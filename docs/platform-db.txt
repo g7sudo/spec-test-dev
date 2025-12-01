@@ -1,0 +1,316 @@
+Project SAVI_PlatformDB {
+  database_type: "PostgreSQL" // logical model; can map to SQL Server later
+}
+
+/**************************************************
+ * ENUMS
+ **************************************************/
+
+Enum TenantStatus {
+  Active
+  Suspended
+  Archived
+}
+
+Enum MembershipStatus {
+  Invited
+  Active
+  Suspended
+}
+
+Enum BypassScope {
+  ReadOnly
+  ReadWrite
+  Full
+}
+
+/**************************************************
+ * BASE ENTITY CONVENTION (DOCUMENTATION)
+ *
+ * Every table follows this pattern:
+ * - Id              uuid (PK)
+ * - Version         int (for optimistic concurrency)
+ * - IsActive        bool
+ * - CreatedAt       timestamptz
+ * - CreatedBy uuid (nullable, FK -> PlatformUser.Id)
+ * - UpdatedAt       timestamptz
+ * - UpdatedBy uuid (nullable, FK -> PlatformUser.Id)
+ **************************************************/
+
+/**************************************************
+ * CORE USER & TENANT
+ **************************************************/
+
+Table PlatformUser {
+  Id               uuid        [pk]
+  Version          int         [not null, default: 1]
+  IsActive         bool        [not null, default: true]
+
+  CreatedAt        timestamptz [not null, default: `now()`]
+  CreatedBy  uuid        [default: null, ref: > PlatformUser.Id]
+  UpdatedAt        timestamptz [default: null]
+  UpdatedBy  uuid        [default: null, ref: > PlatformUser.Id]
+
+  FirebaseUid      text        [default: null, note: 'UID from Firebase, nullable until first login']
+  Email            text        [not null, unique]
+  FullName         text        [default: null]
+  PhoneNumber      text        [default: null]
+
+  Note: 'Global user record, linked to Firebase identity and used across all tenants.'
+}
+
+Table Tenant {
+  Id               uuid          [pk]
+  Version          int           [not null, default: 1]
+  IsActive         bool          [not null, default: true]
+
+  CreatedAt        timestamptz   [not null, default: `now()`]
+  CreatedBy  uuid          [default: null, ref: > PlatformUser.Id]
+ UpdatedAt        timestamptz [default: null]
+  UpdatedBy  uuid          [default: null, ref: > PlatformUser.Id]
+
+  Name             text          [not null]
+  Code             text          [default: null, note: 'Optional short code/slug, unique per platform']
+  Status           TenantStatus  [not null, default: 'Active']
+
+  AddressLine1     text          [default: null]
+  AddressLine2     text          [default: null]
+  City             text          [default: null]
+  State            text          [default: null]
+  Country          text          [default: null]
+  PostalCode       text          [default: null]
+
+  Timezone         text          [default: null]
+  PrimaryContactName  text       [default: null]
+  PrimaryContactEmail text       [default: null]
+  PrimaryContactPhone text       [default: null]
+
+  Provider         text          [not null, note: 'e.g. sqlserver, postgres, sqlite']
+  ConnectionString text          [not null, note: 'Tenant DB connection string']
+
+  Note: 'Represents a community / residential complex with its own DB connection.'
+}
+
+/**************************************************
+ * PLANS & FEATURES
+ **************************************************/
+
+Table Plan {
+  Id                        uuid        [pk]
+  Version                   int         [not null, default: 1]
+  IsActive                  bool        [not null, default: true]
+
+  CreatedAt                 timestamptz [not null, default: `now()`]
+  CreatedBy           uuid        [default: null, ref: > PlatformUser.Id]
+  UpdatedAt        timestamptz [default: null]
+  UpdatedBy           uuid        [default: null, ref: > PlatformUser.Id]
+
+  Code                      text        [not null, unique, note: 'e.g. BASIC, STANDARD, PREMIUM']
+  Name                      text        [not null]
+  Description               text        [default: null]
+
+  MaxRequestsPerMinute      int         [not null, default: 100, note: 'Used by per-tenant rate limiting']
+  DefaultListingExpiryDays  int         [not null, default: 30, note: 'Default marketplace listing lifetime']
+
+  IsMarketplaceEnabled      bool        [not null, default: true]
+  IsCrossCommunityMarketplaceEnabled bool [not null, default: false]
+
+  Note: 'Commercial plan tier & core limits/features.'
+}
+
+Table PlanFeature {
+  Id           uuid        [pk]
+  Version      int         [not null, default: 1]
+  IsActive     bool        [not null, default: true]
+
+  CreatedAt    timestamptz [not null, default: `now()`]
+  CreatedBy uuid     [default: null, ref: > PlatformUser.Id]
+  UpdatedAt        timestamptz [default: null]
+  UpdatedBy uuid     [default: null, ref: > PlatformUser.Id]
+
+  PlanId       uuid        [not null, ref: > Plan.Id]
+  Key          text        [not null, note: 'e.g. MAX_UNITS, MAX_AMENITIES']
+  Value        text        [not null, note: 'String/JSON value depending on feature']
+
+  Note: 'Extensible key-value feature flags per plan.'
+}
+
+Table TenantPlan {
+  Id           uuid        [pk]
+  Version      int         [not null, default: 1]
+  IsActive     bool        [not null, default: true]
+
+  CreatedAt    timestamptz [not null, default: `now()`]
+  CreatedBy uuid     [default: null, ref: > PlatformUser.Id]
+  UpdatedAt        timestamptz [default: null]
+  UpdatedBy uuid     [default: null, ref: > PlatformUser.Id]
+
+  TenantId     uuid        [not null, ref: > Tenant.Id]
+  PlanId       uuid        [not null, ref: > Plan.Id]
+
+  StartsAt     timestamptz [not null, default: `now()`]
+  EndsAt       timestamptz [default: null]
+  IsCurrent    bool        [not null, default: true]
+
+  Note: 'Tracks which plan a tenant is on and the effective period.'
+}
+
+/**************************************************
+ * PERMISSIONS & PLATFORM ROLES
+ **************************************************/
+
+Table Permission {
+  Id           uuid        [pk]
+  Version      int         [not null, default: 1]
+  IsActive     bool        [not null, default: true]
+
+  CreatedAt    timestamptz [not null, default: `now()`]
+  CreatedBy uuid     [default: null, ref: > PlatformUser.Id]
+  UpdatedAt        timestamptz [default: null]
+  UpdatedBy uuid     [default: null, ref: > PlatformUser.Id]
+
+  Key          text        [not null, unique, note: 'e.g. TENANT_MANAGE, MAINTENANCE_VIEW_ALL']
+  Module       text        [not null, note: 'e.g. Tenants, Maintenance, Marketplace']
+  Description  text        [default: null]
+
+  Note: 'Global permission catalog shared by platform and tenants.'
+}
+
+Table PlatformRole {
+  Id           uuid        [pk]
+  Version      int         [not null, default: 1]
+  IsActive     bool        [not null, default: true]
+
+  CreatedAt    timestamptz [not null, default: `now()`]
+  CreatedBy uuid     [default: null, ref: > PlatformUser.Id]
+  UpdatedAt        timestamptz [default: null]
+  UpdatedBy uuid     [default: null, ref: > PlatformUser.Id]
+
+  Code         text        [not null, unique, note: 'e.g. PLATFORM_ADMIN, SUPPORT_AGENT']
+  Name         text        [not null]
+  Description  text        [default: null]
+
+  IsSystem     bool        [not null, default: true, note: 'True for built-in roles']
+
+  Note: 'Roles for platform-level users (root/platform team).'
+}
+
+Table PlatformRolePermission {
+  Id             uuid        [pk]
+  Version        int         [not null, default: 1]
+  IsActive       bool        [not null, default: true]
+
+  CreatedAt      timestamptz [not null, default: `now()`]
+  CreatedBy uuid       [default: null, ref: > PlatformUser.Id]
+  UpdatedAt        timestamptz [default: null]
+  UpdatedBy uuid       [default: null, ref: > PlatformUser.Id]
+
+  PlatformRoleId uuid        [not null, ref: > PlatformRole.Id]
+  PermissionId   uuid        [not null, ref: > Permission.Id]
+
+  Indexes {
+    (PlatformRoleId, PermissionId) [unique]
+  }
+
+  Note: 'Which permissions are granted by each platform role.'
+}
+
+Table PlatformUserRole {
+  Id             uuid        [pk]
+  Version        int         [not null, default: 1]
+  IsActive       bool        [not null, default: true]
+
+  CreatedAt      timestamptz [not null, default: `now()`]
+  CreatedBy uuid       [default: null, ref: > PlatformUser.Id]
+  UpdatedAt        timestamptz [default: null]
+  UpdatedBy uuid       [default: null, ref: > PlatformUser.Id]
+
+  PlatformUserId uuid        [not null, ref: > PlatformUser.Id]
+  PlatformRoleId uuid        [not null, ref: > PlatformRole.Id]
+
+  Indexes {
+    (PlatformUserId, PlatformRoleId) [unique]
+  }
+
+  Note: 'Assigns platform roles to global users.'
+}
+
+Table PlatformRoleBypassPermission {
+  Id             uuid         [pk]
+  Version        int          [not null, default: 1]
+  IsActive       bool         [not null, default: true]
+
+  CreatedAt      timestamptz  [not null, default: `now()`]
+  CreatedBy uuid        [default: null, ref: > PlatformUser.Id]
+  UpdatedAt        timestamptz [default: null]
+  UpdatedBy uuid        [default: null, ref: > PlatformUser.Id]
+
+  PlatformRoleId uuid         [not null, ref: > PlatformRole.Id]
+  PermissionKey  text         [not null, note: 'Matches Permission.Key or wildcard pattern']
+  Scope          BypassScope  [not null, default: 'Full']
+
+  Note: 'Data-driven overrides for platform roles to bypass tenant RBAC for certain permissions.'
+}
+
+/**************************************************
+ * USER ↔ TENANT MEMBERSHIP
+ **************************************************/
+
+Table UserTenantMembership {
+  Id                 uuid             [pk]
+  Version            int              [not null, default: 1]
+  IsActive           bool             [not null, default: true]
+
+  CreatedAt          timestamptz      [not null, default: `now()`]
+  CreatedBy    uuid             [default: null, ref: > PlatformUser.Id]
+  UpdatedAt        timestamptz [default: null]
+  UpdatedBy    uuid             [default: null, ref: > PlatformUser.Id]
+
+  PlatformUserId     uuid             [not null, ref: > PlatformUser.Id]
+  TenantId           uuid             [not null, ref: > Tenant.Id]
+  Status             MembershipStatus [not null, default: 'Invited']
+
+  TenantRoleCode     text             [default: null, note: 'High-level tenant role tag, e.g. COMMUNITY_ADMIN, RESIDENT, OWNER']
+
+  InvitationToken    text             [default: null, note: 'Token for email/deep-link onboarding; null after acceptance']
+  InvitationExpiresAt timestamptz     [default: null]
+  InvitedByUserId    uuid             [default: null, ref: > PlatformUser.Id]
+  JoinedAt           timestamptz      [default: null, note: 'When membership became Active']
+
+  Indexes {
+    (PlatformUserId, TenantId) [unique]
+    (InvitationToken) [unique, name: 'UX_UserTenantMembership_InvitationToken'] // optional uniqueness for tokens
+  }
+
+  Note: 'Indicates which tenants a user belongs to, their membership state, and carries invite metadata.'
+}
+
+/**************************************************
+ * PLATFORM AUDIT LOG
+ **************************************************/
+
+Table PlatformAuditLog {
+  Id             uuid        [pk]
+  Version        int         [not null, default: 1]
+  IsActive       bool        [not null, default: true]
+
+  CreatedAt      timestamptz [not null, default: `now()`]
+  CreatedBy uuid       [default: null, ref: > PlatformUser.Id]
+  UpdatedAt        timestamptz [default: null]
+  UpdatedBy uuid       [default: null, ref: > PlatformUser.Id]
+
+  Timestamp      timestamptz [not null, default: `now()`]
+  PlatformUserId uuid        [default: null, ref: > PlatformUser.Id]
+  TenantId       uuid        [default: null, ref: > Tenant.Id]
+
+  Action         text        [not null, note: 'High-level action name, e.g. TENANT_CREATED, PLAN_CHANGED']
+  EntityType     text        [not null, note: 'e.g. Tenant, Plan, PlatformUser']
+  EntityId       text        [not null, note: 'String to allow UUID or other identifiers']
+
+  OldValues      jsonb       [default: null]
+  NewValues      jsonb       [default: null]
+
+  CorrelationId  text        [default: null, note: 'Helps trace across logs/requests']
+
+  Note: 'Auditing for key platform-level changes.'
+}

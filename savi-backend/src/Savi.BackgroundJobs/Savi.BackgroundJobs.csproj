@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-Savi.BackgroundJobs-ec27deae-cf8f-4692-871d-be871cc5cf1c</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Savi.Application\Savi.Application.csproj" />
+    <ProjectReference Include="..\Savi.Infrastructure\Savi.Infrastructure.csproj" />
+    <ProjectReference Include="..\Savi.SharedKernel\Savi.SharedKernel.csproj" />
+    <ProjectReference Include="..\Savi.MultiTenancy\Savi.MultiTenancy.csproj" />
+  </ItemGroup>
+</Project>
