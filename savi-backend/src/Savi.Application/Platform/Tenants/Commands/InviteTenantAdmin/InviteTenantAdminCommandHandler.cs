@@ -18,19 +18,24 @@ namespace Savi.Application.Platform.Tenants.Commands.InviteTenantAdmin;
 public sealed class InviteTenantAdminCommandHandler
     : IRequestHandler<InviteTenantAdminCommand, Result<InviteTenantAdminResponse>>
 {
+    private const string InvitationTemplateName = "TenantAdminInvitation";
+
     private readonly IPlatformDbContext _platformDbContext;
     private readonly ICurrentUser _currentUser;
+    private readonly IEmailService _emailService;
     private readonly ILogger<InviteTenantAdminCommandHandler> _logger;
     private readonly TenantInvitationOptions _options;
 
     public InviteTenantAdminCommandHandler(
         IPlatformDbContext platformDbContext,
         ICurrentUser currentUser,
+        IEmailService emailService,
         IOptions<TenantInvitationOptions> options,
         ILogger<InviteTenantAdminCommandHandler> logger)
     {
         _platformDbContext = platformDbContext;
         _currentUser = currentUser;
+        _emailService = emailService;
         _logger = logger;
         _options = options.Value ?? new TenantInvitationOptions();
     }
@@ -148,6 +153,43 @@ public sealed class InviteTenantAdminCommandHandler
                 tenant.Id,
                 normalizedEmail,
                 invitationUrl ?? "[hidden]");
+        }
+
+        // Send invitation email
+        if (!string.IsNullOrWhiteSpace(invitationUrl))
+        {
+            var recipientName = command.Request.FullName ?? normalizedEmail.Split('@')[0];
+            var templateData = new Dictionary<string, string>
+            {
+                ["RecipientName"] = recipientName,
+                ["TenantName"] = tenant.Name,
+                ["InvitationUrl"] = invitationUrl,
+                ["ExpiryDays"] = expiryDays.ToString()
+            };
+
+            var emailResult = await _emailService.SendTemplateAsync(
+                InvitationTemplateName,
+                normalizedEmail,
+                recipientName,
+                templateData,
+                cancellationToken);
+
+            if (!emailResult.Success)
+            {
+                _logger.LogWarning(
+                    "Failed to send invitation email to {Email}: {Error}",
+                    normalizedEmail,
+                    emailResult.Error);
+                // Note: We don't fail the whole operation if email fails
+                // The invitation is still created and can be resent
+            }
+            else
+            {
+                _logger.LogInformation(
+                    "Invitation email sent to {Email}. MessageId: {MessageId}",
+                    normalizedEmail,
+                    emailResult.MessageId);
+            }
         }
 
         return Result.Success(new InviteTenantAdminResponse

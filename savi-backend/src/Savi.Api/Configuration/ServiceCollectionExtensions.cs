@@ -9,6 +9,7 @@ using Savi.Application;
 using Savi.Application.Common.Interfaces;
 using Savi.Application.Platform.Tenants;
 using Savi.Infrastructure.Auditing;
+using Savi.Infrastructure.Email;
 using Savi.Infrastructure.Identity;
 using Savi.Infrastructure.Persistence.Platform;
 using Savi.Infrastructure.Persistence.TenantDb;
@@ -118,6 +119,10 @@ public static class ServiceCollectionExtensions
 
         // Add File Storage Service
         services.AddScoped<IFileStorageService, AzureBlobStorageService>();
+
+        // Add Email Service
+        services.Configure<EmailSettings>(configuration.GetSection(EmailSettings.SectionName));
+        services.AddHttpClient<IEmailService, MailerooEmailService>();
 
         // Add MediatR
         services.AddMediatR(cfg =>
