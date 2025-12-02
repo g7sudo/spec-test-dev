@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Savi.Application.Common.Interfaces;
 using Savi.Domain.Tenant;
 
 namespace Savi.Infrastructure.Persistence.TenantDb;
@@ -14,7 +15,7 @@ namespace Savi.Infrastructure.Persistence.TenantDb;
 /// - RBAC (RoleGroup, RoleGroupPermission, CommunityUserRoleGroup)
 /// - Other tenant entities will be added later (Party, Block, Unit, etc.)
 /// </summary>
-public class TenantDbContext : DbContext
+public class TenantDbContext : DbContext, ITenantDbContext
 {
     public TenantDbContext(DbContextOptions<TenantDbContext> options)
         : base(options)
@@ -23,11 +24,35 @@ public class TenantDbContext : DbContext
 
     // Core entities
     public DbSet<CommunityUser> CommunityUsers => Set<CommunityUser>();
+    IQueryable<CommunityUser> ITenantDbContext.CommunityUsers => CommunityUsers;
 
     // Tenant RBAC
     public DbSet<RoleGroup> RoleGroups => Set<RoleGroup>();
     public DbSet<RoleGroupPermission> RoleGroupPermissions => Set<RoleGroupPermission>();
     public DbSet<CommunityUserRoleGroup> CommunityUserRoleGroups => Set<CommunityUserRoleGroup>();
+    IQueryable<RoleGroup> ITenantDbContext.RoleGroups => RoleGroups;
+    IQueryable<RoleGroupPermission> ITenantDbContext.RoleGroupPermissions => RoleGroupPermissions;
+    IQueryable<CommunityUserRoleGroup> ITenantDbContext.CommunityUserRoleGroups => CommunityUserRoleGroups;
+
+    // Community Structure
+    public DbSet<Block> Blocks => Set<Block>();
+    public DbSet<Floor> Floors => Set<Floor>();
+    public DbSet<UnitType> UnitTypes => Set<UnitType>();
+    public DbSet<Unit> Units => Set<Unit>();
+    public DbSet<ParkingSlot> ParkingSlots => Set<ParkingSlot>();
+    IQueryable<Block> ITenantDbContext.Blocks => Blocks;
+    IQueryable<Floor> ITenantDbContext.Floors => Floors;
+    IQueryable<UnitType> ITenantDbContext.UnitTypes => UnitTypes;
+    IQueryable<Unit> ITenantDbContext.Units => Units;
+    IQueryable<ParkingSlot> ITenantDbContext.ParkingSlots => ParkingSlots;
+
+    /// <summary>
+    /// Explicit implementation of ITenantDbContext.Add to match interface signature (void return).
+    /// </summary>
+    void ITenantDbContext.Add<TEntity>(TEntity entity)
+    {
+        base.Add(entity);
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Savi.Domain.Tenant;
 
-namespace Savi.Infrastructure.Persistence.Configurations.TenantDb;
+namespace Savi.Infrastructure.Persistence.Configurations.Tenant;
 
 /// <summary>
 /// EF Core configuration for CommunityUser entity.

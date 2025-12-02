@@ -80,6 +80,37 @@ public static class ServiceCollectionExtensions
         services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
         services.AddScoped<ITenantAdminOnboardingService, TenantAdminOnboardingService>();
 
+        // Register ITenantDbContext per request using factory
+        // This creates TenantDbContext based on current tenant context
+        // Note: We use GetAwaiter().GetResult() instead of Wait() to avoid deadlock issues
+        // This is acceptable here because we're in a synchronous factory delegate context
+        services.AddScoped<ITenantDbContext>(sp =>
+        {
+            var tenantContext = sp.GetRequiredService<ITenantContext>();
+            var factory = sp.GetRequiredService<ITenantDbContextFactory>();
+
+            if (!tenantContext.HasTenant || !tenantContext.TenantId.HasValue)
+            {
+                throw new InvalidOperationException(
+                    "Cannot create TenantDbContext: No tenant context available. Ensure X-Tenant-Id header is set.");
+            }
+
+            // Create TenantDbContext synchronously using GetAwaiter().GetResult()
+            // This avoids deadlock issues that can occur with Task.Wait()
+            // GetAwaiter().GetResult() properly unwraps exceptions and avoids deadlocks
+            var dbContext = factory.CreateAsync(tenantContext.TenantId.Value)
+                .GetAwaiter()
+                .GetResult();
+            
+            if (dbContext is TenantDbContext tenantDbContext)
+            {
+                return tenantDbContext;
+            }
+
+            throw new InvalidOperationException(
+                $"TenantDbContextFactory returned unexpected type: {dbContext?.GetType().Name}");
+        });
+
         // Add MediatR
         services.AddMediatR(cfg =>
         {

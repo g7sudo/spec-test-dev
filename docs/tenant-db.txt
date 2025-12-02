@@ -95,9 +95,9 @@ Enum LeasePartyRole {
  *  IsActive          bool        [not null, default: true]
  *
  *  CreatedAt         timestamptz [not null, default: `now()`]
- *  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id]
+ *  CreatedBy   uuid        [not null, ref: > CommunityUser.Id]
  *  UpdatedAt         timestamptz [default: null]
- *  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+ *  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
  **************************************************/
 
 /**************************************************
@@ -110,9 +110,9 @@ Table CommunityUser {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [default: null, ref: > CommunityUser.Id] // nullable (bootstrap)
+  CreatedBy   uuid        [default: null, ref: > CommunityUser.Id] // nullable (bootstrap)
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   PartyId           uuid        [not null, ref: > Party.Id]
   PlatformUserId    uuid        [default: null, note: 'Logical FK to PlatformDB.PlatformUser.Id']
@@ -134,9 +134,9 @@ Table Party {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   PartyType         PartyType   [not null]
 
@@ -167,9 +167,9 @@ Table PartyAddress {
   IsActive          bool             [not null, default: true]
 
   CreatedAt         timestamptz      [not null, default: `now()`]
-  CreatedByUserId   uuid             [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid             [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz      [default: null]
-  UpdatedByUserId   uuid             [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid             [default: null, ref: > CommunityUser.Id]
 
   PartyId           uuid             [not null, ref: > Party.Id]
   AddressType       PartyAddressType [not null]
@@ -196,9 +196,9 @@ Table PartyContact {
   IsActive          bool              [not null, default: true]
 
   CreatedAt         timestamptz       [not null, default: `now()`]
-  CreatedByUserId   uuid              [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid              [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz       [default: null]
-  UpdatedByUserId   uuid              [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid              [default: null, ref: > CommunityUser.Id]
 
   PartyId           uuid              [not null, ref: > Party.Id]
   ContactType       PartyContactType  [not null]
@@ -220,9 +220,9 @@ Table Document {
   IsActive          bool              [not null, default: true]
 
   CreatedAt         timestamptz       [not null, default: `now()`]
-  CreatedByUserId   uuid              [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid              [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz       [default: null]
-  UpdatedByUserId   uuid              [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid              [default: null, ref: > CommunityUser.Id]
 
   OwnerType         DocumentOwnerType [not null, note: 'What this document is attached to (Party, Unit, Block, etc.).']
   OwnerId           uuid              [not null, note: 'Id of the owning entity in the relevant table.']
@@ -252,9 +252,9 @@ Table Block {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   Name              text        [not null, note: 'e.g. Block A, Tower 1']
   Description       text        [default: null]
@@ -269,9 +269,9 @@ Table Floor {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   BlockId           uuid        [not null, ref: > Block.Id]
   Name              text        [not null, note: 'e.g. G, 1, 2, PH']
@@ -287,9 +287,9 @@ Table UnitType {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   Code              text        [not null, unique, note: 'e.g. STUDIO, 1BHK, 2BHK, PENTHOUSE']
   Name              text        [not null]
@@ -307,9 +307,9 @@ Table Unit {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   BlockId           uuid        [not null, ref: > Block.Id]
   FloorId           uuid        [not null, ref: > Floor.Id]
@@ -330,9 +330,9 @@ Table ParkingSlot {
   IsActive          bool               [not null, default: true]
 
   CreatedAt         timestamptz        [not null, default: `now()`]
-  CreatedByUserId   uuid               [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid               [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz        [default: null]
-  UpdatedByUserId   uuid               [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid               [default: null, ref: > CommunityUser.Id]
 
   Code              text               [not null, note: 'e.g. B1-12, P2-05, OPEN-07']
   LocationType      int                [not null]
@@ -359,9 +359,9 @@ Table UnitOwnership {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   UnitId            uuid        [not null, ref: > Unit.Id]
   PartyId           uuid        [not null, ref: > Party.Id]
@@ -380,9 +380,9 @@ Table Lease {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   UnitId            uuid        [not null, ref: > Unit.Id]
   Status            LeaseStatus [not null, default: 'Draft']
@@ -404,9 +404,9 @@ Table LeaseParty {
   IsActive          bool           [not null, default: true]
 
   CreatedAt         timestamptz    [not null, default: `now()`]
-  CreatedByUserId   uuid           [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid           [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz    [default: null]
-  UpdatedByUserId   uuid           [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid           [default: null, ref: > CommunityUser.Id]
 
   LeaseId           uuid           [not null, ref: > Lease.Id]
   PartyId           uuid           [not null, ref: > Party.Id]
@@ -474,9 +474,9 @@ Table Amenity {
   IsActive          bool          [not null, default: true]
 
   CreatedAt         timestamptz   [not null, default: `now()`]
-  CreatedByUserId   uuid          [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid          [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz   [default: null]
-  UpdatedByUserId   uuid          [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid          [default: null, ref: > CommunityUser.Id]
 
   Name              text          [not null, note: 'Display name, e.g. Party Hall, Tennis Court 1']
   Code              text          [default: null, note: 'Short code, e.g. PHALL1, TENNIS1']
@@ -518,9 +518,9 @@ Table AmenityBooking {
   IsActive          bool                  [not null, default: true]
 
   CreatedAt         timestamptz           [not null, default: `now()`]
-  CreatedByUserId   uuid                  [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid                  [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz           [default: null]
-  UpdatedByUserId   uuid                  [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid                  [default: null, ref: > CommunityUser.Id]
 
   AmenityId         uuid                  [not null, ref: > Amenity.Id]
   UnitId            uuid                  [not null, ref: > Unit.Id]
@@ -623,9 +623,9 @@ Table MaintenanceCategory {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   Name              text        [not null, note: 'e.g. Electrical, Plumbing, HVAC, Lift']
   Code              text        [default: null, note: 'Short code, e.g. ELEC, PLUMB']
@@ -646,9 +646,9 @@ Table MaintenanceRequest {
   IsActive          bool              [not null, default: true]
 
   CreatedAt         timestamptz       [not null, default: `now()`]
-  CreatedByUserId   uuid              [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid              [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz       [default: null]
-  UpdatedByUserId   uuid              [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid              [default: null, ref: > CommunityUser.Id]
 
   UnitId            uuid              [default: null, ref: > Unit.Id, note: 'Null for common-area issues']
   CategoryId        uuid              [not null, ref: > MaintenanceCategory.Id]
@@ -696,9 +696,9 @@ Table MaintenanceApproval {
   IsActive          bool                    [not null, default: true]
 
   CreatedAt         timestamptz             [not null, default: `now()`]
-  CreatedByUserId   uuid                    [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid                    [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz             [default: null]
-  UpdatedByUserId   uuid                    [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid                    [default: null, ref: > CommunityUser.Id]
 
   MaintenanceRequestId uuid                 [not null, ref: > MaintenanceRequest.Id]
 
@@ -732,9 +732,9 @@ Table MaintenanceComment {
   IsActive          bool                 [not null, default: true]
 
   CreatedAt         timestamptz          [not null, default: `now()`]
-  CreatedByUserId   uuid                 [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid                 [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz          [default: null]
-  UpdatedByUserId   uuid                 [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid                 [default: null, ref: > CommunityUser.Id]
 
   MaintenanceRequestId uuid              [not null, ref: > MaintenanceRequest.Id]
   CommentType       MaintenanceCommentType [not null, default: 'ResidentComment']
@@ -784,9 +784,9 @@ Table VisitorPass {
   IsActive          bool              [not null, default: true]
 
   CreatedAt         timestamptz       [not null, default: `now()`]
-  CreatedByUserId   uuid              [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid              [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz       [default: null]
-  UpdatedByUserId   uuid              [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid              [default: null, ref: > CommunityUser.Id]
 
   UnitId            uuid              [not null, ref: > Unit.Id, note: 'Unit this visitor is coming for']
 
@@ -853,9 +853,9 @@ Table CommunityUserProfile {
   IsActive              bool        [not null, default: true]
 
   CreatedAt             timestamptz [not null, default: `now()`]
-  CreatedByUserId       uuid        [not null, ref: > CommunityUser.Id]
+  CreatedBy       uuid        [not null, ref: > CommunityUser.Id]
   UpdatedAt             timestamptz [default: null]
-  UpdatedByUserId       uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy       uuid        [default: null, ref: > CommunityUser.Id]
 
   CommunityUserId       uuid        [not null, ref: > CommunityUser.Id]
 
@@ -941,9 +941,9 @@ Table MarketplaceCategory {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   Name              text        [not null, note: 'e.g. Furniture, Electronics, Kids, Vehicles, Services']
   Code              text        [default: null, note: 'Optional short code, e.g. FURN, ELEC']
@@ -964,9 +964,9 @@ Table MarketplaceListing {
   IsActive          bool                    [not null, default: true]
 
   CreatedAt         timestamptz             [not null, default: `now()`]
-  CreatedByUserId   uuid                    [not null, ref: > CommunityUser.Id, note: 'Seller (community user) who created this listing']
+  CreatedBy   uuid                    [not null, ref: > CommunityUser.Id, note: 'Seller (community user) who created this listing']
   UpdatedAt         timestamptz             [default: null]
-  UpdatedByUserId   uuid                    [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid                    [default: null, ref: > CommunityUser.Id]
 
   CategoryId        uuid                    [not null, ref: > MarketplaceCategory.Id]
   UnitId            uuid                    [default: null, ref: > Unit.Id, note: 'Optional link to seller unit']
@@ -1019,9 +1019,9 @@ Table MarketplaceComment {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   MarketplaceListingId uuid     [not null, ref: > MarketplaceListing.Id]
 
@@ -1041,9 +1041,9 @@ Table MarketplaceOffer {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id, note: 'Buyer making the offer']
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id, note: 'Buyer making the offer']
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   MarketplaceListingId uuid     [not null, ref: > MarketplaceListing.Id]
 
@@ -1069,9 +1069,9 @@ Table MarketplaceListingLike {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id, note: 'User who liked this listing']
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id, note: 'User who liked this listing']
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   MarketplaceListingId uuid     [not null, ref: > MarketplaceListing.Id]
 
@@ -1088,9 +1088,9 @@ Table MarketplaceListingFavorite {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id, note: 'User who favorited this listing']
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id, note: 'User who favorited this listing']
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   MarketplaceListingId uuid     [not null, ref: > MarketplaceListing.Id]
 
@@ -1143,9 +1143,9 @@ Table Announcement {
   IsActive          bool                [not null, default: true]
 
   CreatedAt         timestamptz         [not null, default: `now()`]
-  CreatedByUserId   uuid                [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid                [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz         [default: null]
-  UpdatedByUserId   uuid                [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid                [default: null, ref: > CommunityUser.Id]
 
   Title             text                [not null]
   Body              text                [default: null, note: 'Markdown or rich text content']
@@ -1191,9 +1191,9 @@ Table AnnouncementAudience {
   IsActive          bool                          [not null, default: true]
 
   CreatedAt         timestamptz                   [not null, default: `now()`]
-  CreatedByUserId   uuid                          [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid                          [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz                   [default: null]
-  UpdatedByUserId   uuid                          [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid                          [default: null, ref: > CommunityUser.Id]
 
   AnnouncementId    uuid                          [not null, ref: > Announcement.Id]
   TargetType        AnnouncementAudienceTargetType [not null, default: 'Community']
@@ -1215,9 +1215,9 @@ Table AnnouncementLike {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id, note: 'User who liked the announcement']
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id, note: 'User who liked the announcement']
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   AnnouncementId    uuid        [not null, ref: > Announcement.Id]
 
@@ -1234,9 +1234,9 @@ Table AnnouncementComment {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id]
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id]
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   AnnouncementId    uuid        [not null, ref: > Announcement.Id]
 
@@ -1257,9 +1257,9 @@ Table AnnouncementRead {
   IsActive          bool        [not null, default: true]
 
   CreatedAt         timestamptz [not null, default: `now()`]
-  CreatedByUserId   uuid        [not null, ref: > CommunityUser.Id, note: 'Same as CommunityUserId, for consistency with base fields']
+  CreatedBy   uuid        [not null, ref: > CommunityUser.Id, note: 'Same as CommunityUserId, for consistency with base fields']
   UpdatedAt         timestamptz [default: null]
-  UpdatedByUserId   uuid        [default: null, ref: > CommunityUser.Id]
+  UpdatedBy   uuid        [default: null, ref: > CommunityUser.Id]
 
   AnnouncementId    uuid        [not null, ref: > Announcement.Id]
   CommunityUserId   uuid        [not null, ref: > CommunityUser.Id]

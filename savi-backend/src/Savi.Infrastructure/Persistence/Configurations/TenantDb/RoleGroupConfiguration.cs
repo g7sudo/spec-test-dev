@@ -2,7 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Savi.Domain.Tenant;
 
-namespace Savi.Infrastructure.Persistence.Configurations.TenantDb;
+namespace Savi.Infrastructure.Persistence.Configurations.Tenant;
 
 /// <summary>
 /// EF Core configuration for RoleGroup entity.
@@ -38,11 +38,11 @@ public class RoleGroupConfiguration : IEntityTypeConfiguration<RoleGroup>
         builder.Property(x => x.Description)
             .HasMaxLength(512);
 
-        // GroupType enum - default handled by domain, not DB
         builder.Property(x => x.GroupType)
             .IsRequired()
             .HasConversion<string>()
-            .HasMaxLength(32);
+            .HasMaxLength(32)
+            .HasDefaultValue(RoleGroupType.Other);
 
         builder.Property(x => x.IsSystem)
             .IsRequired()

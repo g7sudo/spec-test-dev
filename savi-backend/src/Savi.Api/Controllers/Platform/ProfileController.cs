@@ -2,7 +2,8 @@ using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Savi.Application.Platform.Profile;
+using Savi.Application.Platform.Profile.Dtos;
+using Savi.Application.Platform.Profile.Queries.GetMyPlatformProfile;
 
 namespace Savi.Api.Controllers.Platform;
 

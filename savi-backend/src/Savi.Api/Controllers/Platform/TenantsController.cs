@@ -3,7 +3,9 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Savi.Api.Configuration;
-using Savi.Application.Platform.Tenants;
+using Savi.Application.Platform.Tenants.Commands.CreateTenant;
+using Savi.Application.Platform.Tenants.Commands.InviteTenantAdmin;
+using Savi.Application.Platform.Tenants.Dtos;
 using Savi.SharedKernel.Authorization;
 
 namespace Savi.Api.Controllers.Platform;
