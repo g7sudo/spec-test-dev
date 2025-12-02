@@ -1,0 +1,116 @@
+/**
+ * Global CSS for SAVI Portal
+ * Tailwind imports + custom styles
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================ */
+/* Custom Fonts                                 */
+/* ============================================ */
+
+/* DM Sans for body text */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+
+/* Outfit for headings/display */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap');
+
+:root {
+  --font-dm-sans: 'DM Sans', system-ui, sans-serif;
+  --font-outfit: 'Outfit', system-ui, sans-serif;
+}
+
+/* ============================================ */
+/* Base Styles                                  */
+/* ============================================ */
+
+@layer base {
+  html {
+    @apply antialiased;
+    font-family: var(--font-dm-sans);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-surface-50 text-gray-900;
+  }
+
+  /* Better focus outlines */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-surface-300;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-surface-400;
+  }
+}
+
+/* ============================================ */
+/* Component Utilities                          */
+/* ============================================ */
+
+@layer components {
+  /* Page container */
+  .page-container {
+    @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Page header */
+  .page-header {
+    @apply mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between;
+  }
+
+  .page-title {
+    @apply font-display text-2xl font-bold text-gray-900 sm:text-3xl;
+  }
+
+  .page-description {
+    @apply mt-1 text-sm text-gray-500;
+  }
+
+  /* Card grid */
+  .card-grid {
+    @apply grid gap-4 sm:gap-6;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+
+  /* Stats grid */
+  .stats-grid {
+    @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-4;
+  }
+}
+
+/* ============================================ */
+/* Animation Classes                            */
+/* ============================================ */
+
+@layer utilities {
+  /* Stagger animations for lists */
+  .stagger-animation > * {
+    @apply animate-slide-up;
+    animation-fill-mode: both;
+  }
+
+  .stagger-animation > *:nth-child(1) { animation-delay: 0ms; }
+  .stagger-animation > *:nth-child(2) { animation-delay: 50ms; }
+  .stagger-animation > *:nth-child(3) { animation-delay: 100ms; }
+  .stagger-animation > *:nth-child(4) { animation-delay: 150ms; }
+  .stagger-animation > *:nth-child(5) { animation-delay: 200ms; }
+  .stagger-animation > *:nth-child(6) { animation-delay: 250ms; }
+}
+
