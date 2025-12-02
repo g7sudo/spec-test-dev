@@ -111,7 +111,7 @@ public class CreateFloorCommandHandler : IRequestHandler<CreateFloorCommand, Res
             return Result<Guid>.Failure("Some files do not belong to the current tenant.");
 
         // Start explicit transaction for floor creation + file move
-        await using var transaction = await ((DbContext)_dbContext).Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await _dbContext.BeginTransactionAsync(cancellationToken);
         try
         {
             // Create the floor using domain factory method

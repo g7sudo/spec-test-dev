@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using Savi.Application.Common.Interfaces;
 using Savi.Domain.Tenant;
 
@@ -68,6 +69,14 @@ public class TenantDbContext : DbContext, ITenantDbContext
     void ITenantDbContext.Add<TEntity>(TEntity entity)
     {
         base.Add(entity);
+    }
+
+    /// <summary>
+    /// Begins a new database transaction.
+    /// </summary>
+    public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        return Database.BeginTransactionAsync(cancellationToken);
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

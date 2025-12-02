@@ -92,7 +92,7 @@ public class UpdateFloorCommandHandler : IRequestHandler<UpdateFloorCommand, Res
             return Result.Failure("Tenant context not available.");
 
         // Start transaction
-        await using var transaction = await ((DbContext)_dbContext).Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await _dbContext.BeginTransactionAsync(cancellationToken);
         try
         {
             // Update floor basic properties

@@ -26,11 +26,11 @@ public class TenantDatabaseMigrator : ITenantDatabaseMigrator
         _logger.LogInformation("Creating DbContext for tenant {TenantId}", tenantId);
 
         // Create tenant-specific DbContext
-        var dbContextObj = await _contextFactory.CreateAsync(tenantId, cancellationToken);
+        var contextInstance = await _contextFactory.CreateAsync(tenantId, cancellationToken);
 
-        if (dbContextObj is not TenantDbContext dbContext)
+        if (contextInstance is not TenantDbContext dbContext)
         {
-            throw new InvalidOperationException($"Expected TenantDbContext but got {dbContextObj?.GetType().Name}");
+            throw new InvalidOperationException($"Expected TenantDbContext but got {contextInstance?.GetType().Name}");
         }
 
         // Get pending migrations before applying

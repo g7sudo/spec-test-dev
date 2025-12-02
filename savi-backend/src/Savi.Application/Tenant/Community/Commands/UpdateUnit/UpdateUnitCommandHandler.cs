@@ -85,7 +85,7 @@ public class UpdateUnitCommandHandler : IRequestHandler<UpdateUnitCommand, Resul
             return Result.Failure("Tenant context not available.");
 
         // Start transaction for unit update + document management
-        await using var transaction = await ((DbContext)_dbContext).Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await _dbContext.BeginTransactionAsync(cancellationToken);
         try
         {
             // Update unit basic properties

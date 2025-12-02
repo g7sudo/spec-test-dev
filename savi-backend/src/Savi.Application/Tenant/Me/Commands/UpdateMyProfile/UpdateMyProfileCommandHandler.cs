@@ -96,7 +96,7 @@ public class UpdateMyProfileCommandHandler : IRequestHandler<UpdateMyProfileComm
             }
 
             // Start transaction for profile update + file move
-            await using var transaction = await ((DbContext)_dbContext).Database.BeginTransactionAsync(cancellationToken);
+            await using var transaction = await _dbContext.BeginTransactionAsync(cancellationToken);
             try
             {
                 // Build destination path: tenant-{TenantId}/users/{CommunityUserId}/{FileName}

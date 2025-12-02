@@ -17,6 +17,8 @@ public class AzureBlobStorageService : IFileStorageService
     private readonly BlobServiceClient _blobServiceClient;
     private readonly string _containerName;
     private readonly ILogger<AzureBlobStorageService> _logger;
+    private readonly SemaphoreSlim _initializationLock = new(1, 1);
+    private bool _isInitialized;
 
     public AzureBlobStorageService(
         IConfiguration configuration,
@@ -28,9 +30,6 @@ public class AzureBlobStorageService : IFileStorageService
         _containerName = configuration["FileUpload:ContainerName"] ?? "savi-files";
         _blobServiceClient = new BlobServiceClient(connectionString);
         _logger = logger;
-
-        // Ensure container exists
-        EnsureContainerExistsAsync().GetAwaiter().GetResult();
     }
 
     public async Task<string> UploadTempFileAsync(
@@ -41,6 +40,8 @@ public class AzureBlobStorageService : IFileStorageService
         string contentType,
         CancellationToken cancellationToken = default)
     {
+        await EnsureInitializedAsync(cancellationToken);
+
         var sanitizedFileName = SanitizeFileName(fileName);
         var blobPath = $"tenant-{tenantId}/temp/{tempKey}/{sanitizedFileName}";
 
@@ -65,6 +66,8 @@ public class AzureBlobStorageService : IFileStorageService
         string destinationBlobPath,
         CancellationToken cancellationToken = default)
     {
+        await EnsureInitializedAsync(cancellationToken);
+
         _logger.LogInformation("Moving file from {Source} to {Destination}", sourceBlobPath, destinationBlobPath);
 
         var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
@@ -100,6 +103,8 @@ public class AzureBlobStorageService : IFileStorageService
         string contentType,
         CancellationToken cancellationToken = default)
     {
+        await EnsureInitializedAsync(cancellationToken);
+
         var sanitizedFileName = SanitizeFileName(fileName);
         var blobPath = $"tenant-{tenantId}/{ownerType.ToLowerInvariant()}/{ownerId}/{sanitizedFileName}";
 
@@ -123,6 +128,8 @@ public class AzureBlobStorageService : IFileStorageService
         string blobPath,
         CancellationToken cancellationToken = default)
     {
+        await EnsureInitializedAsync(cancellationToken);
+
         _logger.LogInformation("Deleting file: {BlobPath}", blobPath);
 
         var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
@@ -147,6 +154,8 @@ public class AzureBlobStorageService : IFileStorageService
         int expiresInMinutes = 60,
         CancellationToken cancellationToken = default)
     {
+        await EnsureInitializedAsync(cancellationToken);
+
         var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
         var blobClient = containerClient.GetBlobClient(blobPath);
 
@@ -180,6 +189,8 @@ public class AzureBlobStorageService : IFileStorageService
         int daysOld,
         CancellationToken cancellationToken = default)
     {
+        await EnsureInitializedAsync(cancellationToken);
+
         var cutoffDate = DateTimeOffset.UtcNow.AddDays(-daysOld);
         var prefix = $"tenant-{tenantId}/temp/";
         var deletedCount = 0;
@@ -228,12 +239,29 @@ public class AzureBlobStorageService : IFileStorageService
     }
 
     /// <summary>
-    /// Ensures the blob container exists, creates if it doesn't.
+    /// Ensures the blob container exists using lazy initialization pattern.
+    /// Thread-safe and only executes once.
     /// </summary>
-    private async Task EnsureContainerExistsAsync()
+    private async Task EnsureInitializedAsync(CancellationToken cancellationToken = default)
     {
-        var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
-        await containerClient.CreateIfNotExistsAsync(PublicAccessType.None);
-        _logger.LogInformation("Ensured blob container exists: {ContainerName}", _containerName);
+        if (_isInitialized)
+            return;
+
+        await _initializationLock.WaitAsync(cancellationToken);
+        try
+        {
+            if (_isInitialized)
+                return;
+
+            var containerClient = _blobServiceClient.GetBlobContainerClient(_containerName);
+            await containerClient.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: cancellationToken);
+            _logger.LogInformation("Ensured blob container exists: {ContainerName}", _containerName);
+
+            _isInitialized = true;
+        }
+        finally
+        {
+            _initializationLock.Release();
+        }
     }
 }

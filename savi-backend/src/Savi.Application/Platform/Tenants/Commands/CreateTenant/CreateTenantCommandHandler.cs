@@ -19,6 +19,7 @@ public sealed class CreateTenantCommandHandler
     : IRequestHandler<CreateTenantCommand, Result<CreateTenantResponse>>
 {
     private const string DefaultProvider = "sqlite";
+    private const string DefaultTenantRoleCode = "COMMUNITY_ADMIN";
 
     private readonly IPlatformDbContext _platformDbContext;
     private readonly ICurrentUser _currentUser;
@@ -123,7 +124,7 @@ public sealed class CreateTenantCommandHandler
         var creatorMembership = UserTenantMembership.CreateActive(
             platformUserId: _currentUser.UserId,
             tenantId: tenant.Id,
-            tenantRoleCode: "COMMUNITY_ADMIN",  // Default role for creator
+            tenantRoleCode: DefaultTenantRoleCode,
             createdBy: _currentUser.UserId);
 
         // Add to context and save
@@ -133,12 +134,13 @@ public sealed class CreateTenantCommandHandler
         await _platformDbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
-            "Created tenant {TenantId} ({TenantCode}) - {TenantName} on plan {PlanCode}. Creator {UserId} added as COMMUNITY_ADMIN.",
+            "Created tenant {TenantId} ({TenantCode}) - {TenantName} on plan {PlanCode}. Creator {UserId} added as {RoleCode}.",
             tenant.Id,
             tenant.Code,
             tenant.Name,
             plan.Code,
-            _currentUser.UserId);
+            _currentUser.UserId,
+            DefaultTenantRoleCode);
 
         if (request.ProvisionTenantDatabase)
         {
@@ -156,7 +158,7 @@ public sealed class CreateTenantCommandHandler
             await _tenantAdminOnboardingService.EnsureCommunityAdminAsync(
                 tenantId: tenant.Id,
                 platformUserId: _currentUser.UserId,
-                tenantRoleCode: "COMMUNITY_ADMIN",
+                tenantRoleCode: DefaultTenantRoleCode,
                 preferredName: null,  // Will be populated from user profile
                 cancellationToken: cancellationToken);
 

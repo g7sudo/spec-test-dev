@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore.Storage;
 using Savi.Domain.Tenant;
 
 namespace Savi.Application.Common.Interfaces;
@@ -45,5 +46,10 @@ public interface ITenantDbContext
     /// Saves all changes made in this context to the database.
     /// </summary>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Begins a new database transaction.
+    /// </summary>
+    Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default);
 }
 
