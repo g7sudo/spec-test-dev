@@ -3,26 +3,26 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Savi.Api.Configuration;
-using Savi.Application.Tenant.Structure.Commands.AllocateParkingSlot;
-using Savi.Application.Tenant.Structure.Commands.CreateParkingSlot;
-using Savi.Application.Tenant.Structure.Commands.DeallocateParkingSlot;
-using Savi.Application.Tenant.Structure.Commands.UpdateParkingSlot;
-using Savi.Application.Tenant.Structure.Dtos;
-using Savi.Application.Tenant.Structure.Queries.GetParkingSlotById;
-using Savi.Application.Tenant.Structure.Queries.ListParkingSlots;
+using Savi.Application.Tenant.Community.Commands.AllocateParkingSlot;
+using Savi.Application.Tenant.Community.Commands.CreateParkingSlot;
+using Savi.Application.Tenant.Community.Commands.DeallocateParkingSlot;
+using Savi.Application.Tenant.Community.Commands.UpdateParkingSlot;
+using Savi.Application.Tenant.Community.Dtos;
+using Savi.Application.Tenant.Community.Queries.GetParkingSlotById;
+using Savi.Application.Tenant.Community.Queries.ListParkingSlots;
 using Savi.Domain.Tenant.Enums;
 using Savi.SharedKernel;
 using Savi.SharedKernel.Authorization;
 using Savi.SharedKernel.Common;
 
-namespace Savi.Api.Controllers.Tenant;
+namespace Savi.Api.Controllers.Tenant.Community;
 
 /// <summary>
 /// Controller for managing parking slots in the community.
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/tenant/structure/parking-slots")]
+[Route("api/v{version:apiVersion}/tenant/community/parking-slots")]
 [Authorize]
 public class ParkingSlotsController : ControllerBase
 {
@@ -39,7 +39,7 @@ public class ParkingSlotsController : ControllerBase
     /// Gets a list of parking slots with optional filtering and pagination.
     /// </summary>
     [HttpGet]
-    [HasPermission(Permissions.Tenant.Structure.View)]
+    [HasPermission(Permissions.Tenant.Community.View)]
     [ProducesResponseType(typeof(PagedResult<ParkingSlotDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -65,7 +65,7 @@ public class ParkingSlotsController : ControllerBase
     /// Gets a parking slot by its ID.
     /// </summary>
     [HttpGet("{id:guid}")]
-    [HasPermission(Permissions.Tenant.Structure.View)]
+    [HasPermission(Permissions.Tenant.Community.View)]
     [ProducesResponseType(typeof(ParkingSlotDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -89,7 +89,7 @@ public class ParkingSlotsController : ControllerBase
     /// Creates a new parking slot.
     /// </summary>
     [HttpPost]
-    [HasPermission(Permissions.Tenant.Structure.Manage)]
+    [HasPermission(Permissions.Tenant.Community.Manage)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -98,7 +98,7 @@ public class ParkingSlotsController : ControllerBase
         [FromBody] CreateParkingSlotCommand command,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("POST /tenant/structure/parking-slots - Creating parking slot: {Code}", command.Code);
+        _logger.LogInformation("POST /tenant/community/parking-slots - Creating parking slot: {Code}", command.Code);
 
         var result = await _mediator.Send(command, cancellationToken);
 
@@ -117,7 +117,7 @@ public class ParkingSlotsController : ControllerBase
     /// Updates an existing parking slot.
     /// </summary>
     [HttpPut("{id:guid}")]
-    [HasPermission(Permissions.Tenant.Structure.Manage)]
+    [HasPermission(Permissions.Tenant.Community.Manage)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -151,7 +151,7 @@ public class ParkingSlotsController : ControllerBase
     /// Allocates a parking slot to a unit.
     /// </summary>
     [HttpPost("{id:guid}/allocate")]
-    [HasPermission(Permissions.Tenant.Structure.Manage)]
+    [HasPermission(Permissions.Tenant.Community.Manage)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -177,7 +177,7 @@ public class ParkingSlotsController : ControllerBase
     /// Deallocates a parking slot from a unit.
     /// </summary>
     [HttpPost("{id:guid}/deallocate")]
-    [HasPermission(Permissions.Tenant.Structure.Manage)]
+    [HasPermission(Permissions.Tenant.Community.Manage)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

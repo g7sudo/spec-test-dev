@@ -3,23 +3,23 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Savi.Api.Configuration;
-using Savi.Application.Tenant.Structure.Commands.CreateBlock;
-using Savi.Application.Tenant.Structure.Commands.UpdateBlock;
-using Savi.Application.Tenant.Structure.Dtos;
-using Savi.Application.Tenant.Structure.Queries.GetBlockById;
-using Savi.Application.Tenant.Structure.Queries.ListBlocks;
+using Savi.Application.Tenant.Community.Commands.CreateBlock;
+using Savi.Application.Tenant.Community.Commands.UpdateBlock;
+using Savi.Application.Tenant.Community.Dtos;
+using Savi.Application.Tenant.Community.Queries.GetBlockById;
+using Savi.Application.Tenant.Community.Queries.ListBlocks;
 using Savi.SharedKernel;
 using Savi.SharedKernel.Authorization;
 using Savi.SharedKernel.Common;
 
-namespace Savi.Api.Controllers.Tenant;
+namespace Savi.Api.Controllers.Tenant.Community;
 
 /// <summary>
 /// Controller for managing blocks (buildings/towers) in the community.
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/tenant/structure/blocks")]
+[Route("api/v{version:apiVersion}/tenant/community/blocks")]
 [Authorize]
 public class BlocksController : ControllerBase
 {
@@ -36,7 +36,7 @@ public class BlocksController : ControllerBase
     /// Gets a list of all blocks with pagination.
     /// </summary>
     [HttpGet]
-    [HasPermission(Permissions.Tenant.Structure.View)]
+    [HasPermission(Permissions.Tenant.Community.View)]
     [ProducesResponseType(typeof(PagedResult<BlockDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -60,7 +60,7 @@ public class BlocksController : ControllerBase
     /// Gets a block by its ID.
     /// </summary>
     [HttpGet("{id:guid}")]
-    [HasPermission(Permissions.Tenant.Structure.View)]
+    [HasPermission(Permissions.Tenant.Community.View)]
     [ProducesResponseType(typeof(BlockDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -84,7 +84,7 @@ public class BlocksController : ControllerBase
     /// Creates a new block.
     /// </summary>
     [HttpPost]
-    [HasPermission(Permissions.Tenant.Structure.Manage)]
+    [HasPermission(Permissions.Tenant.Community.Manage)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -93,7 +93,7 @@ public class BlocksController : ControllerBase
         [FromBody] CreateBlockCommand command,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("POST /tenant/structure/blocks - Creating block: {BlockName}", command.Name);
+        _logger.LogInformation("POST /tenant/community/blocks - Creating block: {BlockName}", command.Name);
 
         var result = await _mediator.Send(command, cancellationToken);
 
@@ -112,7 +112,7 @@ public class BlocksController : ControllerBase
     /// Updates an existing block.
     /// </summary>
     [HttpPut("{id:guid}")]
-    [HasPermission(Permissions.Tenant.Structure.Manage)]
+    [HasPermission(Permissions.Tenant.Community.Manage)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

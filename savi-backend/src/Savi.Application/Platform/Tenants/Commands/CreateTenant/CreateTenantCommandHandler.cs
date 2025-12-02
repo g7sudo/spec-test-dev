@@ -23,17 +23,20 @@ public sealed class CreateTenantCommandHandler
     private readonly IPlatformDbContext _platformDbContext;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantProvisioningService _tenantProvisioningService;
+    private readonly ITenantAdminOnboardingService _tenantAdminOnboardingService;
     private readonly ILogger<CreateTenantCommandHandler> _logger;
 
     public CreateTenantCommandHandler(
         IPlatformDbContext platformDbContext,
         ICurrentUser currentUser,
         ITenantProvisioningService tenantProvisioningService,
+        ITenantAdminOnboardingService tenantAdminOnboardingService,
         ILogger<CreateTenantCommandHandler> logger)
     {
         _platformDbContext = platformDbContext;
         _currentUser = currentUser;
         _tenantProvisioningService = tenantProvisioningService;
+        _tenantAdminOnboardingService = tenantAdminOnboardingService;
         _logger = logger;
     }
 
@@ -115,17 +118,27 @@ public sealed class CreateTenantCommandHandler
             startsAt: DateTime.UtcNow,
             createdBy: _currentUser.UserId);
 
+        // Auto-add the creating Platform Admin to tenant membership
+        // This ensures they can access the tenant immediately via scope dropdown
+        var creatorMembership = UserTenantMembership.CreateActive(
+            platformUserId: _currentUser.UserId,
+            tenantId: tenant.Id,
+            tenantRoleCode: "COMMUNITY_ADMIN",  // Default role for creator
+            createdBy: _currentUser.UserId);
+
         // Add to context and save
         _platformDbContext.Add(tenant);
         _platformDbContext.Add(tenantPlan);
+        _platformDbContext.Add(creatorMembership);
         await _platformDbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
-            "Created tenant {TenantId} ({TenantCode}) - {TenantName} on plan {PlanCode}",
+            "Created tenant {TenantId} ({TenantCode}) - {TenantName} on plan {PlanCode}. Creator {UserId} added as COMMUNITY_ADMIN.",
             tenant.Id,
             tenant.Code,
             tenant.Name,
-            plan.Code);
+            plan.Code,
+            _currentUser.UserId);
 
         if (request.ProvisionTenantDatabase)
         {
@@ -137,6 +150,20 @@ public sealed class CreateTenantCommandHandler
                 SeedDefaultRbac: request.SeedTenantRbac);
 
             await _tenantProvisioningService.ProvisionTenantAsync(provisionOptions, cancellationToken);
+
+            // Create CommunityUser in TenantDB and assign COMMUNITY_ADMIN role
+            // This enables the creator to have full tenant permissions
+            await _tenantAdminOnboardingService.EnsureCommunityAdminAsync(
+                tenantId: tenant.Id,
+                platformUserId: _currentUser.UserId,
+                tenantRoleCode: "COMMUNITY_ADMIN",
+                preferredName: null,  // Will be populated from user profile
+                cancellationToken: cancellationToken);
+
+            _logger.LogInformation(
+                "Created CommunityUser for creator {UserId} in tenant {TenantId}",
+                _currentUser.UserId,
+                tenant.Id);
         }
 
         return Result.Success(new CreateTenantResponse

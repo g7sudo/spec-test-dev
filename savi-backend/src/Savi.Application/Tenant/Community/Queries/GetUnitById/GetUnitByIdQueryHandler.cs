@@ -3,8 +3,10 @@ using Savi.SharedKernel.Common;
 using Microsoft.EntityFrameworkCore;
 using Savi.Application.Common.Interfaces;
 using Savi.Application.Tenant.Community.Dtos;
+using Savi.Application.Tenant.Files.Dtos;
 using Savi.SharedKernel;
 using Savi.SharedKernel.Exceptions;
+using Savi.Domain.Tenant.Enums;
 
 namespace Savi.Application.Tenant.Community.Queries.GetUnitById;
 /// <summary>
@@ -13,9 +15,14 @@ namespace Savi.Application.Tenant.Community.Queries.GetUnitById;
 public class GetUnitByIdQueryHandler : IRequestHandler<GetUnitByIdQuery, Result<UnitDto>>
 {
     private readonly ITenantDbContext _dbContext;
-    public GetUnitByIdQueryHandler(ITenantDbContext dbContext)
+    private readonly IFileStorageService _fileStorageService;
+
+    public GetUnitByIdQueryHandler(
+        ITenantDbContext dbContext,
+        IFileStorageService fileStorageService)
     {
         _dbContext = dbContext;
+        _fileStorageService = fileStorageService;
     }
     public async Task<Result<UnitDto>> Handle(GetUnitByIdQuery request, CancellationToken cancellationToken)
     {
@@ -57,11 +64,46 @@ public class GetUnitByIdQueryHandler : IRequestHandler<GetUnitByIdQuery, Result<
             .Select(ut => ut.Name)
             .FirstOrDefaultAsync(cancellationToken) ?? string.Empty;
 
+        // Get documents (images) for this unit
+        var documents = await _dbContext.Documents
+            .AsNoTracking()
+            .Where(d => d.OwnerType == DocumentOwnerType.Unit
+                     && d.OwnerId == unit.Id
+                     && d.IsActive)
+            .OrderBy(d => d.DisplayOrder)
+            .ToListAsync(cancellationToken);
+
+        // Generate download URLs for each document
+        var documentDtos = new List<DocumentDto>();
+        foreach (var doc in documents)
+        {
+            var downloadUrl = await _fileStorageService.GetDownloadUrlAsync(
+                doc.BlobPath,
+                60, // 60 minutes expiry
+                cancellationToken);
+
+            documentDtos.Add(new DocumentDto
+            {
+                Id = doc.Id,
+                FileName = doc.FileName,
+                Title = doc.Title,
+                Description = doc.Description,
+                ContentType = doc.ContentType,
+                SizeBytes = doc.SizeBytes,
+                Category = doc.Category.ToString(),
+                DisplayOrder = doc.DisplayOrder,
+                ActionState = DocumentActionState.Active,
+                DownloadUrl = downloadUrl,
+                CreatedAt = doc.CreatedAt
+            });
+        }
+
         var unitDto = unit with
         {
             BlockName = blockName,
             FloorName = floorName,
-            UnitTypeName = unitTypeName
+            UnitTypeName = unitTypeName,
+            Documents = documentDtos
         };
 
         return Result<UnitDto>.Success(unitDto);

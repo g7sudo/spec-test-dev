@@ -13,6 +13,7 @@ public interface ITenantDbContext
 {
     // Core entities
     IQueryable<CommunityUser> CommunityUsers { get; }
+    IQueryable<CommunityUserProfile> CommunityUserProfiles { get; }
 
     // Tenant RBAC
     IQueryable<RoleGroup> RoleGroups { get; }
@@ -25,6 +26,15 @@ public interface ITenantDbContext
     IQueryable<UnitType> UnitTypes { get; }
     IQueryable<Unit> Units { get; }
     IQueryable<ParkingSlot> ParkingSlots { get; }
+
+    // Party Management
+    IQueryable<Party> Parties { get; }
+    IQueryable<PartyAddress> PartyAddresses { get; }
+    IQueryable<PartyContact> PartyContacts { get; }
+
+    // File Storage
+    IQueryable<TempFileUpload> TempFileUploads { get; }
+    IQueryable<Document> Documents { get; }
 
     /// <summary>
     /// Adds a new entity to the context.

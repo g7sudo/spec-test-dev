@@ -27,6 +27,13 @@ public interface ICurrentUser
     Guid? CurrentTenantId { get; }
 
     /// <summary>
+    /// The tenant-specific user ID (CommunityUser.Id from the tenant database).
+    /// Null if no tenant is selected or if the user doesn't exist in the current tenant.
+    /// Use this when creating tenant entities that have foreign keys to CommunityUser.
+    /// </summary>
+    Guid? TenantUserId { get; }
+
+    /// <summary>
     /// Platform-level roles assigned to this user (e.g., PLATFORM_ADMIN, SUPPORT_AGENT).
     /// Loaded from PlatformUserRole -> PlatformRole.Code.
     /// </summary>

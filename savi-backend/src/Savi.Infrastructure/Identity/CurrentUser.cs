@@ -34,6 +34,7 @@ public class CurrentUser : ICurrentUser
 
     // Lazy-loaded properties
     private Guid? _userId;
+    private Guid? _tenantUserId;
     private string? _email;
     private bool _isLoaded;
     private IReadOnlyCollection<string>? _platformRoles;
@@ -81,6 +82,16 @@ public class CurrentUser : ICurrentUser
 
     /// <inheritdoc />
     public Guid? CurrentTenantId => _tenantContext.TenantId;
+
+    /// <inheritdoc />
+    public Guid? TenantUserId
+    {
+        get
+        {
+            EnsureLoaded();
+            return _tenantUserId;
+        }
+    }
 
     /// <inheritdoc />
     public IReadOnlyCollection<string> PlatformRoles
@@ -265,8 +276,9 @@ public class CurrentUser : ICurrentUser
     {
         var cacheKey = $"{tenantId}:perm:{platformUserId}";
 
-        if (_cache.TryGetValue(cacheKey, out (List<string> Roles, List<string> Permissions) cached))
+        if (_cache.TryGetValue(cacheKey, out (Guid? TenantUserId, List<string> Roles, List<string> Permissions) cached))
         {
+            _tenantUserId = cached.TenantUserId;
             _tenantRoles = cached.Roles;
             _tenantPermissions = cached.Permissions;
             return;
@@ -289,10 +301,14 @@ public class CurrentUser : ICurrentUser
                 _logger.LogDebug(
                     "CommunityUser not found for PlatformUserId {PlatformUserId} in tenant {TenantId}",
                     platformUserId, tenantId);
+                _tenantUserId = null;
                 _tenantRoles = Array.Empty<string>();
                 _tenantPermissions = Array.Empty<string>();
                 return;
             }
+
+            // Set tenant user ID
+            _tenantUserId = communityUser.Id;
 
             // Load roles
             var roles = await tenantDbContext.CommunityUserRoleGroups
@@ -322,11 +338,11 @@ public class CurrentUser : ICurrentUser
             _tenantPermissions = permissions;
 
             // Cache the results
-            _cache.Set(cacheKey, (roles, permissions), PermissionCacheDuration);
+            _cache.Set(cacheKey, (_tenantUserId, roles, permissions), PermissionCacheDuration);
 
             _logger.LogDebug(
-                "Loaded {RoleCount} tenant roles and {PermissionCount} permissions for user {UserId} in tenant {TenantId}",
-                roles.Count, permissions.Count, platformUserId, tenantId);
+                "Loaded {RoleCount} tenant roles and {PermissionCount} permissions for user {UserId} (TenantUserId: {TenantUserId}) in tenant {TenantId}",
+                roles.Count, permissions.Count, platformUserId, _tenantUserId, tenantId);
         }
         catch (Exception ex)
         {
@@ -334,6 +350,7 @@ public class CurrentUser : ICurrentUser
                 "Failed to load tenant permissions for user {UserId} in tenant {TenantId}",
                 platformUserId, tenantId);
 
+            _tenantUserId = null;
             _tenantRoles = Array.Empty<string>();
             _tenantPermissions = Array.Empty<string>();
         }

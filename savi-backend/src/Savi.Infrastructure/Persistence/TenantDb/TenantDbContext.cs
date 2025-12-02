@@ -24,7 +24,9 @@ public class TenantDbContext : DbContext, ITenantDbContext
 
     // Core entities
     public DbSet<CommunityUser> CommunityUsers => Set<CommunityUser>();
+    public DbSet<CommunityUserProfile> CommunityUserProfiles => Set<CommunityUserProfile>();
     IQueryable<CommunityUser> ITenantDbContext.CommunityUsers => CommunityUsers;
+    IQueryable<CommunityUserProfile> ITenantDbContext.CommunityUserProfiles => CommunityUserProfiles;
 
     // Tenant RBAC
     public DbSet<RoleGroup> RoleGroups => Set<RoleGroup>();
@@ -45,6 +47,20 @@ public class TenantDbContext : DbContext, ITenantDbContext
     IQueryable<UnitType> ITenantDbContext.UnitTypes => UnitTypes;
     IQueryable<Unit> ITenantDbContext.Units => Units;
     IQueryable<ParkingSlot> ITenantDbContext.ParkingSlots => ParkingSlots;
+
+    // Party Management
+    public DbSet<Party> Parties => Set<Party>();
+    public DbSet<PartyAddress> PartyAddresses => Set<PartyAddress>();
+    public DbSet<PartyContact> PartyContacts => Set<PartyContact>();
+    IQueryable<Party> ITenantDbContext.Parties => Parties;
+    IQueryable<PartyAddress> ITenantDbContext.PartyAddresses => PartyAddresses;
+    IQueryable<PartyContact> ITenantDbContext.PartyContacts => PartyContacts;
+
+    // File Storage
+    public DbSet<TempFileUpload> TempFileUploads => Set<TempFileUpload>();
+    public DbSet<Document> Documents => Set<Document>();
+    IQueryable<TempFileUpload> ITenantDbContext.TempFileUploads => TempFileUploads;
+    IQueryable<Document> ITenantDbContext.Documents => Documents;
 
     /// <summary>
     /// Explicit implementation of ITenantDbContext.Add to match interface signature (void return).

@@ -12,6 +12,7 @@ using Savi.Infrastructure.Auditing;
 using Savi.Infrastructure.Identity;
 using Savi.Infrastructure.Persistence.Platform;
 using Savi.Infrastructure.Persistence.TenantDb;
+using Savi.Infrastructure.Storage;
 using Savi.MultiTenancy;
 using Savi.MultiTenancy.Extensions;
 using Savi.SharedKernel.Interfaces;
@@ -76,9 +77,13 @@ public static class ServiceCollectionExtensions
         services.AddScoped<IPlatformDbContext>(sp => sp.GetRequiredService<PlatformDbContext>());
 
         // Add TenantDbContext factory
+        services.AddScoped<TenantDbContextFactory>();
         services.AddScoped<ITenantDbContextFactory, TenantDbContextFactory>();
         services.AddScoped<ITenantProvisioningService, TenantProvisioningService>();
         services.AddScoped<ITenantAdminOnboardingService, TenantAdminOnboardingService>();
+
+        // Add Tenant Database Migrator
+        services.AddScoped<ITenantDatabaseMigrator, Savi.Infrastructure.Services.TenantDatabaseMigrator>();
 
         // Register ITenantDbContext per request using factory
         // This creates TenantDbContext based on current tenant context
@@ -110,6 +115,9 @@ public static class ServiceCollectionExtensions
             throw new InvalidOperationException(
                 $"TenantDbContextFactory returned unexpected type: {dbContext?.GetType().Name}");
         });
+
+        // Add File Storage Service
+        services.AddScoped<IFileStorageService, AzureBlobStorageService>();
 
         // Add MediatR
         services.AddMediatR(cfg =>

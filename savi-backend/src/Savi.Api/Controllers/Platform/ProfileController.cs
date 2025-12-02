@@ -27,10 +27,13 @@ public class ProfileController : ControllerBase
 
     /// <summary>
     /// Gets the current user's platform profile including tenant memberships.
+    /// 
+    /// Note: Prefer using /platform/auth/me for full auth context with permissions.
+    /// This endpoint exists for backwards compatibility.
     /// </summary>
     /// <returns>The user's platform profile.</returns>
     [HttpGet("profile")]
-    [ProducesResponseType(typeof(MyPlatformProfileDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AuthMeResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProfile(CancellationToken cancellationToken)
@@ -47,4 +50,3 @@ public class ProfileController : ControllerBase
         return Ok(result.Value);
     }
 }
-

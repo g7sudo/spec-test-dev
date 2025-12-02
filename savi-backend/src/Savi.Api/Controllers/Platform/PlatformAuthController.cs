@@ -2,6 +2,7 @@ using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Savi.Application.Platform.Profile.Commands.Logout;
 using Savi.Application.Platform.Profile.Dtos;
 using Savi.Application.Platform.Profile.Queries.GetMyPlatformProfile;
 
@@ -27,15 +28,21 @@ public class PlatformAuthController : ControllerBase
     }
 
     /// <summary>
-    /// Gets the current authenticated user's platform profile.
+    /// Gets the current authenticated user's auth context.
     /// 
-    /// Returns user info, platform roles, and tenant memberships.
+    /// Returns:
+    /// - User profile (id, displayName, email)
+    /// - Global platform roles
+    /// - Tenant memberships (for scope dropdown)
+    /// - Current scope (based on X-Tenant-Id header)
+    /// - Context-aware permissions (platform + tenant if scope selected)
+    /// 
     /// Auto-creates PlatformUser on first login.
     /// Root admin emails are auto-assigned PLATFORM_ADMIN role.
     /// </summary>
-    /// <returns>The user's platform profile.</returns>
+    /// <returns>The user's auth context including permissions.</returns>
     [HttpGet("me")]
-    [ProducesResponseType(typeof(MyPlatformProfileDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(AuthMeResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
@@ -51,5 +58,33 @@ public class PlatformAuthController : ControllerBase
 
         return Ok(result.Value);
     }
-}
 
+    /// <summary>
+    /// Logs out the current user and records an audit entry.
+    /// 
+    /// Note: This endpoint is for audit purposes only.
+    /// The actual sign-out happens client-side via Firebase Auth.
+    /// Frontend should:
+    /// 1. Call this endpoint to record logout
+    /// 2. Call firebase.auth().signOut()
+    /// 3. Clear local storage/cookies
+    /// 4. Redirect to /login
+    /// </summary>
+    /// <returns>Success response.</returns>
+    [HttpPost("logout")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> Logout(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("POST /platform/auth/logout");
+
+        var result = await _mediator.Send(new LogoutCommand(), cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return Ok(new { message = "Logout recorded successfully." });
+    }
+}

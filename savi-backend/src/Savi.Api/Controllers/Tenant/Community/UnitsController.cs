@@ -3,24 +3,24 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Savi.Api.Configuration;
-using Savi.Application.Tenant.Structure.Commands.CreateUnit;
-using Savi.Application.Tenant.Structure.Commands.UpdateUnit;
-using Savi.Application.Tenant.Structure.Dtos;
-using Savi.Application.Tenant.Structure.Queries.GetUnitById;
-using Savi.Application.Tenant.Structure.Queries.ListUnits;
+using Savi.Application.Tenant.Community.Commands.CreateUnit;
+using Savi.Application.Tenant.Community.Commands.UpdateUnit;
+using Savi.Application.Tenant.Community.Dtos;
+using Savi.Application.Tenant.Community.Queries.GetUnitById;
+using Savi.Application.Tenant.Community.Queries.ListUnits;
 using Savi.Domain.Tenant.Enums;
 using Savi.SharedKernel;
 using Savi.SharedKernel.Authorization;
 using Savi.SharedKernel.Common;
 
-namespace Savi.Api.Controllers.Tenant;
+namespace Savi.Api.Controllers.Tenant.Community;
 
 /// <summary>
 /// Controller for managing units (apartments/flats) in the community.
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/tenant/structure/units")]
+[Route("api/v{version:apiVersion}/tenant/community/units")]
 [Authorize]
 public class UnitsController : ControllerBase
 {
@@ -37,7 +37,7 @@ public class UnitsController : ControllerBase
     /// Gets a list of units with optional filtering by block/floor and pagination.
     /// </summary>
     [HttpGet]
-    [HasPermission(Permissions.Tenant.Structure.View)]
+    [HasPermission(Permissions.Tenant.Community.View)]
     [ProducesResponseType(typeof(PagedResult<UnitDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -63,7 +63,7 @@ public class UnitsController : ControllerBase
     /// Gets a unit by its ID.
     /// </summary>
     [HttpGet("{id:guid}")]
-    [HasPermission(Permissions.Tenant.Structure.View)]
+    [HasPermission(Permissions.Tenant.Community.View)]
     [ProducesResponseType(typeof(UnitDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -87,7 +87,7 @@ public class UnitsController : ControllerBase
     /// Creates a new unit.
     /// </summary>
     [HttpPost]
-    [HasPermission(Permissions.Tenant.Structure.Manage)]
+    [HasPermission(Permissions.Tenant.Community.Manage)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -96,7 +96,7 @@ public class UnitsController : ControllerBase
         [FromBody] CreateUnitCommand command,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("POST /tenant/structure/units - Creating unit: {UnitNumber}", command.UnitNumber);
+        _logger.LogInformation("POST /tenant/community/units - Creating unit: {UnitNumber}", command.UnitNumber);
 
         var result = await _mediator.Send(command, cancellationToken);
 
@@ -115,7 +115,7 @@ public class UnitsController : ControllerBase
     /// Updates an existing unit.
     /// </summary>
     [HttpPut("{id:guid}")]
-    [HasPermission(Permissions.Tenant.Structure.Manage)]
+    [HasPermission(Permissions.Tenant.Community.Manage)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

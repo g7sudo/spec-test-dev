@@ -47,6 +47,23 @@ try
         options.SubstituteApiVersionInUrl = true;
     });
 
+    // CORS - Allow frontend origins
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowFrontend", policy =>
+        {
+            policy
+                .WithOrigins(
+                    "http://localhost:3000",   // Next.js dev server
+                    "http://localhost:5173",   // Vite dev server
+                    "http://127.0.0.1:3000",
+                    "http://127.0.0.1:5173")
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
+        });
+    });
+
     // OpenAPI/Swagger
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>
@@ -139,6 +156,9 @@ try
         app.UseHsts();
         app.UseHttpsRedirection();
     }
+
+    // CORS - must be before auth middleware
+    app.UseCors("AllowFrontend");
 
     // Swagger (development only by default, or controlled by config)
     if (app.Environment.IsDevelopment())

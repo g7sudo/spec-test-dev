@@ -151,13 +151,13 @@ public static class Permissions
         /// <summary>
         /// Community structure permissions (blocks, floors, units).
         /// </summary>
-        public static class Structure
+        public static class Community
         {
             /// <summary>Permission to view community structure.</summary>
-            public const string View = "TENANT_STRUCTURE_VIEW";
+            public const string View = "TENANT_COMMUNITY_VIEW";
 
             /// <summary>Permission to manage community structure.</summary>
-            public const string Manage = "TENANT_STRUCTURE_MANAGE";
+            public const string Manage = "TENANT_COMMUNITY_MANAGE";
         }
 
         /// <summary>
@@ -185,6 +185,18 @@ public static class Permissions
 
             /// <summary>Permission to manage leases.</summary>
             public const string Manage = "TENANT_LEASE_MANAGE";
+        }
+
+        /// <summary>
+        /// Party management permissions (individuals, companies, entities).
+        /// </summary>
+        public static class Parties
+        {
+            /// <summary>Permission to view parties and their details.</summary>
+            public const string View = "TENANT_PARTY_VIEW";
+
+            /// <summary>Permission to create, update, and delete parties.</summary>
+            public const string Manage = "TENANT_PARTY_MANAGE";
         }
     }
 
@@ -299,13 +311,13 @@ public static class Permissions
             Tenant.Marketplace.Moderate, PermissionScope.Tenant, "Marketplace", "Moderate",
             "Moderate marketplace listings (approve/reject).");
 
-        // Tenant permissions - Structure
+        // Tenant permissions - Community
         yield return new PermissionDefinition(
-            Tenant.Structure.View, PermissionScope.Tenant, "Structure", "View",
+            Tenant.Community.View, PermissionScope.Tenant, "Community", "View",
             "View community structure (blocks, floors, units).");
 
         yield return new PermissionDefinition(
-            Tenant.Structure.Manage, PermissionScope.Tenant, "Structure", "Manage",
+            Tenant.Community.Manage, PermissionScope.Tenant, "Community", "Manage",
             "Manage community structure.");
 
         // Tenant permissions - Users
@@ -329,6 +341,15 @@ public static class Permissions
         yield return new PermissionDefinition(
             Tenant.Leases.Manage, PermissionScope.Tenant, "Leases", "Manage",
             "Manage leases.");
+
+        // Tenant permissions - Parties
+        yield return new PermissionDefinition(
+            Tenant.Parties.View, PermissionScope.Tenant, "Parties", "View",
+            "View parties and their details (addresses, contacts).");
+
+        yield return new PermissionDefinition(
+            Tenant.Parties.Manage, PermissionScope.Tenant, "Parties", "Manage",
+            "Create, update, and delete parties.");
     }
 }
 

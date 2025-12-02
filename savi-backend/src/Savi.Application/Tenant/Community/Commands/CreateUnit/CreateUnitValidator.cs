@@ -33,5 +33,11 @@ public class CreateUnitValidator : AbstractValidator<CreateUnitCommand>
             .MaximumLength(1000)
             .When(x => !string.IsNullOrWhiteSpace(x.Notes))
             .WithMessage("Notes cannot exceed 1000 characters.");
+
+        RuleFor(x => x.TempDocuments)
+            .Must(list => list == null || list.Count <= 10)
+            .WithMessage("Cannot use more than 10 temp document keys.")
+            .Must(list => list == null || list.All(key => !string.IsNullOrWhiteSpace(key)))
+            .WithMessage("Temp document keys cannot be empty.");
     }
 }

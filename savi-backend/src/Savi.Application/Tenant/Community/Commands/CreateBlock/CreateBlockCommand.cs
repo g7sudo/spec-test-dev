@@ -9,5 +9,10 @@ namespace Savi.Application.Tenant.Community.Commands.CreateBlock;
 public record CreateBlockCommand(
     string Name,
     string? Description,
-    int DisplayOrder
+    int DisplayOrder,
+    /// <summary>
+    /// List of tempKeys for uploaded images.
+    /// All TempFileUploads with these keys will be moved to permanent storage.
+    /// </summary>
+    List<string>? TempDocuments = null
 ) : IRequest<Result<Guid>>;

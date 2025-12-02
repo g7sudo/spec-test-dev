@@ -3,23 +3,23 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Savi.Api.Configuration;
-using Savi.Application.Tenant.Structure.Commands.CreateFloor;
-using Savi.Application.Tenant.Structure.Commands.UpdateFloor;
-using Savi.Application.Tenant.Structure.Dtos;
-using Savi.Application.Tenant.Structure.Queries.GetFloorById;
-using Savi.Application.Tenant.Structure.Queries.ListFloorsByBlock;
+using Savi.Application.Tenant.Community.Commands.CreateFloor;
+using Savi.Application.Tenant.Community.Commands.UpdateFloor;
+using Savi.Application.Tenant.Community.Dtos;
+using Savi.Application.Tenant.Community.Queries.GetFloorById;
+using Savi.Application.Tenant.Community.Queries.ListFloorsByBlock;
 using Savi.SharedKernel;
 using Savi.SharedKernel.Authorization;
 using Savi.SharedKernel.Common;
 
-namespace Savi.Api.Controllers.Tenant;
+namespace Savi.Api.Controllers.Tenant.Community;
 
 /// <summary>
 /// Controller for managing floors within blocks.
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/tenant/structure/floors")]
+[Route("api/v{version:apiVersion}/tenant/community/floors")]
 [Authorize]
 public class FloorsController : ControllerBase
 {
@@ -36,7 +36,7 @@ public class FloorsController : ControllerBase
     /// Gets a list of floors for a specific block with pagination.
     /// </summary>
     [HttpGet]
-    [HasPermission(Permissions.Tenant.Structure.View)]
+    [HasPermission(Permissions.Tenant.Community.View)]
     [ProducesResponseType(typeof(PagedResult<FloorDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -62,7 +62,7 @@ public class FloorsController : ControllerBase
     /// Gets a floor by its ID.
     /// </summary>
     [HttpGet("{id:guid}")]
-    [HasPermission(Permissions.Tenant.Structure.View)]
+    [HasPermission(Permissions.Tenant.Community.View)]
     [ProducesResponseType(typeof(FloorDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -86,7 +86,7 @@ public class FloorsController : ControllerBase
     /// Creates a new floor.
     /// </summary>
     [HttpPost]
-    [HasPermission(Permissions.Tenant.Structure.Manage)]
+    [HasPermission(Permissions.Tenant.Community.Manage)]
     [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -95,7 +95,7 @@ public class FloorsController : ControllerBase
         [FromBody] CreateFloorCommand command,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("POST /tenant/structure/floors - Creating floor: {FloorName}", command.Name);
+        _logger.LogInformation("POST /tenant/community/floors - Creating floor: {FloorName}", command.Name);
 
         var result = await _mediator.Send(command, cancellationToken);
 
@@ -114,7 +114,7 @@ public class FloorsController : ControllerBase
     /// Updates an existing floor.
     /// </summary>
     [HttpPut("{id:guid}")]
-    [HasPermission(Permissions.Tenant.Structure.Manage)]
+    [HasPermission(Permissions.Tenant.Community.Manage)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
