@@ -54,11 +54,15 @@ export const DialogContent = forwardRef<
     <DialogPrimitive.Content
       ref={ref}
       className={cn(
-        'fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]',
+        // Position: centered (animation handles the transform to avoid conflicts)
+        'fixed left-[50%] top-[50%] z-50',
         'w-full max-w-lg rounded-xl bg-white p-6 shadow-xl',
-        'data-[state=open]:animate-slide-up',
+        // Animation includes centering transform: translate(-50%, -50%)
+        'animate-dialog-in',
         className
       )}
+      // forwards: keep final transform (centered) after animation completes
+      style={{ animationFillMode: 'forwards' }}
       {...props}
     >
       {children}

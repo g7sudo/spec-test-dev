@@ -62,14 +62,22 @@ const config: Config = {
         glow: "0 0 20px rgba(13, 148, 136, 0.15)",
       },
       animation: {
-        "fade-in": "fadeIn 0.3s ease-out",
-        "slide-up": "slideUp 0.4s ease-out",
-        "slide-down": "slideDown 0.3s ease-out",
+        "fade-in": "fadeIn 0.2s ease-out",
+        "fade-out": "fadeOut 0.15s ease-in",
+        "slide-up": "slideUp 0.3s ease-out",
+        "slide-down": "slideDown 0.2s ease-out",
+        // Dialog-specific animation (accounts for centering transform)
+        "dialog-in": "dialogIn 0.2s ease-out",
+        "dialog-out": "dialogOut 0.15s ease-in",
       },
       keyframes: {
         fadeIn: {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
+        },
+        fadeOut: {
+          "0%": { opacity: "1" },
+          "100%": { opacity: "0" },
         },
         slideUp: {
           "0%": { opacity: "0", transform: "translateY(10px)" },
@@ -78,6 +86,15 @@ const config: Config = {
         slideDown: {
           "0%": { opacity: "0", transform: "translateY(-10px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        // Dialog animation: scale + fade (no translateY conflict)
+        dialogIn: {
+          "0%": { opacity: "0", transform: "translate(-50%, -50%) scale(0.95)" },
+          "100%": { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
+        },
+        dialogOut: {
+          "0%": { opacity: "1", transform: "translate(-50%, -50%) scale(1)" },
+          "100%": { opacity: "0", transform: "translate(-50%, -50%) scale(0.95)" },
         },
       },
     },
