@@ -70,6 +70,12 @@ public class UploadPermanentFileCommandHandler : IRequestHandler<UploadPermanent
             return Result<DocumentDto>.Failure($"{request.OwnerType} with ID '{request.OwnerId}' not found.");
         }
 
+        // Validate tenant user exists
+        if (!_currentUser.TenantUserId.HasValue)
+        {
+            return Result<DocumentDto>.Failure("User does not exist in the current tenant. Contact your administrator.");
+        }
+
         try
         {
             // Upload to blob storage
@@ -92,7 +98,7 @@ public class UploadPermanentFileCommandHandler : IRequestHandler<UploadPermanent
                 blobPath,
                 file.ContentType,
                 file.Length,
-                _currentUser.UserId,
+                _currentUser.TenantUserId.Value,
                 description: request.Description);
 
             _dbContext.Add(document);

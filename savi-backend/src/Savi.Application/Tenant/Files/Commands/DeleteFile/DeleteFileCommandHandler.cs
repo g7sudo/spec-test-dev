@@ -37,6 +37,10 @@ public class DeleteFileCommandHandler : IRequestHandler<DeleteFileCommand, Resul
             return Result.Failure("Document not found.");
         }
 
+        // Validate tenant user exists
+        if (!_currentUser.TenantUserId.HasValue)
+            return Result.Failure("User does not exist in the current tenant. Contact your administrator.");
+
         try
         {
             // Delete blob from storage
@@ -44,7 +48,7 @@ public class DeleteFileCommandHandler : IRequestHandler<DeleteFileCommand, Resul
 
             // Soft-delete document record
             document.Deactivate();
-            document.MarkAsUpdated(_currentUser.UserId);
+            document.MarkAsUpdated(_currentUser.TenantUserId.Value);
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 

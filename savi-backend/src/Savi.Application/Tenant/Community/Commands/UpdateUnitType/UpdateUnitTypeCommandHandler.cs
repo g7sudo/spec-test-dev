@@ -24,19 +24,25 @@ public class UpdateUnitTypeCommandHandler : IRequestHandler<UpdateUnitTypeComman
         {
             throw new NotFoundException("UnitType", request.Id);
         }
+
+        // Validate tenant user exists
+        if (!_currentUser.TenantUserId.HasValue)
+            return Result<Guid>.Failure("User does not exist in the current tenant. Contact your administrator.");
+
         // Check if code already exists for another unit type
         var codeExists = await _dbContext.UnitTypes
             .AsNoTracking()
             .AnyAsync(x => x.Code == request.Code && x.Id != request.Id && x.IsActive, cancellationToken);
         if (codeExists)
             return Result<Guid>.Failure($"Unit type with code '{request.Code}' already exists.");
+
         unitType.Update(
             request.Code,
             request.Name,
             request.Description,
             request.DefaultParkingSlots,
             request.DefaultOccupancyLimit,
-            _currentUser.UserId
+            _currentUser.TenantUserId.Value
         );
         await _dbContext.SaveChangesAsync(cancellationToken);
 

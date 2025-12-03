@@ -3,12 +3,11 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Savi.Api.Configuration;
-using Savi.Application.Tenant.Community.Commands.CreateFloor;
-using Savi.Application.Tenant.Community.Commands.UpdateFloor;
+using Savi.Application.Tenant.Community.Commands.CreateUnitType;
+using Savi.Application.Tenant.Community.Commands.UpdateUnitType;
 using Savi.Application.Tenant.Community.Dtos;
-using Savi.Application.Tenant.Community.Queries.GetFloorById;
-using Savi.Application.Tenant.Community.Queries.ListFloorsByBlock;
-using Savi.Application.Tenant.Community.Queries.ListFloors;
+using Savi.Application.Tenant.Community.Queries.GetUnitTypeById;
+using Savi.Application.Tenant.Community.Queries.ListUnitTypes;
 using Savi.SharedKernel;
 using Savi.SharedKernel.Authorization;
 using Savi.SharedKernel.Common;
@@ -16,39 +15,38 @@ using Savi.SharedKernel.Common;
 namespace Savi.Api.Controllers.Tenant.Community;
 
 /// <summary>
-/// Controller for managing floors within blocks.
+/// Controller for managing unit types in the community.
+/// Unit types define categories like Studio, 1BHK, 2BHK, Penthouse, etc.
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/tenant/community/floors")]
+[Route("api/v{version:apiVersion}/tenant/community/unit-types")]
 [Authorize]
-public class FloorsController : ControllerBase
+public class UnitTypesController : ControllerBase
 {
     private readonly IMediator _mediator;
-    private readonly ILogger<FloorsController> _logger;
+    private readonly ILogger<UnitTypesController> _logger;
 
-    public FloorsController(IMediator mediator, ILogger<FloorsController> logger)
+    public UnitTypesController(IMediator mediator, ILogger<UnitTypesController> logger)
     {
         _mediator = mediator;
         _logger = logger;
     }
 
     /// <summary>
-    /// Gets a list of floors with optional filtering by block and pagination.
+    /// Gets a list of all unit types with pagination.
     /// </summary>
     [HttpGet]
     [HasPermission(Permissions.Tenant.Community.View)]
-    [ProducesResponseType(typeof(PagedResult<FloorDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(PagedResult<UnitTypeDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> ListFloors(
-        [FromQuery] Guid? blockId = null,
+    public async Task<IActionResult> ListUnitTypes(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        var query = new ListFloorsQuery(blockId, page, pageSize);
+        var query = new ListUnitTypesQuery(page, pageSize);
         var result = await _mediator.Send(query, cancellationToken);
 
         if (result.IsFailure)
@@ -60,19 +58,19 @@ public class FloorsController : ControllerBase
     }
 
     /// <summary>
-    /// Gets a floor by its ID.
+    /// Gets a unit type by its ID.
     /// </summary>
     [HttpGet("{id:guid}")]
     [HasPermission(Permissions.Tenant.Community.View)]
-    [ProducesResponseType(typeof(FloorDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UnitTypeDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> GetFloorById(
+    public async Task<IActionResult> GetUnitTypeById(
         Guid id,
         CancellationToken cancellationToken = default)
     {
-        var query = new GetFloorByIdQuery(id);
+        var query = new GetUnitTypeByIdQuery(id);
         var result = await _mediator.Send(query, cancellationToken);
 
         if (result.IsFailure)
@@ -84,7 +82,7 @@ public class FloorsController : ControllerBase
     }
 
     /// <summary>
-    /// Creates a new floor.
+    /// Creates a new unit type.
     /// </summary>
     [HttpPost]
     [HasPermission(Permissions.Tenant.Community.Manage)]
@@ -92,11 +90,11 @@ public class FloorsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> CreateFloor(
-        [FromBody] CreateFloorCommand command,
+    public async Task<IActionResult> CreateUnitType(
+        [FromBody] CreateUnitTypeCommand command,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("POST /tenant/community/floors - Creating floor: {FloorName}", command.Name);
+        _logger.LogInformation("POST /tenant/community/unit-types - Creating unit type: {Name}", command.Name);
 
         var result = await _mediator.Send(command, cancellationToken);
 
@@ -106,13 +104,13 @@ public class FloorsController : ControllerBase
         }
 
         return CreatedAtAction(
-            nameof(GetFloorById),
+            nameof(GetUnitTypeById),
             new { id = result.Value },
             new { id = result.Value });
     }
 
     /// <summary>
-    /// Updates an existing floor.
+    /// Updates an existing unit type.
     /// </summary>
     [HttpPut("{id:guid}")]
     [HasPermission(Permissions.Tenant.Community.Manage)]
@@ -121,16 +119,18 @@ public class FloorsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    public async Task<IActionResult> UpdateFloor(
+    public async Task<IActionResult> UpdateUnitType(
         Guid id,
-        [FromBody] UpdateFloorRequest request,
+        [FromBody] UpdateUnitTypeRequest request,
         CancellationToken cancellationToken = default)
     {
-        var command = new UpdateFloorCommand(
+        var command = new UpdateUnitTypeCommand(
             id,
+            request.Code,
             request.Name,
-            request.LevelNumber,
-            request.DisplayOrder);
+            request.Description,
+            request.DefaultParkingSlots,
+            request.DefaultOccupancyLimit);
 
         var result = await _mediator.Send(command, cancellationToken);
 
@@ -144,10 +144,12 @@ public class FloorsController : ControllerBase
 }
 
 /// <summary>
-/// Request model for updating a floor.
+/// Request model for updating a unit type.
 /// </summary>
-public record UpdateFloorRequest(
+public record UpdateUnitTypeRequest(
+    string Code,
     string Name,
-    int LevelNumber,
-    int DisplayOrder);
+    string? Description,
+    int DefaultParkingSlots,
+    int? DefaultOccupancyLimit);
 

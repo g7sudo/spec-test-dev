@@ -43,8 +43,13 @@ public class AllocateParkingSlotCommandHandler : IRequestHandler<AllocateParking
         {
             return Result.Failure($"Parking slot '{parkingSlot.Code}' is already allocated to another unit.");
         }
+
+        // Validate tenant user exists
+        if (!_currentUser.TenantUserId.HasValue)
+            return Result.Failure("User does not exist in the current tenant. Contact your administrator.");
+
         // Allocate the parking slot using domain method
-        parkingSlot.AllocateToUnit(request.UnitId, _currentUser.UserId);
+        parkingSlot.AllocateToUnit(request.UnitId, _currentUser.TenantUserId.Value);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return Result.Success();

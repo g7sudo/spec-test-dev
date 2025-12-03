@@ -38,6 +38,12 @@ public class CleanupExpiredTempFilesCommandHandler : IRequestHandler<CleanupExpi
             return Result<CleanupResultDto>.Failure("Tenant context not available.");
         }
 
+        // Validate tenant user exists
+        if (!_currentUser.TenantUserId.HasValue)
+        {
+            return Result<CleanupResultDto>.Failure("User does not exist in the current tenant. Contact your administrator.");
+        }
+
         var tenantId = _tenantContext.TenantId.Value;
         var cutoffDate = DateTime.UtcNow.AddDays(-request.DaysOld);
 
@@ -62,7 +68,7 @@ public class CleanupExpiredTempFilesCommandHandler : IRequestHandler<CleanupExpi
 
                     // Soft-delete database record
                     tempFile.Deactivate();
-                    tempFile.MarkAsUpdated(_currentUser.UserId);
+                    tempFile.MarkAsUpdated(_currentUser.TenantUserId.Value);
 
                     deletedCount++;
                 }

@@ -26,13 +26,18 @@ public class CreateUnitTypeCommandHandler : IRequestHandler<CreateUnitTypeComman
         {
             return Result<Guid>.Failure($"Unit type with code '{request.Code}' already exists.");
         }
+
+        // Validate tenant user exists
+        if (!_currentUser.TenantUserId.HasValue)
+            return Result<Guid>.Failure("User does not exist in the current tenant. Contact your administrator.");
+
         var unitType = UnitType.Create(
             request.Code,
             request.Name,
             request.Description,
             request.DefaultParkingSlots,
             request.DefaultOccupancyLimit,
-            _currentUser.UserId
+            _currentUser.TenantUserId.Value
         );
         _dbContext.Add(unitType);
         await _dbContext.SaveChangesAsync(cancellationToken);

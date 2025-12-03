@@ -35,8 +35,12 @@ public class DeallocateParkingSlotCommandHandler : IRequestHandler<DeallocatePar
             return Result.Failure($"Parking slot '{parkingSlot.Code}' is not currently allocated.");
         }
 
+        // Validate tenant user exists
+        if (!_currentUser.TenantUserId.HasValue)
+            return Result.Failure("User does not exist in the current tenant. Contact your administrator.");
+
         // Deallocate the parking slot using domain method
-        parkingSlot.Deallocate(_currentUser.UserId);
+        parkingSlot.Deallocate(_currentUser.TenantUserId.Value);
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return Result.Success();
