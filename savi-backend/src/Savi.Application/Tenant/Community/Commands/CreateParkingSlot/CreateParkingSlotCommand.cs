@@ -14,5 +14,6 @@ public record CreateParkingSlotCommand(
     bool IsCovered,
     bool IsEVCompatible,
     ParkingStatus Status,
-    string? Notes
+    string? Notes,
+    List<string>? TempDocuments = null
 ) : IRequest<Result<Guid>>;

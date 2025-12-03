@@ -2,6 +2,7 @@ using MediatR;
 using Savi.SharedKernel.Common;
 using Savi.Domain.Tenant.Enums;
 using Savi.SharedKernel;
+using Savi.Application.Tenant.Files.Dtos;
 
 namespace Savi.Application.Tenant.Community.Commands.UpdateParkingSlot;
 /// <summary>
@@ -14,5 +15,7 @@ public record UpdateParkingSlotCommand(
     string? LevelLabel,
     bool IsCovered,
     bool IsEVCompatible,
-    string? Notes
+    string? Notes,
+    List<DocumentManagementDto>? Documents = null,
+    List<string>? TempDocuments = null
 ) : IRequest<Result>;

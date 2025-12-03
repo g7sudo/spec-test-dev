@@ -1,3 +1,5 @@
+using Savi.Application.Tenant.Files.Dtos;
+
 namespace Savi.Application.Tenant.Community.Dtos;
 
 public record ParkingSlotDto
@@ -12,6 +14,13 @@ public record ParkingSlotDto
     public string? Notes { get; init; }
     public Guid? AllocatedUnitId { get; init; }
     public string? AllocatedUnitNumber { get; init; }
+
+    /// <summary>
+    /// All documents (images, PDFs, etc.) attached to this parking slot.
+    /// Includes ActionState to indicate if document should be deleted.
+    /// </summary>
+    public List<DocumentDto> Documents { get; init; } = new();
+
     public bool IsActive { get; init; }
     public DateTime CreatedAt { get; init; }
 }

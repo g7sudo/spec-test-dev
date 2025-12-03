@@ -3,8 +3,10 @@ using Savi.SharedKernel.Common;
 using Microsoft.EntityFrameworkCore;
 using Savi.Application.Common.Interfaces;
 using Savi.Application.Tenant.Community.Dtos;
+using Savi.Application.Tenant.Files.Dtos;
 using Savi.SharedKernel;
 using Savi.SharedKernel.Exceptions;
+using Savi.Domain.Tenant.Enums;
 
 namespace Savi.Application.Tenant.Community.Queries.GetParkingSlotById;
 /// <summary>
@@ -13,10 +15,16 @@ namespace Savi.Application.Tenant.Community.Queries.GetParkingSlotById;
 public class GetParkingSlotByIdQueryHandler : IRequestHandler<GetParkingSlotByIdQuery, Result<ParkingSlotDto>>
 {
     private readonly ITenantDbContext _dbContext;
-    public GetParkingSlotByIdQueryHandler(ITenantDbContext dbContext)
+    private readonly IFileStorageService _fileStorageService;
+
+    public GetParkingSlotByIdQueryHandler(
+        ITenantDbContext dbContext,
+        IFileStorageService fileStorageService)
     {
         _dbContext = dbContext;
+        _fileStorageService = fileStorageService;
     }
+
     public async Task<Result<ParkingSlotDto>> Handle(GetParkingSlotByIdQuery request, CancellationToken cancellationToken)
     {
         var parkingSlot = await _dbContext.ParkingSlots
@@ -37,10 +45,12 @@ public class GetParkingSlotByIdQueryHandler : IRequestHandler<GetParkingSlotById
                 CreatedAt = x.CreatedAt
             })
             .FirstOrDefaultAsync(cancellationToken);
+
         if (parkingSlot == null)
         {
             throw new NotFoundException("ParkingSlot", request.Id);
         }
+
         // Get unit number if allocated
         if (parkingSlot.AllocatedUnitId.HasValue)
         {
@@ -52,6 +62,42 @@ public class GetParkingSlotByIdQueryHandler : IRequestHandler<GetParkingSlotById
 
             parkingSlot = parkingSlot with { AllocatedUnitNumber = unitNumber };
         }
+
+        // Get documents (images) for this parking slot
+        var documents = await _dbContext.Documents
+            .AsNoTracking()
+            .Where(d => d.OwnerType == DocumentOwnerType.ParkingSlot
+                     && d.OwnerId == parkingSlot.Id
+                     && d.IsActive)
+            .OrderBy(d => d.DisplayOrder)
+            .ToListAsync(cancellationToken);
+
+        // Generate download URLs for each document
+        var documentDtos = new List<DocumentDto>();
+        foreach (var doc in documents)
+        {
+            var downloadUrl = await _fileStorageService.GetDownloadUrlAsync(
+                doc.BlobPath,
+                60, // 60 minutes expiry
+                cancellationToken);
+
+            documentDtos.Add(new DocumentDto
+            {
+                Id = doc.Id,
+                FileName = doc.FileName,
+                Title = doc.Title,
+                Description = doc.Description,
+                ContentType = doc.ContentType,
+                SizeBytes = doc.SizeBytes,
+                Category = doc.Category.ToString(),
+                DisplayOrder = doc.DisplayOrder,
+                ActionState = DocumentActionState.Active,
+                DownloadUrl = downloadUrl,
+                CreatedAt = doc.CreatedAt
+            });
+        }
+
+        parkingSlot = parkingSlot with { Documents = documentDtos };
 
         return Result<ParkingSlotDto>.Success(parkingSlot);
     }
