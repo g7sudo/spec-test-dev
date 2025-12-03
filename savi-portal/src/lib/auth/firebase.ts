@@ -7,6 +7,7 @@ import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import {
   getAuth,
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   onAuthStateChanged,
   Auth,
@@ -61,6 +62,18 @@ export function getFirebaseAuth(): Auth {
 export async function signInWithEmail(email: string, password: string): Promise<User> {
   const auth = getFirebaseAuth();
   const result = await signInWithEmailAndPassword(auth, email, password);
+  return result.user;
+}
+
+/**
+ * Creates a new user with email and password
+ * Used for invitation acceptance when user doesn't have an account
+ * @returns Firebase User on success
+ * @throws FirebaseError on failure
+ */
+export async function createUserWithEmail(email: string, password: string): Promise<User> {
+  const auth = getFirebaseAuth();
+  const result = await createUserWithEmailAndPassword(auth, email, password);
   return result.user;
 }
 

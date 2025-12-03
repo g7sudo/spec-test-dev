@@ -7,6 +7,7 @@ export {
   getFirebaseApp,
   getFirebaseAuth,
   signInWithEmail,
+  createUserWithEmail,
   signOut,
   sendPasswordReset,
   getIdToken,
