@@ -25,6 +25,8 @@ import {
   Store,
   Megaphone,
   UserCircle,
+  Layers,
+  KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { extractTenantSlug, isPlatformPath } from '@/config/routes';
@@ -106,6 +108,24 @@ function getTenantNavItems(slug: string): NavSection[] {
           permission: 'TENANT_COMMUNITY_VIEW',
         },
         { 
+          label: 'Blocks', 
+          href: `/tenant/${slug}/blocks`, 
+          icon: Building2,
+          permission: 'TENANT_COMMUNITY_VIEW',
+        },
+        { 
+          label: 'Floors', 
+          href: `/tenant/${slug}/floors`, 
+          icon: Layers,
+          permission: 'TENANT_COMMUNITY_VIEW',
+        },
+        { 
+          label: 'Parking', 
+          href: `/tenant/${slug}/parking`, 
+          icon: ParkingCircle,
+          permission: 'TENANT_COMMUNITY_VIEW',
+        },
+        { 
           label: 'Residents', 
           href: `/tenant/${slug}/residents`, 
           icon: Users,
@@ -118,10 +138,10 @@ function getTenantNavItems(slug: string): NavSection[] {
           permission: 'TENANT_PARTY_VIEW',
         },
         { 
-          label: 'Parking', 
-          href: `/tenant/${slug}/parking`, 
-          icon: ParkingCircle,
-          permission: 'TENANT_COMMUNITY_VIEW',
+          label: 'Ownership', 
+          href: `/tenant/${slug}/ownership`, 
+          icon: KeyRound,
+          permission: 'TENANT_OWNERSHIP_VIEW',
         },
       ],
     },

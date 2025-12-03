@@ -42,7 +42,7 @@ public class PlatformRoleSeeder
     }
 
     /// <summary>
-    /// Seeds the PLATFORM_ADMIN role with all platform permissions.
+    /// Seeds the PLATFORM_ADMIN role with all permissions (platform and tenant).
     /// </summary>
     private async Task SeedPlatformAdminAsync(CancellationToken cancellationToken)
     {
@@ -55,7 +55,7 @@ public class PlatformRoleSeeder
             adminRole = PlatformRole.Create(
                 code: PlatformAdminCode,
                 name: "Platform Administrator",
-                description: "Full access to all platform-level operations",
+                description: "Full access to all platform and tenant operations",
                 isSystem: true);
 
             _dbContext.PlatformRolesSet.Add(adminRole);
@@ -68,8 +68,8 @@ public class PlatformRoleSeeder
             _logger.LogDebug("PLATFORM_ADMIN role already exists");
         }
 
-        // Assign all platform permissions to admin role
-        await AssignPlatformPermissionsToRoleAsync(adminRole, PermissionScope.Platform, cancellationToken);
+        // Assign ALL permissions to admin role (both platform and tenant scopes)
+        await AssignAllPermissionsToRoleAsync(adminRole, cancellationToken);
     }
 
     /// <summary>
@@ -118,6 +118,21 @@ public class PlatformRoleSeeder
     {
         var permissionKeys = Permissions.All()
             .Where(p => p.Scope == scope)
+            .Select(p => p.Key)
+            .ToList();
+
+        await AssignSpecificPermissionsToRoleAsync(role, permissionKeys, cancellationToken);
+    }
+
+    /// <summary>
+    /// Assigns ALL permissions (regardless of scope) to a role.
+    /// Used for PLATFORM_ADMIN to grant full access to everything.
+    /// </summary>
+    private async Task AssignAllPermissionsToRoleAsync(
+        PlatformRole role,
+        CancellationToken cancellationToken)
+    {
+        var permissionKeys = Permissions.All()
             .Select(p => p.Key)
             .ToList();
 

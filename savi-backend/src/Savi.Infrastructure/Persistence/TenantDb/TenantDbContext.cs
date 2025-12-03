@@ -57,6 +57,10 @@ public class TenantDbContext : DbContext, ITenantDbContext
     IQueryable<PartyAddress> ITenantDbContext.PartyAddresses => PartyAddresses;
     IQueryable<PartyContact> ITenantDbContext.PartyContacts => PartyContacts;
 
+    // Ownership & Residency
+    public DbSet<UnitOwnership> UnitOwnerships => Set<UnitOwnership>();
+    IQueryable<UnitOwnership> ITenantDbContext.UnitOwnerships => UnitOwnerships;
+
     // File Storage
     public DbSet<TempFileUpload> TempFileUploads => Set<TempFileUpload>();
     public DbSet<Document> Documents => Set<Document>();

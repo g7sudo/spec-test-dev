@@ -33,6 +33,9 @@ public interface ITenantDbContext
     IQueryable<PartyAddress> PartyAddresses { get; }
     IQueryable<PartyContact> PartyContacts { get; }
 
+    // Ownership & Residency
+    IQueryable<UnitOwnership> UnitOwnerships { get; }
+
     // File Storage
     IQueryable<TempFileUpload> TempFileUploads { get; }
     IQueryable<Document> Documents { get; }

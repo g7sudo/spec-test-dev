@@ -59,6 +59,18 @@ public static class Permissions
             /// <summary>Permission to manage plans.</summary>
             public const string Manage = "PLATFORM_PLAN_MANAGE";
         }
+
+        /// <summary>
+        /// Platform RBAC management permissions.
+        /// </summary>
+        public static class Rbac
+        {
+            /// <summary>Permission to view platform roles and permissions.</summary>
+            public const string View = "PLATFORM_RBAC_VIEW";
+
+            /// <summary>Permission to manage platform roles and permissions.</summary>
+            public const string Manage = "PLATFORM_RBAC_MANAGE";
+        }
     }
 
     /// <summary>
@@ -198,6 +210,30 @@ public static class Permissions
             /// <summary>Permission to create, update, and delete parties.</summary>
             public const string Manage = "TENANT_PARTY_MANAGE";
         }
+
+        /// <summary>
+        /// Ownership management permissions (unit ownership records).
+        /// </summary>
+        public static class Ownership
+        {
+            /// <summary>Permission to view ownership records and history.</summary>
+            public const string View = "TENANT_OWNERSHIP_VIEW";
+
+            /// <summary>Permission to manage ownership (add, transfer, end ownership).</summary>
+            public const string Manage = "TENANT_OWNERSHIP_MANAGE";
+        }
+
+        /// <summary>
+        /// Tenant RBAC management permissions.
+        /// </summary>
+        public static class Rbac
+        {
+            /// <summary>Permission to view tenant roles and permissions.</summary>
+            public const string View = "TENANT_RBAC_VIEW";
+
+            /// <summary>Permission to manage tenant roles and permissions.</summary>
+            public const string Manage = "TENANT_RBAC_MANAGE";
+        }
     }
 
     /// <summary>
@@ -237,6 +273,15 @@ public static class Permissions
         yield return new PermissionDefinition(
             Platform.Plans.Manage, PermissionScope.Platform, "Plans", "Manage",
             "Manage plans.");
+
+        // Platform permissions - RBAC
+        yield return new PermissionDefinition(
+            Platform.Rbac.View, PermissionScope.Platform, "Rbac", "View",
+            "View platform roles and permissions.");
+
+        yield return new PermissionDefinition(
+            Platform.Rbac.Manage, PermissionScope.Platform, "Rbac", "Manage",
+            "Manage platform roles and permissions.");
 
         // Tenant permissions - Maintenance
         yield return new PermissionDefinition(
@@ -350,6 +395,15 @@ public static class Permissions
         yield return new PermissionDefinition(
             Tenant.Parties.Manage, PermissionScope.Tenant, "Parties", "Manage",
             "Create, update, and delete parties.");
+
+        // Tenant permissions - Ownership
+        yield return new PermissionDefinition(
+            Tenant.Ownership.View, PermissionScope.Tenant, "Ownership", "View",
+            "View unit ownership records and history.");
+
+        yield return new PermissionDefinition(
+            Tenant.Ownership.Manage, PermissionScope.Tenant, "Ownership", "Manage",
+            "Manage unit ownership (add, transfer, end ownership).");
     }
 }
 
