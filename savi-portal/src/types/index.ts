@@ -11,4 +11,7 @@ export * from './invitation';
 export * from './community';
 export * from './ownership';
 export * from './rbac';
+export * from './lease';
+export * from './resident-invite';
+export * from './resident';
 

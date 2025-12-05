@@ -118,6 +118,7 @@ export default function AcceptInvitationPage() {
           setIsSubmitting(false);
           return;
         }
+
         if (password.length < 6) {
           setError('Password must be at least 6 characters');
           setIsSubmitting(false);
@@ -145,15 +146,9 @@ export default function AcceptInvitationPage() {
       setStep('success');
       
       setTimeout(() => {
-        if (result.requiresFirstTimeSetup) {
-          // Redirect to first-time setup wizard
-          router.push(`/tenant/${result.tenantCode}/setup`);
-        } else {
-          // Redirect to tenant dashboard
-          router.push(`/tenant/${result.tenantCode}/dashboard`);
-        }
+        // Always redirect to tenant dashboard
+        router.push(`/tenant/${result.tenantCode}/dashboard`);
       }, 1500);
-
     } catch (err: any) {
       console.error('Failed to accept invitation:', err);
       
@@ -426,4 +421,3 @@ export default function AcceptInvitationPage() {
     </Card>
   );
 }
-

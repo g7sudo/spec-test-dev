@@ -36,6 +36,11 @@ public interface ITenantDbContext
     // Ownership & Residency
     IQueryable<UnitOwnership> UnitOwnerships { get; }
 
+    // Lease & Residents
+    IQueryable<Lease> Leases { get; }
+    IQueryable<LeaseParty> LeaseParties { get; }
+    IQueryable<ResidentInvite> ResidentInvites { get; }
+
     // File Storage
     IQueryable<TempFileUpload> TempFileUploads { get; }
     IQueryable<Document> Documents { get; }

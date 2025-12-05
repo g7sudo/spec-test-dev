@@ -164,8 +164,10 @@ export default function UnitsPage() {
   const tenantSlug = params.tenantSlug as string;
   const { profile } = useAuthStore();
 
-  // Guard against double fetch in Strict Mode
-  const fetchedRef = useRef(false);
+  // Guards against double fetch in React Strict Mode
+  // Each independent fetch needs its own guard ref
+  const unitsFetchedRef = useRef(false);
+  const filtersFetchedRef = useRef(false);
 
   // Data state
   const [units, setUnits] = useState<Unit[]>([]);
@@ -191,8 +193,12 @@ export default function UnitsPage() {
   const canView = permissions['TENANT_COMMUNITY_VIEW'] === true;
   const canManage = permissions['TENANT_COMMUNITY_MANAGE'] === true;
 
-  // Load blocks and floors for filters
-  const loadFilters = useCallback(async () => {
+  // Load blocks and floors for filters (with Strict Mode guard)
+  const loadFilters = useCallback(async (force = false) => {
+    // Guard against double fetch in Strict Mode
+    if (!force && filtersFetchedRef.current) return;
+    filtersFetchedRef.current = true;
+
     try {
       const [blocksResult, floorsResult] = await Promise.all([
         listBlocks({ pageSize: 100 }),
@@ -202,14 +208,15 @@ export default function UnitsPage() {
       setFloors(floorsResult.items);
     } catch (err) {
       console.error('Failed to load filter options:', err);
+      filtersFetchedRef.current = false; // Allow retry on error
     }
   }, []);
 
-  // Load units
+  // Load units (with Strict Mode guard)
   const fetchUnits = useCallback(async (force = false) => {
     // Guard against double fetch in Strict Mode
-    if (!force && fetchedRef.current) return;
-    fetchedRef.current = true;
+    if (!force && unitsFetchedRef.current) return;
+    unitsFetchedRef.current = true;
 
     setIsLoading(true);
     setError(null);
@@ -232,14 +239,28 @@ export default function UnitsPage() {
     }
   }, [page, filterBlockId, filterFloorId]);
 
-  // Initial load
+  // Initial load - filters (runs once)
   useEffect(() => {
     loadFilters();
   }, [loadFilters]);
 
-  // Fetch units when filters change
+  // Reset units guard when filter dependencies ACTUALLY change
+  // This runs BEFORE the fetch effect due to React's execution order
+  const prevDepsRef = useRef({ page, filterBlockId, filterFloorId });
   useEffect(() => {
-    fetchedRef.current = false; // Reset guard when dependencies change
+    const prev = prevDepsRef.current;
+    const changed = prev.page !== page || 
+                    prev.filterBlockId !== filterBlockId || 
+                    prev.filterFloorId !== filterFloorId;
+    
+    if (changed) {
+      unitsFetchedRef.current = false; // Reset only on actual change
+      prevDepsRef.current = { page, filterBlockId, filterFloorId };
+    }
+  }, [page, filterBlockId, filterFloorId]);
+
+  // Fetch units - guard prevents double call in Strict Mode
+  useEffect(() => {
     fetchUnits();
   }, [fetchUnits]);
 

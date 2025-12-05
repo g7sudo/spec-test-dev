@@ -11,6 +11,7 @@ public static class EmailTemplates
     public static class Names
     {
         public const string TenantAdminInvitation = "TenantAdminInvitation";
+        public const string ResidentInvitation = "ResidentInvitation";
         public const string WelcomeEmail = "WelcomeEmail";
         public const string PasswordReset = "PasswordReset";
     }
@@ -23,6 +24,7 @@ public static class EmailTemplates
         return templateName switch
         {
             Names.TenantAdminInvitation => TenantAdminInvitationTemplate,
+            Names.ResidentInvitation => ResidentInvitationTemplate,
             Names.WelcomeEmail => WelcomeEmailTemplate,
             Names.PasswordReset => PasswordResetTemplate,
             _ => null
@@ -101,6 +103,91 @@ Hi {{RecipientName}},
 You've been invited to join {{TenantName}} as a Community Administrator on SAVI - the smart community management platform.
 
 As a Community Admin, you'll be able to manage residents, amenities, maintenance requests, and more.
+
+Accept your invitation by visiting:
+{{InvitationUrl}}
+
+This invitation will expire in {{ExpiryDays}} days.
+
+If you didn't expect this invitation, you can safely ignore this email.
+
+---
+SAVI Community Management Platform
+"""
+    };
+
+    /// <summary>
+    /// Resident invitation template.
+    /// Placeholders: {{RecipientName}}, {{CommunityName}}, {{UnitLabel}}, {{Role}}, {{InvitationUrl}}, {{ExpiryDays}}
+    /// </summary>
+    public static readonly EmailTemplate ResidentInvitationTemplate = new()
+    {
+        Name = Names.ResidentInvitation,
+        Subject = "You're invited to join {{UnitLabel}} at {{CommunityName}}",
+        HtmlBody = """
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resident Invitation</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+        <tr>
+            <td style="padding: 40px 30px; text-align: center; background-color: #10b981;">
+                <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 600;">SAVI</h1>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 40px 30px;">
+                <h2 style="color: #1f2937; margin: 0 0 20px 0; font-size: 24px;">Welcome to Your New Home!</h2>
+                <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                    Hi {{RecipientName}},
+                </p>
+                <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 20px 0;">
+                    You've been invited to join <strong>{{UnitLabel}}</strong> at <strong>{{CommunityName}}</strong> as a <strong>{{Role}}</strong>.
+                </p>
+                <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
+                    Accept this invitation to access the SAVI mobile app, where you can manage your home, submit maintenance requests, book amenities, and stay connected with your community.
+                </p>
+                <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
+                    <tr>
+                        <td style="border-radius: 8px; background-color: #10b981;">
+                            <a href="{{InvitationUrl}}" target="_blank" style="display: inline-block; padding: 16px 32px; font-size: 16px; font-weight: 600; color: #ffffff; text-decoration: none;">
+                                Accept Invitation
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+                <p style="color: #9ca3af; font-size: 14px; line-height: 1.6; margin: 30px 0 0 0;">
+                    This invitation will expire in <strong>{{ExpiryDays}} days</strong>.
+                </p>
+                <p style="color: #9ca3af; font-size: 14px; line-height: 1.6; margin: 10px 0 0 0;">
+                    If you didn't expect this invitation, you can safely ignore this email.
+                </p>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding: 30px; background-color: #f9fafb; border-top: 1px solid #e5e7eb;">
+                <p style="color: #6b7280; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
+                    This email was sent by SAVI Community Management Platform.<br>
+                    If you have questions, please contact your community administrator.
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+""",
+        TextBody = """
+You're invited to join {{UnitLabel}} at {{CommunityName}}
+
+Hi {{RecipientName}},
+
+You've been invited to join {{UnitLabel}} at {{CommunityName}} as a {{Role}}.
+
+Accept this invitation to access the SAVI mobile app, where you can manage your home, submit maintenance requests, book amenities, and stay connected with your community.
 
 Accept your invitation by visiting:
 {{InvitationUrl}}

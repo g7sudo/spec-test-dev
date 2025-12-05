@@ -148,7 +148,7 @@ function getTenantNavItems(slug: string): NavSection[] {
           label: 'Residents', 
           href: `/tenant/${slug}/residents`, 
           icon: Users,
-          permission: 'TENANT_USER_VIEW',
+          permission: 'TENANT_LEASE_VIEW',
         },
         { 
           label: 'Parties', 

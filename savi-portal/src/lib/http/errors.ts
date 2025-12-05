@@ -16,7 +16,7 @@ import {
 
 /**
  * Maps an HTTP response to the appropriate error type
- * Follows backend ProblemDetails format (RFC 7807)
+ * Supports both RFC 7807 ProblemDetails and simple { error: "..." } format
  */
 export async function mapResponseToError(response: Response): Promise<ApiError> {
   const status = response.status;
@@ -32,7 +32,16 @@ export async function mapResponseToError(response: Response): Promise<ApiError> 
     // Ignore parse errors, use default messages
   }
   
-  const message = problemDetails?.detail || problemDetails?.title || response.statusText;
+  // Extract message from various formats:
+  // - ProblemDetails: { detail: "...", title: "..." }
+  // - Simple error: { error: "..." }
+  // - Message field: { message: "..." }
+  const message = 
+    problemDetails?.detail || 
+    problemDetails?.title || 
+    (problemDetails as Record<string, unknown>)?.error as string ||
+    (problemDetails as Record<string, unknown>)?.message as string ||
+    response.statusText;
   
   // Map to appropriate error type
   switch (status) {

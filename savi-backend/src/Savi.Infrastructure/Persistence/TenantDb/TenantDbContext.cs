@@ -61,6 +61,14 @@ public class TenantDbContext : DbContext, ITenantDbContext
     public DbSet<UnitOwnership> UnitOwnerships => Set<UnitOwnership>();
     IQueryable<UnitOwnership> ITenantDbContext.UnitOwnerships => UnitOwnerships;
 
+    // Lease & Residents
+    public DbSet<Lease> Leases => Set<Lease>();
+    public DbSet<LeaseParty> LeaseParties => Set<LeaseParty>();
+    public DbSet<ResidentInvite> ResidentInvites => Set<ResidentInvite>();
+    IQueryable<Lease> ITenantDbContext.Leases => Leases;
+    IQueryable<LeaseParty> ITenantDbContext.LeaseParties => LeaseParties;
+    IQueryable<ResidentInvite> ITenantDbContext.ResidentInvites => ResidentInvites;
+
     // File Storage
     public DbSet<TempFileUpload> TempFileUploads => Set<TempFileUpload>();
     public DbSet<Document> Documents => Set<Document>();

@@ -200,6 +200,21 @@ public static class Permissions
         }
 
         /// <summary>
+        /// Resident invite permissions.
+        /// </summary>
+        public static class ResidentInvites
+        {
+            /// <summary>Permission to view resident invites.</summary>
+            public const string View = "TENANT_RESIDENT_INVITE_VIEW";
+
+            /// <summary>Permission to create and send resident invites.</summary>
+            public const string Create = "TENANT_RESIDENT_INVITE_CREATE";
+
+            /// <summary>Permission to manage resident invites (cancel, resend).</summary>
+            public const string Manage = "TENANT_RESIDENT_INVITE_MANAGE";
+        }
+
+        /// <summary>
         /// Party management permissions (individuals, companies, entities).
         /// </summary>
         public static class Parties
@@ -386,6 +401,19 @@ public static class Permissions
         yield return new PermissionDefinition(
             Tenant.Leases.Manage, PermissionScope.Tenant, "Leases", "Manage",
             "Manage leases.");
+
+        // Tenant permissions - Resident Invites
+        yield return new PermissionDefinition(
+            Tenant.ResidentInvites.View, PermissionScope.Tenant, "ResidentInvites", "View",
+            "View resident invites.");
+
+        yield return new PermissionDefinition(
+            Tenant.ResidentInvites.Create, PermissionScope.Tenant, "ResidentInvites", "Create",
+            "Create and send resident invites.");
+
+        yield return new PermissionDefinition(
+            Tenant.ResidentInvites.Manage, PermissionScope.Tenant, "ResidentInvites", "Manage",
+            "Manage resident invites (cancel, resend).");
 
         // Tenant permissions - Parties
         yield return new PermissionDefinition(

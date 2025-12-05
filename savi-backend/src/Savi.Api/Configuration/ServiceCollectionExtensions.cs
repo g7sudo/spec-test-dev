@@ -8,6 +8,7 @@ using Microsoft.IdentityModel.Tokens;
 using Savi.Application;
 using Savi.Application.Common.Interfaces;
 using Savi.Application.Platform.Tenants;
+using Savi.Application.Tenant.ResidentInvites;
 using Savi.Infrastructure.Auditing;
 using Savi.Infrastructure.Email;
 using Savi.Infrastructure.Identity;
@@ -44,6 +45,10 @@ public static class ServiceCollectionExtensions
         // Bind tenant invitation settings
         services.Configure<TenantInvitationOptions>(
             configuration.GetSection(TenantInvitationOptions.SectionName));
+
+        // Bind resident invitation settings
+        services.Configure<ResidentInvitationOptions>(
+            configuration.GetSection(ResidentInvitationOptions.SectionName));
 
         // Add platform user bootstrap service (must be before ICurrentUser)
         services.AddScoped<IPlatformUserBootstrapService, PlatformUserBootstrapService>();

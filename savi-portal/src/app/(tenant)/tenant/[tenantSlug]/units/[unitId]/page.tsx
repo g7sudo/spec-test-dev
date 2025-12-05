@@ -55,6 +55,7 @@ import {
   TransferOwnershipDialog,
   EndOwnershipDialog,
 } from '@/components/ownership';
+import { LeaseSection } from '@/components/leases';
 import { getOwnershipsByUnit } from '@/lib/api/ownership';
 import {
   UnitOwnership,
@@ -131,6 +132,7 @@ function UnitInfoPanel({ unit, canManage, onEdit }: UnitInfoPanelProps) {
             </Button>
           )
         }
+
       />
       <CardContent>
         <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -247,6 +249,7 @@ function ParkingAllocationSection({
             </Button>
           )
         }
+
       />
       <CardContent>
         {isLoading ? (
@@ -390,6 +393,7 @@ function OwnershipSection({
             ? `${currentOwnerships.length} current owner${currentOwnerships.length !== 1 ? 's' : ''}`
             : 'No current owners'
         }
+
         action={
           canManage && (
             <div className="flex gap-2">
@@ -406,6 +410,7 @@ function OwnershipSection({
             </div>
           )
         }
+
       />
       <CardContent>
         {isLoading ? (
@@ -587,6 +592,9 @@ export default function UnitDetailPage() {
   const canManage = permissions['TENANT_COMMUNITY_MANAGE'] === true;
   const canViewOwnership = permissions['TENANT_OWNERSHIP_VIEW'] === true;
   const canManageOwnership = permissions['TENANT_OWNERSHIP_MANAGE'] === true;
+  // Fixed: Backend uses TENANT_LEASE_* (singular), not TENANT_LEASES_*
+  const canViewLeases = permissions['TENANT_LEASE_VIEW'] === true;
+  const canManageLeases = permissions['TENANT_LEASE_MANAGE'] === true;
 
   // Load unit data
   const loadUnit = useCallback(async (force = false) => {
@@ -611,6 +619,7 @@ export default function UnitDetailPage() {
         setShowNotFound(true);
         return;
       }
+
       setError('Failed to load unit details');
     } finally {
       setIsLoading(false);
@@ -782,9 +791,17 @@ export default function UnitDetailPage() {
           onEndOwnership={(ownership) => setEndingOwnership(ownership)}
           onViewOwner={navigateToOwner}
         />
+
+        {/* Lease Section (spans 2 columns) */}
+        <LeaseSection
+          unitId={unitId}
+          unitNumber={unit.unitNumber}
+          canView={canViewLeases}
+          canManage={canManageLeases}
+        />
       </div>
 
-      {/* Future: Residents Section, Maintenance History, Documents */}
+      {/* Future: Maintenance History, Documents */}
 
       {/* Edit Unit Dialog */}
       <UnitFormDialog
@@ -835,4 +852,3 @@ export default function UnitDetailPage() {
     </div>
   );
 }
-
