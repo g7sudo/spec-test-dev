@@ -76,6 +76,22 @@ public class TenantDbContext : DbContext, ITenantDbContext
     }
 
     /// <summary>
+    /// Removes an entity from the context.
+    /// </summary>
+    void ITenantDbContext.Remove<TEntity>(TEntity entity)
+    {
+        base.Remove(entity);
+    }
+
+    /// <summary>
+    /// Removes a range of entities from the context.
+    /// </summary>
+    void ITenantDbContext.RemoveRange<TEntity>(IEnumerable<TEntity> entities)
+    {
+        base.RemoveRange(entities);
+    }
+
+    /// <summary>
     /// Begins a new database transaction.
     /// </summary>
     public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)

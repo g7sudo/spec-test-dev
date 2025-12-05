@@ -265,9 +265,10 @@ export function TransferOwnershipDialog({
         isPrimaryOwner: owner.isPrimaryOwner,
       }));
       
+      // API expects ISO date string "YYYY-MM-DD"
       await transferOwnership({
         unitId,
-        transferDate: { year, month, day },
+        transferDate: transferDate, // Already in ISO format from input[type=date]
         newOwners: newOwnersData,
       });
       

@@ -32,6 +32,16 @@ public interface IPlatformDbContext
     /// </summary>
     void Add<TEntity>(TEntity entity) where TEntity : class;
 
+    /// <summary>
+    /// Removes an entity from the context.
+    /// </summary>
+    void Remove<TEntity>(TEntity entity) where TEntity : class;
+
+    /// <summary>
+    /// Removes a range of entities from the context.
+    /// </summary>
+    void RemoveRange<TEntity>(IEnumerable<TEntity> entities) where TEntity : class;
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 

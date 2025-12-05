@@ -66,6 +66,16 @@ public class PlatformDbContext : DbContext, IPlatformDbContext
     /// </summary>
     void IPlatformDbContext.Add<TEntity>(TEntity entity) => base.Add(entity);
 
+    /// <summary>
+    /// Removes an entity from the context (explicit interface implementation).
+    /// </summary>
+    void IPlatformDbContext.Remove<TEntity>(TEntity entity) => base.Remove(entity);
+
+    /// <summary>
+    /// Removes a range of entities from the context (explicit interface implementation).
+    /// </summary>
+    void IPlatformDbContext.RemoveRange<TEntity>(IEnumerable<TEntity> entities) => base.RemoveRange(entities);
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

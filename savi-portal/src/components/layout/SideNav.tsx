@@ -27,6 +27,8 @@ import {
   UserCircle,
   Layers,
   KeyRound,
+  Shield,
+  UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { extractTenantSlug, isPlatformPath } from '@/config/routes';
@@ -69,6 +71,23 @@ const platformNavItems: NavSection[] = [
         href: '/platform/users', 
         icon: Users,
         permission: 'PLATFORM_USER_VIEW',
+      },
+    ],
+  },
+  {
+    title: 'Team & Permissions',
+    items: [
+      { 
+        label: 'Roles', 
+        href: '/platform/rbac/roles', 
+        icon: Shield,
+        permission: 'PLATFORM_RBAC_VIEW',
+      },
+      { 
+        label: 'Users', 
+        href: '/platform/rbac/users', 
+        icon: UserCog,
+        permission: 'PLATFORM_RBAC_VIEW',
       },
     ],
   },
@@ -199,6 +218,23 @@ function getTenantNavItems(slug: string): NavSection[] {
           href: `/tenant/${slug}/billing`, 
           icon: CreditCard,
           // No permission check - visible to all tenant members
+        },
+      ],
+    },
+    {
+      title: 'Team & Access',
+      items: [
+        { 
+          label: 'Roles', 
+          href: `/tenant/${slug}/rbac/roles`, 
+          icon: Shield,
+          permission: 'TENANT_RBAC_VIEW',
+        },
+        { 
+          label: 'Users', 
+          href: `/tenant/${slug}/rbac/users`, 
+          icon: UserCog,
+          permission: 'TENANT_RBAC_VIEW',
         },
       ],
     },

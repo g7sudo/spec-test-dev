@@ -10,4 +10,5 @@ export * from './tenant';
 export * from './invitation';
 export * from './community';
 export * from './ownership';
+export * from './rbac';
 

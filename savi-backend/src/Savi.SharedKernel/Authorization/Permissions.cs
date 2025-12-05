@@ -404,6 +404,15 @@ public static class Permissions
         yield return new PermissionDefinition(
             Tenant.Ownership.Manage, PermissionScope.Tenant, "Ownership", "Manage",
             "Manage unit ownership (add, transfer, end ownership).");
+
+        // Tenant permissions - RBAC
+        yield return new PermissionDefinition(
+            Tenant.Rbac.View, PermissionScope.Tenant, "Rbac", "View",
+            "View tenant roles and permissions.");
+
+        yield return new PermissionDefinition(
+            Tenant.Rbac.Manage, PermissionScope.Tenant, "Rbac", "Manage",
+            "Manage tenant roles and permissions.");
     }
 }
 

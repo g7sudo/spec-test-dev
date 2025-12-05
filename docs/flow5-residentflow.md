@@ -1,9 +1,8 @@
-Nice, this is a fun one. We’ll stay only on:
+We’ll stay only on:
 	•	Community admin → invites primary resident for a unit
 	•	Primary resident signs up via mobile app + Firebase and
-	•	Primary resident → invites co-residents for the same unit
+	•	Community admin/Primary resident → invites co-residents for the same unit
 
-I’ll give it as a markdown section you can later append to savi-auth-flows.md (or another doc).
 
 ⸻
 
@@ -26,6 +25,7 @@ This flow covers:
 3. **Co-Residents**:
    - Primary resident invites **additional co-residents** for the same unit.
    - Co-residents sign up / log in via **Firebase** and accept their invites.
+   - Community admin invites **additional co-residents** for the same unit,Co-residents sign up / log in via **Firebase** and accept their invites.(same as above point)
 
 All of this is **tenant-scoped** and uses the same identity model:
 

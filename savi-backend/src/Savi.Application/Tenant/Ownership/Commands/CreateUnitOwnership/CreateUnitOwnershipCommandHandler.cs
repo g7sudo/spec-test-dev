@@ -73,13 +73,17 @@ public class CreateUnitOwnershipCommandHandler
         }
 
         // Calculate total current ownership share
-        var currentTotalShare = await _dbContext.UnitOwnerships
+        // Note: SQLite doesn't support Sum on decimal, so we load values and sum client-side
+        var currentOwnershipShares = await _dbContext.UnitOwnerships
             .AsNoTracking()
             .Where(o =>
                 o.UnitId == request.UnitId &&
                 o.IsActive &&
                 o.ToDate == null)
-            .SumAsync(o => o.OwnershipShare, cancellationToken);
+            .Select(o => o.OwnershipShare)
+            .ToListAsync(cancellationToken);
+
+        var currentTotalShare = currentOwnershipShares.Sum();
 
         if (currentTotalShare + request.OwnershipShare > 100)
         {

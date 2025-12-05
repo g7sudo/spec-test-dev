@@ -245,15 +245,16 @@ export function AddOwnershipDialog({
           setIsSubmitting(false);
           return;
         }
+
         partyId = selectedParty.id;
       }
       
-      // Create the ownership
+      // Create the ownership - API expects ISO date string "YYYY-MM-DD"
       await createOwnership({
         unitId,
         partyId,
         ownershipShare: share,
-        fromDate: { year, month, day },
+        fromDate: fromDate, // Already in ISO format from input[type=date]
         isPrimaryOwner,
       });
       
@@ -322,6 +323,7 @@ export function AddOwnershipDialog({
                     <Search className="h-4 w-4" />
                   )
                 }
+
               />
 
               {/* Search Results */}
@@ -535,5 +537,3 @@ export function AddOwnershipDialog({
     </Dialog>
   );
 }
-
-

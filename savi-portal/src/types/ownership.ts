@@ -50,6 +50,7 @@ export interface DateOnly {
 /**
  * Unit ownership record linking a Party to a Unit
  * Contains share percentage, date range, and primary owner indicator
+ * Note: API returns dates as ISO strings "YYYY-MM-DD" or DateOnly objects
  */
 export interface UnitOwnership {
   id: string;
@@ -62,10 +63,10 @@ export interface UnitOwnership {
   partyType: PartyType;
   /** Ownership share percentage (0-100) */
   ownershipShare: number;
-  /** Start date of ownership */
-  fromDate: DateOnly | null;
-  /** End date of ownership (null = still active) */
-  toDate: DateOnly | null;
+  /** Start date of ownership - can be ISO string or DateOnly object */
+  fromDate: string | DateOnly | null;
+  /** End date of ownership (null = still active) - can be ISO string or DateOnly object */
+  toDate: string | DateOnly | null;
   /** Whether this is the primary owner for the period */
   isPrimaryOwner: boolean;
   /** Computed: whether ownership is currently active (toDate is null or in future) */
@@ -80,12 +81,14 @@ export interface UnitOwnership {
 
 /**
  * Create a new unit ownership record
+ * Note: API expects dates as ISO strings "YYYY-MM-DD"
  */
 export interface CreateOwnershipRequest {
   unitId: string;
   partyId: string;
   ownershipShare: number;
-  fromDate: DateOnly;
+  /** ISO date string "YYYY-MM-DD" */
+  fromDate: string;
   isPrimaryOwner: boolean;
 }
 
@@ -101,18 +104,22 @@ export interface NewOwnerEntry {
 /**
  * Transfer ownership to new owner(s)
  * Closes all current ownerships and creates new ones
+ * Note: API expects dates as ISO strings "YYYY-MM-DD"
  */
 export interface TransferOwnershipRequest {
   unitId: string;
-  transferDate: DateOnly;
+  /** ISO date string "YYYY-MM-DD" */
+  transferDate: string;
   newOwners: NewOwnerEntry[];
 }
 
 /**
  * End ownership for a specific ownership record
+ * Note: API expects dates as ISO strings "YYYY-MM-DD"
  */
 export interface EndOwnershipRequest {
-  endDate: DateOnly;
+  /** ISO date string "YYYY-MM-DD" */
+  endDate: string;
 }
 
 // ============================================
@@ -155,13 +162,43 @@ export interface ListOwnershipsByPartyParams {
 // ============================================
 
 /**
- * Formats a DateOnly object to a display string (e.g., "Jan 15, 2024")
+ * Type guard to check if a date value is a DateOnly object
  */
-export function formatDateOnly(date: DateOnly | null | undefined): string {
+function isDateOnlyObject(date: unknown): date is DateOnly {
+  return (
+    typeof date === 'object' &&
+    date !== null &&
+    'year' in date &&
+    'month' in date &&
+    'day' in date
+  );
+}
+
+/**
+ * Formats a date (ISO string or DateOnly object) to a display string (e.g., "Jan 15, 2024")
+ * Handles both string dates from API ("2024-01-01") and DateOnly objects
+ */
+export function formatDateOnly(date: string | DateOnly | null | undefined): string {
   if (!date) return '—';
   
   try {
-    const d = new Date(date.year, date.month - 1, date.day);
+    let d: Date;
+    
+    if (typeof date === 'string') {
+      // Handle ISO string format "YYYY-MM-DD"
+      d = new Date(date + 'T00:00:00'); // Add time to avoid timezone issues
+    } else if (isDateOnlyObject(date)) {
+      // Handle DateOnly object
+      d = new Date(date.year, date.month - 1, date.day);
+    } else {
+      return '—';
+    }
+    
+    // Check if date is valid
+    if (isNaN(d.getTime())) {
+      return '—';
+    }
+    
     return d.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -176,8 +213,8 @@ export function formatDateOnly(date: DateOnly | null | undefined): string {
  * Formats ownership period as "From → To" or "From → Present"
  */
 export function formatOwnershipPeriod(
-  fromDate: DateOnly | null | undefined,
-  toDate: DateOnly | null | undefined
+  fromDate: string | DateOnly | null | undefined,
+  toDate: string | DateOnly | null | undefined
 ): string {
   const from = formatDateOnly(fromDate);
   const to = toDate ? formatDateOnly(toDate) : 'Present';
@@ -203,10 +240,18 @@ export function getTodayAsDateOnly(): DateOnly {
 }
 
 /**
- * Converts DateOnly to Date object
+ * Converts date (ISO string or DateOnly object) to Date object
  */
-export function dateOnlyToDate(date: DateOnly | null | undefined): Date | null {
+export function dateOnlyToDate(date: string | DateOnly | null | undefined): Date | null {
   if (!date) return null;
+  
+  if (typeof date === 'string') {
+    // Handle ISO string format "YYYY-MM-DD"
+    const d = new Date(date + 'T00:00:00');
+    return isNaN(d.getTime()) ? null : d;
+  }
+  
+  // Handle DateOnly object
   return new Date(date.year, date.month - 1, date.day);
 }
 

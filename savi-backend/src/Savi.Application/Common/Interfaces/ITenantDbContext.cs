@@ -46,6 +46,16 @@ public interface ITenantDbContext
     void Add<TEntity>(TEntity entity) where TEntity : class;
 
     /// <summary>
+    /// Removes an entity from the context.
+    /// </summary>
+    void Remove<TEntity>(TEntity entity) where TEntity : class;
+
+    /// <summary>
+    /// Removes a range of entities from the context.
+    /// </summary>
+    void RemoveRange<TEntity>(IEnumerable<TEntity> entities) where TEntity : class;
+
+    /// <summary>
     /// Saves all changes made in this context to the database.
     /// </summary>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);

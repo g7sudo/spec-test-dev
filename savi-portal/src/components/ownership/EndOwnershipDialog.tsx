@@ -107,11 +107,20 @@ export function EndOwnershipDialog({
     
     // Validate end date is not before from date
     if (ownership.fromDate) {
-      const fromDateObj = new Date(
-        ownership.fromDate.year,
-        ownership.fromDate.month - 1,
-        ownership.fromDate.day
-      );
+      let fromDateObj: Date;
+      
+      if (typeof ownership.fromDate === 'string') {
+        // Handle ISO string format "YYYY-MM-DD"
+        fromDateObj = new Date(ownership.fromDate + 'T00:00:00');
+      } else {
+        // Handle DateOnly object
+        fromDateObj = new Date(
+          ownership.fromDate.year,
+          ownership.fromDate.month - 1,
+          ownership.fromDate.day
+        );
+      }
+      
       const endDateObj = new Date(year, month - 1, day);
       
       if (endDateObj < fromDateObj) {
@@ -123,8 +132,9 @@ export function EndOwnershipDialog({
     setIsSubmitting(true);
     
     try {
+      // API expects ISO date string "YYYY-MM-DD"
       await endOwnership(ownership.id, {
-        endDate: { year, month, day },
+        endDate: endDate, // Already in ISO format from input[type=date]
       });
       
       onSuccess();

@@ -38,6 +38,7 @@ import {
   formatOwnershipPeriod,
   getOwnershipStatusColor,
   getOwnershipStatusLabel,
+  dateOnlyToDate,
 } from '@/types/ownership';
 
 // ============================================
@@ -283,8 +284,9 @@ function OwnershipHistorySection({ ownerships, tenantSlug }: OwnershipHistorySec
   // Sort by fromDate descending
   const sortedOwnerships = [...ownerships].sort((a, b) => {
     if (!a.fromDate || !b.fromDate) return 0;
-    const aDate = new Date(a.fromDate.year, a.fromDate.month - 1, a.fromDate.day);
-    const bDate = new Date(b.fromDate.year, b.fromDate.month - 1, b.fromDate.day);
+    const aDate = dateOnlyToDate(a.fromDate);
+    const bDate = dateOnlyToDate(b.fromDate);
+    if (!aDate || !bDate) return 0;
     return bDate.getTime() - aDate.getTime();
   });
 
