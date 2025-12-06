@@ -34,5 +34,10 @@ public enum DocumentOwnerType
     /// <summary>
     /// Document belongs to a Community User (profile image, ID proof, etc.).
     /// </summary>
-    CommunityUser = 6
+    CommunityUser = 6,
+
+    /// <summary>
+    /// Document belongs to an Amenity (photos, rules documents, etc.).
+    /// </summary>
+    Amenity = 7
 }

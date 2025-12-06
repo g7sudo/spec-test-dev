@@ -45,6 +45,11 @@ public interface ITenantDbContext
     IQueryable<TempFileUpload> TempFileUploads { get; }
     IQueryable<Document> Documents { get; }
 
+    // Amenities
+    IQueryable<Amenity> Amenities { get; }
+    IQueryable<AmenityBooking> AmenityBookings { get; }
+    IQueryable<AmenityBlackout> AmenityBlackouts { get; }
+
     /// <summary>
     /// Adds a new entity to the context.
     /// </summary>

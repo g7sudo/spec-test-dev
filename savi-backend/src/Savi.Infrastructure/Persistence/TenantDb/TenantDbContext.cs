@@ -75,6 +75,14 @@ public class TenantDbContext : DbContext, ITenantDbContext
     IQueryable<TempFileUpload> ITenantDbContext.TempFileUploads => TempFileUploads;
     IQueryable<Document> ITenantDbContext.Documents => Documents;
 
+    // Amenities
+    public DbSet<Amenity> Amenities => Set<Amenity>();
+    public DbSet<AmenityBooking> AmenityBookings => Set<AmenityBooking>();
+    public DbSet<AmenityBlackout> AmenityBlackouts => Set<AmenityBlackout>();
+    IQueryable<Amenity> ITenantDbContext.Amenities => Amenities;
+    IQueryable<AmenityBooking> ITenantDbContext.AmenityBookings => AmenityBookings;
+    IQueryable<AmenityBlackout> ITenantDbContext.AmenityBlackouts => AmenityBlackouts;
+
     /// <summary>
     /// Explicit implementation of ITenantDbContext.Add to match interface signature (void return).
     /// </summary>
