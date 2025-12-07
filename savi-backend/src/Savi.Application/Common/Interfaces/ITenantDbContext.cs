@@ -50,6 +50,13 @@ public interface ITenantDbContext
     IQueryable<AmenityBooking> AmenityBookings { get; }
     IQueryable<AmenityBlackout> AmenityBlackouts { get; }
 
+    // Maintenance
+    IQueryable<MaintenanceCategory> MaintenanceCategories { get; }
+    IQueryable<MaintenanceRequest> MaintenanceRequests { get; }
+    IQueryable<MaintenanceRequestDetail> MaintenanceRequestDetails { get; }
+    IQueryable<MaintenanceApproval> MaintenanceApprovals { get; }
+    IQueryable<MaintenanceComment> MaintenanceComments { get; }
+
     /// <summary>
     /// Adds a new entity to the context.
     /// </summary>

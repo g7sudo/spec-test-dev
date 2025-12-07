@@ -613,6 +613,19 @@ Enum MaintenanceCommentType {
   Other
 }
 
+Enum MaintenanceDetailType {
+  Service      // labour / inspection / work tasks
+  SparePart    // parts, materials, consumables
+  Other        // misc charges, fees
+}
+
+Enum MaintenanceOwnerPaymentStatus {
+  NotRequired   // no charge to owner (internal/community-funded work)
+  Pending       // owner needs to pay, not yet paid
+  Paid          // fully paid
+  Waived        // payment written off / waived by community
+}
+
 /**************************************************
  * MAINTENANCE CATEGORY
  **************************************************/
@@ -650,16 +663,23 @@ Table MaintenanceRequest {
   UpdatedAt         timestamptz       [default: null]
   UpdatedBy   uuid              [default: null, ref: > CommunityUser.Id]
 
-  UnitId            uuid              [default: null, ref: > Unit.Id, note: 'Null for common-area issues']
+  // --- Identity in UI
+  TicketNumber        text              [not null, unique, note: 'Human-readable ticket number per community, e.g. MT-000123']
+
+  // --- Unit + category
+  UnitId            uuid              [not null, ref: > Unit.Id, note: 'Maintenance request is always for a Unit']
   CategoryId        uuid              [not null, ref: > MaintenanceCategory.Id]
 
-  ReportedByUserId  uuid              [not null, ref: > CommunityUser.Id, note: 'Resident/owner this request is for']
+  // --- Who the request is for (identity) vs who submitted it (actor)
+  RequestedForPartyId uuid            [not null, ref: > Party.Id, note: 'Resident/owner party this request is for']
+  RequestedByUserId uuid              [not null, ref: > CommunityUser.Id, note: 'User who submitted the request (resident or admin)']
   AssignedToUserId  uuid              [default: null, ref: > CommunityUser.Id, note: 'Maintenance staff currently responsible']
 
+  // --- Content
   Title             text              [not null]
   Description       text              [default: null]
-  LocationText      text              [default: null, note: 'Free-text location for common areas (e.g. Lift near Block A lobby)']
 
+  // --- Workflow
   Status            MaintenanceStatus [not null, default: 'New']
   Priority          MaintenancePriority [not null, default: 'Normal']
   Source            MaintenanceSource [not null, default: 'MobileApp']
@@ -678,12 +698,49 @@ Table MaintenanceRequest {
   CancelledByUserId uuid              [default: null, ref: > CommunityUser.Id]
   CancellationReason text             [default: null]
 
- // -- Review / rating by resident (no owner rating)
+  // --- Site visit assessment
+  AssessmentSummary      text         [default: null, note: 'Short summary from site visit, e.g. Tap cartridge worn, needs replacement']
+  AssessmentCompletedAt  timestamptz  [default: null, note: 'When the site visit assessment was completed']
+  AssessmentByUserId     uuid         [default: null, ref: > CommunityUser.Id, note: 'Maintenance staff who did the site visit/assessment']
+
+  // --- Resident review
   ResidentRating    int               [default: null, note: '1–5 rating from resident']
   ResidentFeedback  text              [default: null]
   RatedAt           timestamptz       [default: null]
 
-  Note: 'Core maintenance ticket: who reported, which unit/location, status, assignment and resident review.'
+  Note: 'Unit-only maintenance ticket: unit + category + subject (Party) + actor (CommunityUser) + status, assignment, ticket number, and resident review.'
+}
+
+/**************************************************
+ * MAINTENANCE REQUEST DETAIL (LINE ITEMS)
+ **************************************************/
+
+Table MaintenanceRequestDetail {
+  Id                    uuid   [pk]
+  Version               int    [not null, default: 1]
+  IsActive              bool   [not null, default: true]
+
+  CreatedAt             timestamptz [not null, default: `now()`]
+  CreatedBy             uuid        [not null, ref: > CommunityUser.Id]
+  UpdatedAt             timestamptz [default: null]
+  UpdatedBy             uuid        [default: null, ref: > CommunityUser.Id]
+
+  MaintenanceRequestId  uuid        [not null, ref: > MaintenanceRequest.Id]
+
+  LineType              MaintenanceDetailType [not null, default: 'Service']
+  Description           text        [not null, note: 'What is this line about? e.g. Replace tap cartridge']
+
+  Quantity              numeric     [not null, default: 1]
+  UnitOfMeasure         text        [default: null, note: 'e.g. pcs, hours']
+
+  EstimatedUnitPrice    numeric     [default: null, note: 'Estimated price per unit']
+  EstimatedTotalPrice   numeric     [default: null, note: 'Estimated total for this line; can be Quantity * EstimatedUnitPrice']
+
+  IsBillable            bool        [not null, default: true, note: 'If false, internal work not charged to owner']
+
+  SortOrder             int         [default: 0, note: 'For ordering lines in UI']
+
+  Note: 'Detailed assessment lines for a maintenance request: service tasks and spare parts with estimated cost.'
 }
 
 /**************************************************
@@ -704,7 +761,7 @@ Table MaintenanceApproval {
 
   Status            MaintenanceApprovalStatus [not null, default: 'Pending']
 
-  RequestedAmount   numeric                 [default: null, note: 'Amount to be approved (manual tracking)']
+  RequestedAmount   numeric                 [default: null, note: 'Total estimated cost to be approved (sum of detail lines)']
   Currency          text                    [default: null, note: 'Optional currency code, e.g. BHD']
 
   RequestedByUserId uuid                    [not null, ref: > CommunityUser.Id, note: 'Staff who raised the approval']
@@ -718,7 +775,13 @@ Table MaintenanceApproval {
   CancelledByUserId uuid                    [default: null, ref: > CommunityUser.Id]
   CancellationReason text                  [default: null]
 
-  Note: 'Tracks payment/extra-cost approvals for a maintenance request (can support multiple approval attempts over time).'
+  // --- Owner payment tracking
+  OwnerPaymentStatus    MaintenanceOwnerPaymentStatus [not null, default: 'NotRequired']
+  OwnerPaidAmount       numeric                   [default: null, note: 'Actual amount paid by owner for this approved request']
+  OwnerPaidAt           timestamptz               [default: null]
+  OwnerPaymentReference text                      [default: null, note: 'Receipt no / transaction id / internal note']
+
+  Note: 'Tracks extra-cost approval for a maintenance request and (optionally) whether owner payment was received.'
 }
 
 

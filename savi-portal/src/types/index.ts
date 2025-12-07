@@ -14,4 +14,4 @@ export * from './rbac';
 export * from './lease';
 export * from './resident-invite';
 export * from './resident';
-
+export * from './maintenance';

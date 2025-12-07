@@ -83,6 +83,18 @@ public class TenantDbContext : DbContext, ITenantDbContext
     IQueryable<AmenityBooking> ITenantDbContext.AmenityBookings => AmenityBookings;
     IQueryable<AmenityBlackout> ITenantDbContext.AmenityBlackouts => AmenityBlackouts;
 
+    // Maintenance
+    public DbSet<MaintenanceCategory> MaintenanceCategories => Set<MaintenanceCategory>();
+    public DbSet<MaintenanceRequest> MaintenanceRequests => Set<MaintenanceRequest>();
+    public DbSet<MaintenanceRequestDetail> MaintenanceRequestDetails => Set<MaintenanceRequestDetail>();
+    public DbSet<MaintenanceApproval> MaintenanceApprovals => Set<MaintenanceApproval>();
+    public DbSet<MaintenanceComment> MaintenanceComments => Set<MaintenanceComment>();
+    IQueryable<MaintenanceCategory> ITenantDbContext.MaintenanceCategories => MaintenanceCategories;
+    IQueryable<MaintenanceRequest> ITenantDbContext.MaintenanceRequests => MaintenanceRequests;
+    IQueryable<MaintenanceRequestDetail> ITenantDbContext.MaintenanceRequestDetails => MaintenanceRequestDetails;
+    IQueryable<MaintenanceApproval> ITenantDbContext.MaintenanceApprovals => MaintenanceApprovals;
+    IQueryable<MaintenanceComment> ITenantDbContext.MaintenanceComments => MaintenanceComments;
+
     /// <summary>
     /// Explicit implementation of ITenantDbContext.Add to match interface signature (void return).
     /// </summary>
