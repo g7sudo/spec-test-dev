@@ -16,15 +16,24 @@ public interface ITenantProvisioningService
 /// <summary>
 /// Parameters required to provision a tenant database.
 /// </summary>
-/// <param name="TenantId">Unique tenant identifier.</param>
-/// <param name="TenantCode">Tenant code/slug (for logging paths).</param>
-/// <param name="Provider">Database provider (postgresql, sqlserver, sqlite, etc.).</param>
-/// <param name="ConnectionString">Connection string to use.</param>
-/// <param name="SeedDefaultRbac">Whether to seed default tenant role groups + permissions.</param>
-public sealed record TenantProvisioningOptions(
-    Guid TenantId,
-    string TenantCode,
-    string Provider,
-    string ConnectionString,
-    bool SeedDefaultRbac);
+public sealed class TenantProvisioningOptions
+{
+    /// <summary>Unique tenant identifier.</summary>
+    public Guid TenantId { get; init; }
+
+    /// <summary>Tenant code/slug (for logging paths).</summary>
+    public string TenantCode { get; init; } = string.Empty;
+
+    /// <summary>Database provider (postgresql, sqlserver, sqlite, etc.).</summary>
+    public string Provider { get; init; } = string.Empty;
+
+    /// <summary>Connection string to use.</summary>
+    public string ConnectionString { get; init; } = string.Empty;
+
+    /// <summary>Whether to seed default tenant role groups + permissions.</summary>
+    public bool SeedDefaultRbac { get; init; } = true;
+
+    /// <summary>Whether to seed default lookup data (UnitTypes, MaintenanceCategories).</summary>
+    public bool SeedDefaultData { get; init; } = true;
+}
 

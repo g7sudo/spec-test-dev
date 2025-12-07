@@ -12,7 +12,9 @@ using Savi.Application.Tenant.ResidentInvites;
 using Savi.Infrastructure.Auditing;
 using Savi.Infrastructure.Email;
 using Savi.Infrastructure.Identity;
+using Savi.Infrastructure.Notifications;
 using Savi.Infrastructure.Persistence.Platform;
+using Savi.Infrastructure.Persistence.Seeding;
 using Savi.Infrastructure.Persistence.TenantDb;
 using Savi.Infrastructure.Storage;
 using Savi.MultiTenancy;
@@ -91,6 +93,9 @@ public static class ServiceCollectionExtensions
         // Add Tenant Database Migrator
         services.AddScoped<ITenantDatabaseMigrator, Savi.Infrastructure.Services.TenantDatabaseMigrator>();
 
+        // Add Test Data Seeder Factory
+        services.AddScoped<ITestDataSeederFactory, TestDataSeederFactory>();
+
         // Register ITenantDbContext per request using factory
         // This creates TenantDbContext based on current tenant context
         // Note: We use GetAwaiter().GetResult() instead of Wait() to avoid deadlock issues
@@ -140,6 +145,33 @@ public static class ServiceCollectionExtensions
 
         // Add Audit.NET logging
         services.AddAuditLogging();
+
+        // Add Push Notification Services
+        services.AddPushNotifications(configuration);
+
+        return services;
+    }
+
+    /// <summary>
+    /// Adds push notification services (Firebase) and queue processor.
+    /// </summary>
+    public static IServiceCollection AddPushNotifications(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        // Configure Firebase options
+        services.Configure<FirebasePushNotificationOptions>(
+            configuration.GetSection(FirebasePushNotificationOptions.SectionName));
+
+        // Configure queue processor options
+        services.Configure<NotificationQueueProcessorOptions>(
+            configuration.GetSection(NotificationQueueProcessorOptions.SectionName));
+
+        // Register push notification service
+        services.AddSingleton<IPushNotificationService, FirebasePushNotificationService>();
+
+        // Register queue processor as hosted service
+        services.AddHostedService<NotificationQueueProcessor>();
 
         return services;
     }

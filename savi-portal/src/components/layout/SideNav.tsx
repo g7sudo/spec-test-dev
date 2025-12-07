@@ -92,6 +92,17 @@ const platformNavItems: NavSection[] = [
     ],
   },
   {
+    title: 'Monetization',
+    items: [
+      { 
+        label: 'Ads & Campaigns', 
+        href: '/platform/ads', 
+        icon: Megaphone,
+        permission: 'PLATFORM_ADVERTISER_VIEW',
+      },
+    ],
+  },
+  {
     title: 'System',
     items: [
       { 

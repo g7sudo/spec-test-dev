@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Savi.Application.Common.Interfaces;
 using Savi.Domain.Tenant;
+using Savi.Infrastructure.Persistence.Seeding;
 using Savi.SharedKernel.Authorization;
 
 namespace Savi.Infrastructure.Persistence.TenantDb;
@@ -16,10 +17,14 @@ namespace Savi.Infrastructure.Persistence.TenantDb;
 public class TenantProvisioningService : ITenantProvisioningService
 {
     private readonly ILogger<TenantProvisioningService> _logger;
+    private readonly ILoggerFactory _loggerFactory;
 
-    public TenantProvisioningService(ILogger<TenantProvisioningService> logger)
+    public TenantProvisioningService(
+        ILogger<TenantProvisioningService> logger,
+        ILoggerFactory loggerFactory)
     {
         _logger = logger;
+        _loggerFactory = loggerFactory;
     }
 
     public async Task ProvisionTenantAsync(
@@ -30,6 +35,18 @@ public class TenantProvisioningService : ITenantProvisioningService
 
         await EnsureDatabaseSchemaAsync(tenantDbContext, options, ct);
 
+        // Seed RBAC (role groups and permissions)
+        await SeedRbacAsync(tenantDbContext, options, ct);
+
+        // Seed default lookup data (UnitTypes, MaintenanceCategories)
+        await SeedDefaultDataAsync(tenantDbContext, options, ct);
+    }
+
+    private async Task SeedRbacAsync(
+        TenantDbContext tenantDbContext,
+        TenantProvisioningOptions options,
+        CancellationToken ct)
+    {
         if (!options.SeedDefaultRbac)
         {
             _logger.LogInformation(
@@ -74,6 +91,30 @@ public class TenantProvisioningService : ITenantProvisioningService
         _logger.LogInformation(
             "Seeded COMMUNITY_ADMIN role with {PermissionCount} permissions for tenant {TenantCode}",
             tenantPermissionKeys.Count,
+            options.TenantCode);
+    }
+
+    private async Task SeedDefaultDataAsync(
+        TenantDbContext tenantDbContext,
+        TenantProvisioningOptions options,
+        CancellationToken ct)
+    {
+        if (!options.SeedDefaultData)
+        {
+            _logger.LogInformation(
+                "Skipping tenant data seeding for {TenantCode} (SeedDefaultData disabled).",
+                options.TenantCode);
+            return;
+        }
+
+        var dataSeeder = new TenantDataSeeder(
+            tenantDbContext,
+            _loggerFactory.CreateLogger<TenantDataSeeder>());
+
+        await dataSeeder.SeedAsync(ct);
+
+        _logger.LogInformation(
+            "Seeded default data (UnitTypes, MaintenanceCategories) for tenant {TenantCode}",
             options.TenantCode);
     }
 

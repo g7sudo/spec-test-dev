@@ -15,3 +15,6 @@ export * from './lease';
 export * from './resident-invite';
 export * from './resident';
 export * from './maintenance';
+export * from './announcement';
+export * from './visitor';
+export * from './ads';

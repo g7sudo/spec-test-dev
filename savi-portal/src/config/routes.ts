@@ -17,6 +17,12 @@ export const ROUTES = {
     DASHBOARD: '/platform/dashboard',
     TENANTS: '/platform/tenants',
     USERS: '/platform/users',
+    // Ads Module routes
+    ADS: {
+      ROOT: '/platform/ads',
+      ADVERTISERS: '/platform/ads/advertisers',
+      CAMPAIGNS: '/platform/ads/campaigns',
+    },
   },
   
   // Account routes (shared across scopes)

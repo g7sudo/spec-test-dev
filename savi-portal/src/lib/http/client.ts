@@ -93,6 +93,13 @@ export const httpClient = {
   async delete<T>(path: string, options?: RequestOptions): Promise<T> {
     return request<T>(path, { ...options, method: 'DELETE' });
   },
+
+  /**
+   * PATCH request
+   */
+  async patch<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {
+    return request<T>(path, { ...options, method: 'PATCH', body });
+  },
 };
 
 /**

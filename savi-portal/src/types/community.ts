@@ -159,6 +159,35 @@ export interface UpdateUnitRequest {
 }
 
 // ============================================
+// Unit Party DTOs
+// ============================================
+
+/**
+ * Association type for unit party
+ */
+export type UnitPartyAssociationType = 'Resident' | 'Owner';
+
+/**
+ * Role of party in unit
+ */
+export type UnitPartyRole = 'PrimaryResident' | 'CoResident' | 'PrimaryOwner' | 'CoOwner';
+
+/**
+ * Party associated with a unit (resident or owner)
+ * Returned from GET /api/v1/tenant/community/units/{unitId}/parties
+ */
+export interface UnitParty {
+  partyId: string;
+  partyName: string;
+  partyType: string;
+  associationType: UnitPartyAssociationType;
+  role: UnitPartyRole;
+  isPrimary: boolean;
+  email: string | null;
+  phone: string | null;
+}
+
+// ============================================
 // Parking Slot DTOs
 // ============================================
 

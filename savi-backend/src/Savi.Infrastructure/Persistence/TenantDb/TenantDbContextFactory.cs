@@ -1,3 +1,5 @@
+using System.IO;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Savi.Infrastructure.Persistence.Platform;
@@ -72,8 +74,9 @@ public class TenantDbContextFactory : ITenantDbContextFactory
                 break;
 
             case "sqlite":
-                optionsBuilder.UseSqlite(tenant.ConnectionString);
-                _logger.LogInformation("Using SQLite with connection string: {ConnectionString}", tenant.ConnectionString);
+                var normalizedConnectionString = NormalizeSqliteConnectionString(tenant.ConnectionString);
+                optionsBuilder.UseSqlite(normalizedConnectionString);
+                _logger.LogInformation("Using SQLite with connection string: {ConnectionString}", normalizedConnectionString);
                 break;
 
             default:
@@ -88,6 +91,39 @@ public class TenantDbContextFactory : ITenantDbContextFactory
             tenant.Provider);
 
         return new TenantDbContext(optionsBuilder.Options);
+    }
+
+    /// <summary>
+    /// Normalizes SQLite connection string by converting relative paths to absolute paths.
+    /// </summary>
+    private static string NormalizeSqliteConnectionString(string connectionString)
+    {
+        var builder = new SqliteConnectionStringBuilder(connectionString);
+
+        if (string.IsNullOrWhiteSpace(builder.DataSource))
+        {
+            return connectionString;
+        }
+
+        // If already absolute, return as-is
+        if (Path.IsPathRooted(builder.DataSource))
+        {
+            return connectionString;
+        }
+
+        // Convert relative path to absolute
+        var baseDir = AppContext.BaseDirectory ?? Directory.GetCurrentDirectory();
+        var absolutePath = Path.GetFullPath(Path.Combine(baseDir, builder.DataSource));
+
+        // Ensure directory exists
+        var directory = Path.GetDirectoryName(absolutePath);
+        if (!string.IsNullOrWhiteSpace(directory) && !Directory.Exists(directory))
+        {
+            Directory.CreateDirectory(directory);
+        }
+
+        builder.DataSource = absolutePath;
+        return builder.ToString();
     }
 }
 

@@ -144,12 +144,15 @@ public sealed class CreateTenantCommandHandler
 
         if (request.ProvisionTenantDatabase)
         {
-            var provisionOptions = new TenantProvisioningOptions(
-                TenantId: tenant.Id,
-                TenantCode: code,
-                Provider: provider,
-                ConnectionString: connectionString,
-                SeedDefaultRbac: request.SeedTenantRbac);
+            var provisionOptions = new TenantProvisioningOptions
+            {
+                TenantId = tenant.Id,
+                TenantCode = code,
+                Provider = provider,
+                ConnectionString = connectionString,
+                SeedDefaultRbac = request.SeedTenantRbac,
+                SeedDefaultData = true
+            };
 
             await _tenantProvisioningService.ProvisionTenantAsync(provisionOptions, cancellationToken);
 

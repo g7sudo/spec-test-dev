@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Savi.Application.Common.Interfaces;
 using Savi.Infrastructure.Persistence.Platform;
 
 namespace Savi.Infrastructure.Persistence.Seeding;
@@ -48,6 +49,26 @@ public class DatabaseSeeder
             dbContext,
             scope.ServiceProvider.GetRequiredService<ILogger<PlatformRoleSeeder>>());
         await roleSeeder.SeedAsync(cancellationToken);
+
+        // Seed default platform user (development only)
+        var platformUserSeeder = new PlatformUserSeeder(
+            dbContext,
+            scope.ServiceProvider.GetRequiredService<ILogger<PlatformUserSeeder>>());
+        await platformUserSeeder.SeedAsync(cancellationToken);
+
+        // Seed default tenant (development only)
+        var provisioningService = scope.ServiceProvider.GetRequiredService<ITenantProvisioningService>();
+        var tenantSeeder = new TenantSeeder(
+            dbContext,
+            provisioningService,
+            scope.ServiceProvider.GetRequiredService<ILogger<TenantSeeder>>());
+        await tenantSeeder.SeedAsync(cancellationToken);
+
+        // Seed ads data (development only - advertisers, campaigns, creatives, events)
+        var adsSeeder = new AdsSeeder(
+            dbContext,
+            scope.ServiceProvider.GetRequiredService<ILogger<AdsSeeder>>());
+        await adsSeeder.SeedAsync(cancellationToken);
 
         _logger.LogInformation("Database seeding completed");
     }

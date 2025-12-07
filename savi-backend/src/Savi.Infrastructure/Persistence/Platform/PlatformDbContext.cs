@@ -61,6 +61,26 @@ public class PlatformDbContext : DbContext, IPlatformDbContext
     public DbSet<PlatformAuditLog> PlatformAuditLogsSet => Set<PlatformAuditLog>();
     IQueryable<PlatformAuditLog> IPlatformDbContext.PlatformAuditLogs => PlatformAuditLogsSet;
 
+    // Device registrations (push notifications)
+    public DbSet<DeviceRegistration> DeviceRegistrationsSet => Set<DeviceRegistration>();
+    IQueryable<DeviceRegistration> IPlatformDbContext.DeviceRegistrations => DeviceRegistrationsSet;
+
+    // Notification queue
+    public DbSet<NotificationQueue> NotificationQueueSet => Set<NotificationQueue>();
+    IQueryable<NotificationQueue> IPlatformDbContext.NotificationQueue => NotificationQueueSet;
+
+    // Ads / Campaigns
+    public DbSet<Advertiser> AdvertisersSet => Set<Advertiser>();
+    public DbSet<Campaign> CampaignsSet => Set<Campaign>();
+    public DbSet<CampaignTargetTenant> CampaignTargetTenantsSet => Set<CampaignTargetTenant>();
+    public DbSet<CampaignCreative> CampaignCreativesSet => Set<CampaignCreative>();
+    public DbSet<AdEvent> AdEventsSet => Set<AdEvent>();
+    IQueryable<Advertiser> IPlatformDbContext.Advertisers => AdvertisersSet;
+    IQueryable<Campaign> IPlatformDbContext.Campaigns => CampaignsSet;
+    IQueryable<CampaignTargetTenant> IPlatformDbContext.CampaignTargetTenants => CampaignTargetTenantsSet;
+    IQueryable<CampaignCreative> IPlatformDbContext.CampaignCreatives => CampaignCreativesSet;
+    IQueryable<AdEvent> IPlatformDbContext.AdEvents => AdEventsSet;
+
     /// <summary>
     /// Adds a new entity to the context (explicit interface implementation).
     /// </summary>

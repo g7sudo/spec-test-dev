@@ -5,7 +5,7 @@
  * Submit site visit assessment summary for a maintenance request
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, ClipboardCheck } from 'lucide-react';
 import {
   Dialog,
@@ -48,12 +48,12 @@ export function AssessmentDialog({
   const [error, setError] = useState<string | null>(null);
 
   // Reset form when dialog opens
-  useState(() => {
+  useEffect(() => {
     if (open) {
       setSummary(currentAssessment || '');
       setError(null);
     }
-  });
+  }, [open, currentAssessment]);
 
   // ============================================
   // Submit

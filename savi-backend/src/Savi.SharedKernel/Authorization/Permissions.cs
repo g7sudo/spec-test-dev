@@ -71,6 +71,63 @@ public static class Permissions
             /// <summary>Permission to manage platform roles and permissions.</summary>
             public const string Manage = "PLATFORM_RBAC_MANAGE";
         }
+
+        /// <summary>
+        /// Platform notification permissions.
+        /// </summary>
+        public static class Notifications
+        {
+            /// <summary>Permission to broadcast platform-wide notifications.</summary>
+            public const string Broadcast = "PLATFORM_NOTIFICATION_BROADCAST";
+        }
+
+        /// <summary>
+        /// Advertiser management permissions.
+        /// </summary>
+        public static class Advertisers
+        {
+            /// <summary>Permission to view advertisers.</summary>
+            public const string View = "PLATFORM_ADVERTISER_VIEW";
+
+            /// <summary>Permission to create advertisers.</summary>
+            public const string Create = "PLATFORM_ADVERTISER_CREATE";
+
+            /// <summary>Permission to update advertisers.</summary>
+            public const string Update = "PLATFORM_ADVERTISER_UPDATE";
+
+            /// <summary>Permission to delete advertisers.</summary>
+            public const string Delete = "PLATFORM_ADVERTISER_DELETE";
+        }
+
+        /// <summary>
+        /// Campaign management permissions.
+        /// </summary>
+        public static class Campaigns
+        {
+            /// <summary>Permission to view campaigns.</summary>
+            public const string View = "PLATFORM_CAMPAIGN_VIEW";
+
+            /// <summary>Permission to create campaigns.</summary>
+            public const string Create = "PLATFORM_CAMPAIGN_CREATE";
+
+            /// <summary>Permission to update campaigns.</summary>
+            public const string Update = "PLATFORM_CAMPAIGN_UPDATE";
+
+            /// <summary>Permission to delete campaigns.</summary>
+            public const string Delete = "PLATFORM_CAMPAIGN_DELETE";
+
+            /// <summary>Permission to manage campaign status (activate/pause/end).</summary>
+            public const string ManageStatus = "PLATFORM_CAMPAIGN_MANAGE_STATUS";
+        }
+
+        /// <summary>
+        /// Ad analytics permissions.
+        /// </summary>
+        public static class AdAnalytics
+        {
+            /// <summary>Permission to view ad analytics and reports.</summary>
+            public const string View = "PLATFORM_AD_ANALYTICS_VIEW";
+        }
     }
 
     /// <summary>
@@ -297,6 +354,54 @@ public static class Permissions
         yield return new PermissionDefinition(
             Platform.Rbac.Manage, PermissionScope.Platform, "Rbac", "Manage",
             "Manage platform roles and permissions.");
+
+        // Platform permissions - Notifications
+        yield return new PermissionDefinition(
+            Platform.Notifications.Broadcast, PermissionScope.Platform, "Notifications", "Broadcast",
+            "Broadcast platform-wide notifications to all users.");
+
+        // Platform permissions - Advertisers
+        yield return new PermissionDefinition(
+            Platform.Advertisers.View, PermissionScope.Platform, "Advertisers", "View",
+            "View advertisers and their details.");
+
+        yield return new PermissionDefinition(
+            Platform.Advertisers.Create, PermissionScope.Platform, "Advertisers", "Create",
+            "Create new advertisers.");
+
+        yield return new PermissionDefinition(
+            Platform.Advertisers.Update, PermissionScope.Platform, "Advertisers", "Update",
+            "Update advertiser details.");
+
+        yield return new PermissionDefinition(
+            Platform.Advertisers.Delete, PermissionScope.Platform, "Advertisers", "Delete",
+            "Delete advertisers.");
+
+        // Platform permissions - Campaigns
+        yield return new PermissionDefinition(
+            Platform.Campaigns.View, PermissionScope.Platform, "Campaigns", "View",
+            "View campaigns, creatives, and targeting.");
+
+        yield return new PermissionDefinition(
+            Platform.Campaigns.Create, PermissionScope.Platform, "Campaigns", "Create",
+            "Create new advertising campaigns.");
+
+        yield return new PermissionDefinition(
+            Platform.Campaigns.Update, PermissionScope.Platform, "Campaigns", "Update",
+            "Update campaign details and creatives.");
+
+        yield return new PermissionDefinition(
+            Platform.Campaigns.Delete, PermissionScope.Platform, "Campaigns", "Delete",
+            "Delete campaigns.");
+
+        yield return new PermissionDefinition(
+            Platform.Campaigns.ManageStatus, PermissionScope.Platform, "Campaigns", "ManageStatus",
+            "Manage campaign status (activate, pause, end).");
+
+        // Platform permissions - Ad Analytics
+        yield return new PermissionDefinition(
+            Platform.AdAnalytics.View, PermissionScope.Platform, "AdAnalytics", "View",
+            "View ad analytics, impressions, and click reports.");
 
         // Tenant permissions - Maintenance
         yield return new PermissionDefinition(

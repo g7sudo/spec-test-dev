@@ -39,5 +39,10 @@ public enum DocumentOwnerType
     /// <summary>
     /// Document belongs to an Amenity (photos, rules documents, etc.).
     /// </summary>
-    Amenity = 7
+    Amenity = 7,
+
+    /// <summary>
+    /// Document belongs to an Announcement (images, posters, etc.).
+    /// </summary>
+    Announcement = 8
 }

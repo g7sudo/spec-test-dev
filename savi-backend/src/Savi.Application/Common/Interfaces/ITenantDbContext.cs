@@ -57,6 +57,19 @@ public interface ITenantDbContext
     IQueryable<MaintenanceApproval> MaintenanceApprovals { get; }
     IQueryable<MaintenanceComment> MaintenanceComments { get; }
 
+    // Visitors
+    IQueryable<VisitorPass> VisitorPasses { get; }
+
+    // Announcements
+    IQueryable<Announcement> Announcements { get; }
+    IQueryable<AnnouncementAudience> AnnouncementAudiences { get; }
+    IQueryable<AnnouncementLike> AnnouncementLikes { get; }
+    IQueryable<AnnouncementComment> AnnouncementComments { get; }
+    IQueryable<AnnouncementRead> AnnouncementReads { get; }
+
+    // User Notifications
+    IQueryable<UserNotification> UserNotifications { get; }
+
     /// <summary>
     /// Adds a new entity to the context.
     /// </summary>

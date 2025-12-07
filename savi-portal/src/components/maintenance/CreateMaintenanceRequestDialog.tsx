@@ -4,6 +4,9 @@
  * Create Maintenance Request Dialog
  * Form to create a new maintenance request
  * Selects unit, category, party (resident/owner), title, description, priority
+ * 
+ * Party selection is filtered based on selected unit - only shows
+ * residents and owners currently associated with that unit.
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -24,14 +27,12 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
-import { listUnits } from '@/lib/api/community';
-import { listParties } from '@/lib/api/parties';
+import { listUnits, getUnitParties } from '@/lib/api/community';
 import {
   listMaintenanceCategories,
   createMaintenanceRequest,
 } from '@/lib/api/maintenance';
-import { Unit } from '@/types/community';
-import { Party } from '@/types/party';
+import { Unit, UnitParty } from '@/types/community';
 import {
   MaintenanceCategorySummary,
   MaintenancePriority,
@@ -66,13 +67,13 @@ export function CreateMaintenanceRequestDialog({
   // Refs for Strict Mode guard
   const unitsFetchedRef = useRef(false);
   const categoriesFetchedRef = useRef(false);
-  const partiesFetchedRef = useRef(false);
 
   // Data state
   const [units, setUnits] = useState<Unit[]>([]);
   const [categories, setCategories] = useState<MaintenanceCategorySummary[]>([]);
-  const [parties, setParties] = useState<Party[]>([]);
+  const [unitParties, setUnitParties] = useState<UnitParty[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [isLoadingParties, setIsLoadingParties] = useState(false);
 
   // Form state
   const [unitId, setUnitId] = useState(preselectedUnitId || '');
@@ -123,29 +124,54 @@ export function CreateMaintenanceRequestDialog({
     }
   }, [categoryId]);
 
-  // Load parties for selection
-  const loadParties = useCallback(async (force = false) => {
-    if (!force && partiesFetchedRef.current) return;
-    partiesFetchedRef.current = true;
-
-    try {
-      const result = await listParties({ pageSize: 500 });
-      setParties(result.items);
-    } catch (err) {
-      console.error('Failed to load parties:', err);
-      partiesFetchedRef.current = false;
+  // Load parties for the selected unit
+  const loadUnitParties = useCallback(async (selectedUnitId: string) => {
+    if (!selectedUnitId) {
+      setUnitParties([]);
+      return;
     }
-  }, []);
 
-  // Initial load
+    setIsLoadingParties(true);
+    try {
+      const parties = await getUnitParties(selectedUnitId);
+      setUnitParties(parties);
+      
+      // If preselected party is in the list, keep it selected
+      if (preselectedPartyId && parties.some(p => p.partyId === preselectedPartyId)) {
+        setPartyId(preselectedPartyId);
+      }
+    } catch (err) {
+      console.error('Failed to load unit parties:', err);
+      setUnitParties([]);
+    } finally {
+      setIsLoadingParties(false);
+    }
+  }, [preselectedPartyId]);
+
+  // Initial load - units and categories
   useEffect(() => {
     if (open) {
       setIsLoadingData(true);
-      Promise.all([loadUnits(), loadCategories(), loadParties()]).finally(() => {
+      Promise.all([loadUnits(), loadCategories()]).finally(() => {
         setIsLoadingData(false);
       });
     }
-  }, [open, loadUnits, loadCategories, loadParties]);
+  }, [open, loadUnits, loadCategories]);
+
+  // Load parties when unit changes
+  useEffect(() => {
+    if (open && unitId) {
+      loadUnitParties(unitId);
+    }
+  }, [open, unitId, loadUnitParties]);
+
+  // Load parties for preselected unit on dialog open
+  useEffect(() => {
+    if (open && preselectedUnitId) {
+      setUnitId(preselectedUnitId);
+      loadUnitParties(preselectedUnitId);
+    }
+  }, [open, preselectedUnitId, loadUnitParties]);
 
   // Reset form when dialog closes
   useEffect(() => {
@@ -157,16 +183,23 @@ export function CreateMaintenanceRequestDialog({
       setDescription('');
       setPriority(MaintenancePriority.Normal);
       setError(null);
+      setUnitParties([]);
       // Reset fetch refs for next open
       unitsFetchedRef.current = false;
       categoriesFetchedRef.current = false;
-      partiesFetchedRef.current = false;
     }
   }, [open, preselectedUnitId, preselectedPartyId]);
 
   // ============================================
   // Form Handlers
   // ============================================
+
+  // Handle unit change - clear party selection and load new parties
+  const handleUnitChange = (newUnitId: string) => {
+    setUnitId(newUnitId);
+    setPartyId(''); // Clear party selection when unit changes
+    setUnitParties([]); // Clear parties list - will be reloaded by effect
+  };
 
   const handleSubmit = async () => {
     // Validation
@@ -211,6 +244,20 @@ export function CreateMaintenanceRequestDialog({
   };
 
   // ============================================
+  // Helper to get role display label
+  // ============================================
+
+  const getRoleLabel = (party: UnitParty): string => {
+    const labels: Record<string, string> = {
+      PrimaryResident: 'Primary Resident',
+      CoResident: 'Co-Resident',
+      PrimaryOwner: 'Primary Owner',
+      CoOwner: 'Co-Owner',
+    };
+    return labels[party.role] || party.role;
+  };
+
+  // ============================================
   // Render
   // ============================================
 
@@ -233,7 +280,7 @@ export function CreateMaintenanceRequestDialog({
                 <Home className="h-4 w-4 inline mr-1" />
                 Unit *
               </label>
-              <Select value={unitId} onValueChange={setUnitId}>
+              <Select value={unitId} onValueChange={handleUnitChange}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a unit" />
                 </SelectTrigger>
@@ -268,26 +315,50 @@ export function CreateMaintenanceRequestDialog({
               </Select>
             </div>
 
-            {/* Party Selection (who the request is for) */}
+            {/* Party Selection (who the request is for) - filtered by unit */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 <User className="h-4 w-4 inline mr-1" />
                 Request For (Resident/Owner) *
               </label>
-              <Select value={partyId} onValueChange={setPartyId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select resident or owner" />
-                </SelectTrigger>
-                <SelectContent>
-                  {parties.map((party) => (
-                    <SelectItem key={party.id} value={party.id}>
-                      {party.partyName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {!unitId ? (
+                <div className="text-sm text-gray-400 italic py-2 px-3 border border-dashed border-gray-300 rounded-lg">
+                  Please select a unit first
+                </div>
+              ) : isLoadingParties ? (
+                <div className="flex items-center gap-2 text-sm text-gray-500 py-2 px-3 border border-gray-200 rounded-lg">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading residents & owners...
+                </div>
+              ) : unitParties.length === 0 ? (
+                <div className="text-sm text-amber-600 bg-amber-50 py-2 px-3 rounded-lg">
+                  No residents or owners found for this unit
+                </div>
+              ) : (
+                <Select value={partyId} onValueChange={setPartyId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select resident or owner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {unitParties.map((party) => (
+                      <SelectItem key={party.partyId} value={party.partyId}>
+                        <div className="flex items-center gap-2">
+                          <span>{party.partyName}</span>
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${
+                            party.associationType === 'Resident'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-green-100 text-green-700'
+                          }`}>
+                            {getRoleLabel(party)}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
               <p className="text-xs text-gray-500 mt-1">
-                The resident or owner this maintenance request is for
+                Current residents and owners associated with this unit
               </p>
             </div>
 
@@ -360,4 +431,3 @@ export function CreateMaintenanceRequestDialog({
     </Dialog>
   );
 }
-

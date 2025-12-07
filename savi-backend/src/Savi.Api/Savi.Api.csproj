@@ -28,4 +28,10 @@
     <ProjectReference Include="..\Savi.MultiTenancy\Savi.MultiTenancy.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="dk-dev-app-firebase-admin.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

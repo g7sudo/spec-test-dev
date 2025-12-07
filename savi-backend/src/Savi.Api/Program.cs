@@ -1,3 +1,4 @@
+using Microsoft.EntityFrameworkCore;
 using Savi.Api.Configuration;
 using Savi.Api.Middleware;
 using Savi.Infrastructure.Auditing;
@@ -137,8 +138,8 @@ try
         using var scope = app.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<Savi.Infrastructure.Persistence.Platform.PlatformDbContext>();
         
-        // Ensure database is created (for SQLite) or apply pending migrations
-        await dbContext.Database.EnsureCreatedAsync();
+        // Apply pending migrations to Platform DB
+        await dbContext.Database.MigrateAsync();
         
         await app.Services.SeedDatabaseAsync();
     }

@@ -26,6 +26,15 @@ public interface IPlatformDbContext
     IQueryable<PlatformRoleBypassPermission> PlatformRoleBypassPermissions { get; }
     IQueryable<UserTenantMembership> UserTenantMemberships { get; }
     IQueryable<PlatformAuditLog> PlatformAuditLogs { get; }
+    IQueryable<DeviceRegistration> DeviceRegistrations { get; }
+    IQueryable<NotificationQueue> NotificationQueue { get; }
+
+    // Ads / Campaigns
+    IQueryable<Advertiser> Advertisers { get; }
+    IQueryable<Campaign> Campaigns { get; }
+    IQueryable<CampaignTargetTenant> CampaignTargetTenants { get; }
+    IQueryable<CampaignCreative> CampaignCreatives { get; }
+    IQueryable<AdEvent> AdEvents { get; }
 
     /// <summary>
     /// Adds a new entity to the context.

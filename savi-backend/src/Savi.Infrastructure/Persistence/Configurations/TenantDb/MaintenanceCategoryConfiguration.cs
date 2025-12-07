@@ -45,16 +45,8 @@ public class MaintenanceCategoryConfiguration : IEntityTypeConfiguration<Mainten
             .IsRequired()
             .HasDefaultValue(false);
 
-        // Foreign keys - CreatedBy/UpdatedBy to CommunityUser
-        builder.HasOne<CommunityUser>()
-            .WithMany()
-            .HasForeignKey(x => x.CreatedBy)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne<CommunityUser>()
-            .WithMany()
-            .HasForeignKey(x => x.UpdatedBy)
-            .OnDelete(DeleteBehavior.Restrict);
+        // Note: CreatedBy/UpdatedBy are audit fields without FK constraints
+        // to allow system-seeded data and preserve audit trail if users are deleted
 
         // Indexes
         builder.HasIndex(x => x.Name);

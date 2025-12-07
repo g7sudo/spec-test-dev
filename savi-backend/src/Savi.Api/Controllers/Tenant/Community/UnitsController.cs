@@ -8,6 +8,8 @@ using Savi.Application.Tenant.Community.Commands.UpdateUnit;
 using Savi.Application.Tenant.Community.Dtos;
 using Savi.Application.Tenant.Community.Queries.GetUnitById;
 using Savi.Application.Tenant.Community.Queries.ListUnits;
+using Savi.Application.Tenant.Units.Dtos;
+using Savi.Application.Tenant.Units.Queries.GetPartiesByUnit;
 using Savi.Domain.Tenant.Enums;
 using Savi.SharedKernel;
 using Savi.SharedKernel.Authorization;
@@ -142,6 +144,37 @@ public class UnitsController : ControllerBase
         }
 
         return NoContent();
+    }
+
+    /// <summary>
+    /// Gets parties (residents and/or owners) associated with a unit.
+    /// Useful for populating dropdowns when creating maintenance requests or other unit-related operations.
+    /// </summary>
+    /// <param name="id">The unit ID.</param>
+    /// <param name="associationFilter">Filter by association type: All (default), Residents, or Owners.</param>
+    /// <param name="primaryOnly">If true, returns only primary residents/owners. If null/false, returns all.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    [HttpGet("{id:guid}/parties")]
+    [HasPermission(Permissions.Tenant.Community.View)]
+    [ProducesResponseType(typeof(List<UnitPartyDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetPartiesByUnit(
+        Guid id,
+        [FromQuery] PartyAssociationFilter associationFilter = PartyAssociationFilter.All,
+        [FromQuery] bool? primaryOnly = null,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetPartiesByUnitQuery(id, associationFilter, primaryOnly);
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return NotFound(new { error = result.Error });
+        }
+
+        return Ok(result.Value);
     }
 }
 

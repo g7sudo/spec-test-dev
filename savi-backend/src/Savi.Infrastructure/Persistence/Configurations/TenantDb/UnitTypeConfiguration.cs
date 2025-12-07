@@ -48,15 +48,7 @@ public class UnitTypeConfiguration : IEntityTypeConfiguration<UnitType>
         builder.HasIndex(x => x.Code)
             .IsUnique();
 
-        // Foreign keys (audit fields)
-        builder.HasOne<CommunityUser>()
-            .WithMany()
-            .HasForeignKey(x => x.CreatedBy)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne<CommunityUser>()
-            .WithMany()
-            .HasForeignKey(x => x.UpdatedBy)
-            .OnDelete(DeleteBehavior.Restrict);
+        // Note: CreatedBy/UpdatedBy are audit fields without FK constraints
+        // to allow system-seeded data and preserve audit trail if users are deleted
     }
 }

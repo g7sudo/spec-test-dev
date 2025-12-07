@@ -5,7 +5,7 @@
  * Allows supervisor to reject a maintenance request with reason
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, XCircle } from 'lucide-react';
 import {
   Dialog,
@@ -48,13 +48,13 @@ export function RejectDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset when dialog opens
-  useState(() => {
+  // Reset form when dialog opens
+  useEffect(() => {
     if (open) {
       setReason('');
       setError(null);
     }
-  });
+  }, [open]);
 
   // ============================================
   // Submit

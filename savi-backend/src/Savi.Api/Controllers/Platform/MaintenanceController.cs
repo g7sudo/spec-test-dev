@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Savi.Api.Configuration;
 using Savi.Application.Platform.Commands.MigrateTenantDatabases;
+using Savi.Application.Platform.Commands.SeedTestData;
 using Savi.SharedKernel.Authorization;
 
 namespace Savi.Api.Controllers.Platform;
@@ -43,6 +44,38 @@ public class MaintenanceController : ControllerBase
         _logger.LogInformation("POST /platform/maintenance/migrate-tenant-databases - Starting migration for all tenants");
 
         var command = new MigrateTenantDatabasesCommand();
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Seeds test/demo data for a specific tenant.
+    /// Used for development and demonstration purposes.
+    /// </summary>
+    /// <param name="tenantId">The tenant ID to seed data for</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Seeding results with statistics</returns>
+    [HttpPost("seed-test-data/{tenantId:guid}")]
+    [HasPermission(Permissions.Platform.Tenants.Manage)]
+    [ProducesResponseType(typeof(SeedTestDataResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> SeedTestData(
+        [FromRoute] Guid tenantId,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation(
+            "POST /platform/maintenance/seed-test-data/{TenantId} - Seeding test data",
+            tenantId);
+
+        var command = new SeedTestDataCommand(tenantId);
         var result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)

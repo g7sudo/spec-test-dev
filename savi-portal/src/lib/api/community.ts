@@ -9,6 +9,7 @@ import {
   Floor,
   Unit,
   UnitType,
+  UnitParty,
   ParkingSlot,
   PagedResult,
   ListBlocksParams,
@@ -185,6 +186,14 @@ export async function createUnit(data: CreateUnitRequest): Promise<string> {
  */
 export async function updateUnit(id: string, data: UpdateUnitRequest): Promise<void> {
   return httpClient.put<void>(`${UNITS_BASE}/${id}`, data);
+}
+
+/**
+ * Gets all parties associated with a unit (residents and owners)
+ * Returns current residents from active leases and current owners
+ */
+export async function getUnitParties(unitId: string): Promise<UnitParty[]> {
+  return httpClient.get<UnitParty[]>(`${UNITS_BASE}/${unitId}/parties`);
 }
 
 // ============================================

@@ -5,7 +5,7 @@
  * Add a comment/note to a maintenance request
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Loader2, MessageSquare } from 'lucide-react';
 import {
   Dialog,
@@ -58,8 +58,8 @@ export function AddCommentDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Reset when dialog opens
-  useState(() => {
+  // Reset form when dialog opens
+  useEffect(() => {
     if (open) {
       setCommentType(MaintenanceCommentType.StaffPublicReply);
       setMessage('');
@@ -67,7 +67,7 @@ export function AddCommentDialog({
       setVisibleToOwner(true);
       setError(null);
     }
-  });
+  }, [open]);
 
   // Update visibility based on comment type
   const handleTypeChange = (type: MaintenanceCommentType) => {

@@ -771,7 +771,7 @@ public class MaintenanceRequestsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> AddComment(
         Guid id,
-        [FromBody] AddCommentRequest request,
+        [FromBody] AddMaintenanceCommentRequest request,
         CancellationToken cancellationToken = default)
     {
         var command = new AddCommentCommand(
@@ -905,9 +905,9 @@ public record RecordPaymentRequest(
     string? PaymentReference);
 
 /// <summary>
-/// Request model for adding a comment.
+/// Request model for adding a maintenance comment.
 /// </summary>
-public record AddCommentRequest(
+public record AddMaintenanceCommentRequest(
     MaintenanceCommentType CommentType,
     string Message,
     bool IsVisibleToResident,

@@ -95,6 +95,26 @@ public class TenantDbContext : DbContext, ITenantDbContext
     IQueryable<MaintenanceApproval> ITenantDbContext.MaintenanceApprovals => MaintenanceApprovals;
     IQueryable<MaintenanceComment> ITenantDbContext.MaintenanceComments => MaintenanceComments;
 
+    // Visitors
+    public DbSet<VisitorPass> VisitorPasses => Set<VisitorPass>();
+    IQueryable<VisitorPass> ITenantDbContext.VisitorPasses => VisitorPasses;
+
+    // Announcements
+    public DbSet<Announcement> Announcements => Set<Announcement>();
+    public DbSet<AnnouncementAudience> AnnouncementAudiences => Set<AnnouncementAudience>();
+    public DbSet<AnnouncementLike> AnnouncementLikes => Set<AnnouncementLike>();
+    public DbSet<AnnouncementComment> AnnouncementComments => Set<AnnouncementComment>();
+    public DbSet<AnnouncementRead> AnnouncementReads => Set<AnnouncementRead>();
+    IQueryable<Announcement> ITenantDbContext.Announcements => Announcements;
+    IQueryable<AnnouncementAudience> ITenantDbContext.AnnouncementAudiences => AnnouncementAudiences;
+    IQueryable<AnnouncementLike> ITenantDbContext.AnnouncementLikes => AnnouncementLikes;
+    IQueryable<AnnouncementComment> ITenantDbContext.AnnouncementComments => AnnouncementComments;
+    IQueryable<AnnouncementRead> ITenantDbContext.AnnouncementReads => AnnouncementReads;
+
+    // User Notifications
+    public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
+    IQueryable<UserNotification> ITenantDbContext.UserNotifications => UserNotifications;
+
     /// <summary>
     /// Explicit implementation of ITenantDbContext.Add to match interface signature (void return).
     /// </summary>
