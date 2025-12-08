@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,6 +12,7 @@ import { signOut as firebaseSignOut } from '@/services/firebase/auth';
 import { useAppStore } from '@/state/appStore';
 import { navigationRef } from '@/core/navigation/navigationRef';
 import { Image } from 'expo-image';
+import { getUserProfile, type UserProfileResponse } from '@/services/api/profile';
 
 type ProfileStackParamList = {
   ProfileMain: undefined;
@@ -38,8 +39,53 @@ export const ProfileScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const { user } = useAuthStore();
-  const { selectedTenant } = useTenantStore();
+  const { selectedTenant, currentTenant } = useTenantStore();
   const { clearPendingInvite } = usePendingInvite();
+  
+  const [profile, setProfile] = useState<UserProfileResponse | null>(null);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+
+  useEffect(() => {
+    loadProfile();
+  }, [selectedTenant?.tenantId, currentTenant?.id]); // Reload when tenant changes
+
+  // Reload profile when screen comes into focus (e.g., returning from EditProfile)
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadProfile();
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  const loadProfile = async () => {
+    // Check for tenant - use tenantId from selectedTenant or id from currentTenant
+    const tenantId = selectedTenant?.tenantId || currentTenant?.id;
+    if (!tenantId) {
+      setIsLoadingProfile(false);
+      return;
+    }
+
+    try {
+      setIsLoadingProfile(true);
+      // Authorization header is automatically added by apiClient from auth store
+      const profileData = await getUserProfile();
+      setProfile(profileData);
+      console.log('[ProfileScreen] ✅ Profile loaded:', {
+        displayName: profileData.displayName,
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        primaryEmail: profileData.primaryEmail,
+        partyName: profileData.partyName,
+      });
+    } catch (error: any) {
+      console.error('[ProfileScreen] ❌ Failed to load profile:', {
+        error: error.message,
+      });
+      // Continue without profile data - use auth store data as fallback
+    } finally {
+      setIsLoadingProfile(false);
+    }
+  };
 
   const handleSignOut = async () => {
     Alert.alert(
@@ -116,7 +162,7 @@ export const ProfileScreen: React.FC = () => {
       title: 'Edit Profile',
       subtitle: 'Update your personal information',
       icon: 'person-outline',
-      onPress: () => console.log('Edit Profile'),
+      onPress: () => navigation.navigate('EditProfile'),
       showChevron: true,
     },
     {
@@ -124,7 +170,7 @@ export const ProfileScreen: React.FC = () => {
       title: 'Change Password',
       subtitle: 'Update your password',
       icon: 'lock-closed-outline',
-      onPress: () => console.log('Change Password'),
+      onPress: () => navigation.navigate('ChangePassword'),
       showChevron: true,
     },
     {
@@ -238,46 +284,90 @@ export const ProfileScreen: React.FC = () => {
       >
         {/* User Profile Card */}
         <Card style={styles.profileCard}>
-          <Row align="center" gap={16}>
-            {user?.photoURL ? (
-              <Image
-                source={{ uri: user.photoURL }}
-                style={styles.avatar}
-                contentFit="cover"
-              />
-            ) : (
+          {isLoadingProfile ? (
+            <Row align="center" gap={16}>
               <View
                 style={[
                   styles.avatarPlaceholder,
                   { backgroundColor: theme.colors.primaryLight },
                 ]}
               >
-                <Text variant="h2" color={theme.colors.primary}>
-                  {user?.displayName?.charAt(0).toUpperCase() || 'U'}
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              </View>
+              <View style={styles.profileInfo}>
+                <Text variant="h3" weight="bold">
+                  Loading...
+                </Text>
+                <Text variant="body" color={theme.colors.textSecondary}>
+                  {user?.email || 'email@example.com'}
                 </Text>
               </View>
-            )}
-            <View style={styles.profileInfo}>
-              <Text variant="h3" weight="bold">
-                {user?.displayName || 'User'}
-              </Text>
-              <Text variant="body" color={theme.colors.textSecondary}>
-                {user?.email || 'email@example.com'}
-              </Text>
-              {selectedTenant && (
-                <Row gap={4} align="center" style={styles.unitInfo}>
-                  <Ionicons
-                    name="home-outline"
-                    size={14}
-                    color={theme.colors.textTertiary}
-                  />
-                  <Text variant="caption" color={theme.colors.textTertiary}>
-                    {selectedTenant.unitName} • {selectedTenant.tenantName}
+            </Row>
+          ) : (
+            <Row align="center" gap={16}>
+              {/* Profile Photo */}
+              {profile?.profilePhotoUrl ? (
+                <Image
+                  source={{ uri: profile.profilePhotoUrl }}
+                  style={styles.avatar}
+                  contentFit="cover"
+                />
+              ) : (
+                <View
+                  style={[
+                    styles.avatarPlaceholder,
+                    { backgroundColor: theme.colors.primaryLight },
+                  ]}
+                >
+                  <Text variant="h2" color={theme.colors.primary}>
+                    {(() => {
+                      // Use displayName, firstName, or fallback to 'U'
+                      const name = profile?.displayName || 
+                                  (profile?.firstName && profile?.lastName 
+                                    ? `${profile.firstName} ${profile.lastName}`
+                                    : profile?.firstName || 
+                                      profile?.partyName || 
+                                      user?.displayName || 
+                                      'U');
+                      return name.charAt(0).toUpperCase();
+                    })()}
                   </Text>
-                </Row>
+                </View>
               )}
-            </View>
-          </Row>
+              
+              <View style={styles.profileInfo}>
+                {/* Display Name */}
+                <Text variant="h3" weight="bold">
+                  {profile?.displayName || 
+                   (profile?.firstName && profile?.lastName 
+                     ? `${profile.firstName} ${profile.lastName}`
+                     : profile?.firstName || 
+                       profile?.partyName || 
+                       user?.displayName || 
+                       'User')}
+                </Text>
+                
+                {/* Email */}
+                <Text variant="body" color={theme.colors.textSecondary}>
+                  {profile?.primaryEmail || user?.email || 'email@example.com'}
+                </Text>
+                
+                {/* Community Name */}
+                {selectedTenant && (
+                  <Row gap={4} align="center" style={styles.unitInfo}>
+                    <Ionicons
+                      name="home-outline"
+                      size={14}
+                      color={theme.colors.textTertiary}
+                    />
+                    <Text variant="caption" color={theme.colors.textTertiary}>
+                      {selectedTenant.tenantName}
+                    </Text>
+                  </Row>
+                )}
+              </View>
+            </Row>
+          )}
         </Card>
 
         {/* Account Section */}

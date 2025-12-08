@@ -8,6 +8,7 @@ export {
   signInWithEmail,
   signOut,
   resetPassword,
+  changePassword,
   getIdToken,
 } from './auth';
 

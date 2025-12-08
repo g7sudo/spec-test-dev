@@ -26,9 +26,33 @@ apiClient.interceptors.request.use(
     }
 
     // Add tenant ID header for tenant-scoped requests
+    // Platform endpoints (/v1/platform/*) should NOT have X-Tenant-Id
+    // Tenant endpoints (/v1/tenant/*) MUST have X-Tenant-Id header
+    // 
+    // The tenant ID is persisted in Zustand store (AsyncStorage) via tenantStore
+    // and automatically restored on app startup
     const currentTenant = useTenantStore.getState().currentTenant;
-    if (currentTenant && !config.url?.startsWith('/platform/')) {
-      config.headers['X-Tenant-Id'] = currentTenant.id;
+    const isPlatformEndpoint = config.url?.startsWith('/v1/platform/');
+    const isTenantEndpoint = config.url?.startsWith('/v1/tenant/');
+    
+    if (isTenantEndpoint) {
+      // All /v1/tenant/* endpoints MUST have X-Tenant-Id header
+      if (currentTenant?.id) {
+        // Automatically add X-Tenant-Id header from persisted tenant store
+        config.headers['X-Tenant-Id'] = currentTenant.id;
+        console.log('[API Client] 🏢 Added X-Tenant-Id header for tenant endpoint:', {
+          endpoint: config.url,
+          tenantId: currentTenant.id,
+        });
+      } else {
+        console.warn('[API Client] ⚠️ Tenant endpoint requires X-Tenant-Id but no tenant selected:', {
+          endpoint: config.url,
+        });
+        // Still proceed - backend will return error if tenant ID is required
+      }
+    } else if (isPlatformEndpoint) {
+      // Platform endpoints should NOT have X-Tenant-Id header
+      console.log('[API Client] 🌐 Platform endpoint - skipping X-Tenant-Id header:', config.url);
     }
 
     // Log outgoing request

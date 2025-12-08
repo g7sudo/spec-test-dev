@@ -19,6 +19,7 @@ import { Screen, Text, Button } from '@/shared/components';
 import { AuthStackParamList } from '@/app/navigation/types';
 import { useTranslation } from 'react-i18next';
 import { getAuthMe } from '@/services/api/auth';
+import { getUserProfile } from '@/services/api/profile';
 import { useAuthStore } from '@/state/authStore';
 import { useTenantStore } from '@/state/tenantStore';
 import { useAppStore } from '@/state/appStore';
@@ -50,15 +51,53 @@ export const WelcomeScreen: React.FC = () => {
       // Get fresh Firebase token
       const currentFirebaseToken = await getIdToken();
 
-      // Get user profile
+      // Get user profile and tenant memberships (platform level)
       const authMeResponse = await getAuthMe(currentFirebaseToken);
 
-      console.log('[WelcomeScreen] ✅ User profile loaded:', {
+      console.log('[WelcomeScreen] ✅ Platform profile loaded:', {
         userId: authMeResponse.userId,
         email: authMeResponse.email,
         displayName: authMeResponse.displayName,
         tenantMembershipsCount: authMeResponse.tenantMemberships.length,
       });
+
+      // Get detailed user profile (tenant level) - requires tenant to be selected first
+      let userProfile = null;
+      if (authMeResponse.tenantMemberships.length > 0) {
+        try {
+          // Select tenant first so apiClient can add X-Tenant-Id header
+          const tenant = authMeResponse.tenantMemberships[0];
+          useTenantStore.getState().selectTenant(
+            {
+              id: tenant.tenantId,
+              name: tenant.tenantName,
+              slug: tenant.tenantSlug,
+            },
+            {
+              id: '',
+              name: '',
+            }
+          );
+
+          // Store token in auth store first (apiClient reads from store)
+          useAuthStore.getState().setIdToken(currentFirebaseToken);
+          
+          // Now fetch detailed profile (apiClient will use token from store)
+          userProfile = await getUserProfile();
+          console.log('[WelcomeScreen] ✅ Tenant profile loaded:', {
+            id: userProfile.id,
+            communityUserId: userProfile.communityUserId,
+            displayName: userProfile.displayName,
+            firstName: userProfile.firstName,
+            lastName: userProfile.lastName,
+          });
+        } catch (profileError: any) {
+          console.warn('[WelcomeScreen] ⚠️ Failed to load tenant profile:', {
+            error: profileError.message,
+          });
+          // Continue without tenant profile - not critical
+        }
+      }
 
       // Update auth store
       if (authMeResponse.tenantMemberships.length > 0) {
@@ -72,28 +111,40 @@ export const WelcomeScreen: React.FC = () => {
           unitName: '',
         };
 
+        // Use profile data if available, otherwise use platform data
+        const displayName = userProfile?.displayName || 
+                           userProfile?.firstName && userProfile?.lastName 
+                             ? `${userProfile.firstName} ${userProfile.lastName}`
+                             : authMeResponse.displayName || 'User';
+        
+        const phoneNumber = userProfile?.primaryPhone || authMeResponse.phoneNumber;
+        const email = userProfile?.primaryEmail || authMeResponse.email;
+
         login(
           {
             id: authMeResponse.userId,
-            email: authMeResponse.email,
-            displayName: authMeResponse.displayName || 'User',
-            phoneNumber: authMeResponse.phoneNumber,
+            email: email,
+            displayName: displayName,
+            phoneNumber: phoneNumber,
           },
           currentFirebaseToken,
           [membership]
         );
 
-        selectTenant(
-          {
-            id: tenant.tenantId,
-            name: tenant.tenantName,
-            slug: tenant.tenantSlug,
-          },
-          {
-            id: '',
-            name: '',
-          }
-        );
+        // Tenant already selected above for profile fetch
+        if (!userProfile) {
+          selectTenant(
+            {
+              id: tenant.tenantId,
+              name: tenant.tenantName,
+              slug: tenant.tenantSlug,
+            },
+            {
+              id: '',
+              name: '',
+            }
+          );
+        }
       }
 
       // Set app as ready

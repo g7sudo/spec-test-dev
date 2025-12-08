@@ -34,7 +34,7 @@ import { VisitorListScreen, VisitorDetailScreen, CreateVisitorScreen } from '@/f
 import { CommunityScreen } from '@/features/community/screens/CommunityScreen';
 
 // Profile Stack Screens
-import { ProfileScreen, SettingsScreen } from '@/features/profile/screens';
+import { ProfileScreen, SettingsScreen, EditProfileScreen, ChangePasswordScreen } from '@/features/profile/screens';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -164,6 +164,16 @@ const ProfileStackNavigator: React.FC = () => {
       }}
     >
       <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
+      <ProfileStack.Screen
+        name="EditProfile"
+        component={EditProfileScreen}
+        options={{ headerShown: false }}
+      />
+      <ProfileStack.Screen
+        name="ChangePassword"
+        component={ChangePasswordScreen}
+        options={{ headerShown: false }}
+      />
       <ProfileStack.Screen
         name="Settings"
         component={SettingsScreen}

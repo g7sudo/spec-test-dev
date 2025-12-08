@@ -21,7 +21,7 @@ import { useTheme } from '@/core/theme';
 import { Screen, Text, Button, TextInput } from '@/shared/components';
 import { AuthStackParamList } from '@/app/navigation/types';
 import { useTranslation } from 'react-i18next';
-import { updateProfile } from '@/services/api/profile';
+import { updateProfile, getUserProfile } from '@/services/api/profile';
 import { useIsApiLoading } from '@/state/apiLoadingStore';
 import { getAuthMe } from '@/services/api/auth';
 import { useAuthStore } from '@/state/authStore';
@@ -94,32 +94,15 @@ export const SetupProfileScreen: React.FC = () => {
 
       console.log('[SetupProfileScreen] ✅ Profile updated successfully');
 
-      // Get updated user profile
+      // Get updated user profile (platform level)
       const authMeResponse = await getAuthMe(currentFirebaseToken);
 
-      // Update auth store
+      // Get detailed user profile (tenant level)
+      let userProfile = null;
       if (authMeResponse.tenantMemberships.length > 0) {
         const tenant = authMeResponse.tenantMemberships[0];
-        const membership = {
-          tenantId: tenant.tenantId,
-          tenantName: tenant.tenantName,
-          tenantSlug: tenant.tenantSlug,
-          role: tenant.roles[0]?.toLowerCase() as 'resident' | 'community_admin' | 'property_manager',
-          unitId: '',
-          unitName: '',
-        };
-
-        login(
-          {
-            id: authMeResponse.userId,
-            email: authMeResponse.email,
-            displayName: authMeResponse.displayName || `${firstName} ${lastName}`,
-            phoneNumber: authMeResponse.phoneNumber,
-          },
-          currentFirebaseToken,
-          [membership]
-        );
-
+        
+        // Select tenant first so apiClient can add X-Tenant-Id header
         selectTenant(
           {
             id: tenant.tenantId,
@@ -130,6 +113,54 @@ export const SetupProfileScreen: React.FC = () => {
             id: '',
             name: '',
           }
+        );
+
+        // Store token in auth store first (apiClient reads from store)
+        useAuthStore.getState().setIdToken(currentFirebaseToken);
+        
+        // Fetch detailed profile (apiClient will use token from store)
+        try {
+          userProfile = await getUserProfile();
+          console.log('[SetupProfileScreen] ✅ Tenant profile loaded:', {
+            id: userProfile.id,
+            displayName: userProfile.displayName,
+            firstName: userProfile.firstName,
+            lastName: userProfile.lastName,
+          });
+        } catch (profileError: any) {
+          console.warn('[SetupProfileScreen] ⚠️ Failed to load tenant profile:', {
+            error: profileError.message,
+          });
+          // Continue without tenant profile - not critical
+        }
+
+        const membership = {
+          tenantId: tenant.tenantId,
+          tenantName: tenant.tenantName,
+          tenantSlug: tenant.tenantSlug,
+          role: tenant.roles[0]?.toLowerCase() as 'resident' | 'community_admin' | 'property_manager',
+          unitId: '',
+          unitName: '',
+        };
+
+        // Use profile data if available, otherwise use platform data
+        const displayName = userProfile?.displayName || 
+                           userProfile?.firstName && userProfile?.lastName 
+                             ? `${userProfile.firstName} ${userProfile.lastName}`
+                             : `${firstName} ${lastName}`;
+        
+        const userPhoneNumber = userProfile?.primaryPhone || phoneNumber;
+        const userEmail = userProfile?.primaryEmail || authMeResponse.email;
+
+        login(
+          {
+            id: authMeResponse.userId,
+            email: userEmail,
+            displayName: displayName,
+            phoneNumber: userPhoneNumber,
+          },
+          currentFirebaseToken,
+          [membership]
         );
       }
 

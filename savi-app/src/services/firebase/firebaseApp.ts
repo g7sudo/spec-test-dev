@@ -6,7 +6,13 @@
  */
 
 import { initializeApp, getApps, FirebaseApp, getApp } from 'firebase/app';
-import { getAuth, Auth } from 'firebase/auth';
+import { 
+  initializeAuth, 
+  getAuth, 
+  Auth,
+  getReactNativePersistence 
+} from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENV } from '@/core/config/env';
 
 // Firebase configuration
@@ -23,6 +29,7 @@ const firebaseConfig = {
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
+let authInitialized = false;
 
 /**
  * Gets or initializes the Firebase app instance
@@ -42,12 +49,36 @@ export function getFirebaseApp(): FirebaseApp {
 }
 
 /**
- * Gets the Firebase Auth instance
+ * Gets the Firebase Auth instance with AsyncStorage persistence
+ * 
+ * Uses initializeAuth with ReactNativePersistence to persist auth state
+ * between app sessions. This ensures users stay logged in after app restarts.
+ * 
+ * Note: initializeAuth must be called before getAuth. If auth was already
+ * initialized without persistence, this will initialize it with persistence.
  */
 export function getFirebaseAuth(): Auth {
-  if (!auth) {
+  if (!auth || !authInitialized) {
     const firebaseApp = getFirebaseApp();
-    auth = getAuth(firebaseApp);
+    
+    // Initialize auth with AsyncStorage persistence for React Native
+    // This persists authentication state between app sessions
+    try {
+      auth = initializeAuth(firebaseApp, {
+        persistence: getReactNativePersistence(AsyncStorage),
+      });
+      authInitialized = true;
+      console.log('[Firebase Auth] ✅ Initialized with AsyncStorage persistence');
+    } catch (error: any) {
+      // If auth is already initialized (e.g., during hot reload), get existing instance
+      if (error.code === 'auth/already-initialized') {
+        auth = getAuth(firebaseApp);
+        authInitialized = true;
+        console.log('[Firebase Auth] ⚠️ Auth already initialized, using existing instance');
+      } else {
+        throw error;
+      }
+    }
   }
   return auth;
 }

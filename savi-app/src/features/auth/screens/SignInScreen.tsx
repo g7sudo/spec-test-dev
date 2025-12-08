@@ -24,6 +24,8 @@ import { useInviteAcceptance } from '@/features/invite/hooks/useInviteAcceptance
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { signInWithEmail, getIdToken } from '@/services/firebase/auth';
 import { initializeFirebase } from '@/services/firebase';
+import { getAuthMe } from '@/services/api/auth';
+import { getUserProfile } from '@/services/api/profile';
 
 type SignInRouteProp = RouteProp<AuthStackParamList, 'SignIn'>;
 type SignInNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -91,32 +93,87 @@ export const SignInScreen: React.FC = () => {
       }
 
       // No pending invite - normal sign in flow
-      // Mock memberships - in production, this would come from backend API
-      const memberships = [
-        {
-          tenantId: 'tenant-1',
-          tenantName: 'Palm Gardens',
-          tenantSlug: 'palm-gardens',
-          role: 'resident' as const,
-          unitId: 'unit-1',
-          unitName: 'A-101',
-        },
-      ];
+      // Get user profile and tenant memberships from backend
+      const authMeResponse = await getAuthMe(firebaseToken);
+      
+      console.log('[SignInScreen] ✅ User profile loaded:', {
+        userId: authMeResponse.userId,
+        email: authMeResponse.email,
+        displayName: authMeResponse.displayName,
+        tenantMembershipsCount: authMeResponse.tenantMemberships.length,
+      });
+
+      // Create memberships from tenant memberships
+      const memberships = authMeResponse.tenantMemberships.map((tenant) => ({
+        tenantId: tenant.tenantId,
+        tenantName: tenant.tenantName,
+        tenantSlug: tenant.tenantSlug,
+        role: tenant.roles[0]?.toLowerCase() as 'resident' | 'community_admin' | 'property_manager',
+        unitId: '',
+        unitName: '',
+      }));
+
+      // Get detailed profile if tenant memberships exist
+      let userProfile = null;
+      if (memberships.length > 0) {
+        try {
+          // Select first tenant so apiClient can add X-Tenant-Id header
+          const firstTenant = authMeResponse.tenantMemberships[0];
+          useTenantStore.getState().selectTenant(
+            {
+              id: firstTenant.tenantId,
+              name: firstTenant.tenantName,
+              slug: firstTenant.tenantSlug,
+            },
+            {
+              id: '',
+              name: '',
+            }
+          );
+
+          // Store token in auth store first (apiClient reads from store)
+          useAuthStore.getState().setIdToken(firebaseToken);
+          
+          // Fetch detailed profile (apiClient will use token from store)
+          userProfile = await getUserProfile();
+          console.log('[SignInScreen] ✅ Tenant profile loaded:', {
+            id: userProfile.id,
+            displayName: userProfile.displayName,
+            firstName: userProfile.firstName,
+            lastName: userProfile.lastName,
+          });
+        } catch (profileError: any) {
+          console.warn('[SignInScreen] ⚠️ Failed to load tenant profile:', {
+            error: profileError.message,
+          });
+          // Continue without tenant profile - not critical
+        }
+      }
+
+      // Use profile data if available, otherwise use platform data
+      const displayName = userProfile?.displayName || 
+                         userProfile?.firstName && userProfile?.lastName 
+                           ? `${userProfile.firstName} ${userProfile.lastName}`
+                           : authMeResponse.displayName || 
+                             user.displayName || 
+                             email.split('@')[0];
+      
+      const phoneNumber = userProfile?.primaryPhone || authMeResponse.phoneNumber;
+      const userEmail = userProfile?.primaryEmail || authMeResponse.email || user.email || email;
 
       login(
         {
-          uid: user.uid,
-          email: user.email || email,
-          displayName: user.displayName || email.split('@')[0],
-          photoURL: user.photoURL,
-          emailVerified: user.emailVerified,
+          id: authMeResponse.userId,
+          email: userEmail,
+          displayName: displayName,
+          phoneNumber: phoneNumber,
         },
         firebaseToken,
         memberships
       );
 
-      // Auto-select tenant if only one membership
-      if (memberships.length === 1) {
+      // Auto-select tenant if only one membership (already selected above if fetching profile)
+      if (memberships.length === 1 && !userProfile) {
         const membership = memberships[0];
         useTenantStore.getState().selectTenant({
           id: membership.tenantId,
