@@ -76,4 +76,10 @@ public record ResidentInviteDto
     /// When the invite was created.
     /// </summary>
     public DateTime CreatedAt { get; init; }
+
+    /// <summary>
+    /// The 6-character access code for manual entry.
+    /// Only included when ExposeInvitationDetails is true.
+    /// </summary>
+    public string? AccessCode { get; init; }
 }

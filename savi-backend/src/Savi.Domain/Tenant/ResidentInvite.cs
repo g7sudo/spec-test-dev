@@ -36,6 +36,12 @@ public class ResidentInvite : BaseEntity
     public string InvitationToken { get; private set; } = string.Empty;
 
     /// <summary>
+    /// 6-character alphanumeric access code for manual entry.
+    /// Easier to type than the full token.
+    /// </summary>
+    public string AccessCode { get; private set; } = string.Empty;
+
+    /// <summary>
     /// Email address the invite was sent to.
     /// </summary>
     public string Email { get; private set; } = string.Empty;
@@ -102,6 +108,7 @@ public class ResidentInvite : BaseEntity
             Email = email.ToLowerInvariant().Trim(),
             Status = ResidentInviteStatus.Pending,
             InvitationToken = GenerateSecureToken(),
+            AccessCode = GenerateAccessCode(),
             ExpiresAt = DateTime.UtcNow.AddDays(expirationDays)
         };
 
@@ -180,6 +187,15 @@ public class ResidentInvite : BaseEntity
     }
 
     /// <summary>
+    /// Validates the provided access code against this invite (case-insensitive).
+    /// </summary>
+    public bool ValidateAccessCode(string code)
+    {
+        return !string.IsNullOrEmpty(code) &&
+               AccessCode.Equals(code.ToUpperInvariant().Trim(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// Generates a secure random token for the invitation.
     /// </summary>
     private static string GenerateSecureToken()
@@ -191,5 +207,27 @@ public class ResidentInvite : BaseEntity
             .Replace("+", "-")
             .Replace("/", "_")
             .Replace("=", "");
+    }
+
+    /// <summary>
+    /// Generates a 6-character alphanumeric access code.
+    /// Uses characters that are easy to read and type (no 0/O, 1/I/L confusions).
+    /// </summary>
+    private static string GenerateAccessCode()
+    {
+        // Exclude confusing characters: 0, O, 1, I, L
+        const string chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+        var codeChars = new char[6];
+
+        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+        var randomBytes = new byte[6];
+        rng.GetBytes(randomBytes);
+
+        for (int i = 0; i < 6; i++)
+        {
+            codeChars[i] = chars[randomBytes[i] % chars.Length];
+        }
+
+        return new string(codeChars);
     }
 }

@@ -2,7 +2,9 @@ using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Savi.Application.Tenant.Auth.Queries.GetMyTenantAuth;
 using Savi.Application.Tenant.Me.Commands.UpdateMyNotificationSettings;
+using Savi.Application.Tenant.Me.Commands.UpdateMyPartyInfo;
 using Savi.Application.Tenant.Me.Commands.UpdateMyPrivacySettings;
 using Savi.Application.Tenant.Me.Commands.UpdateMyProfile;
 using Savi.Application.Tenant.Me.Dtos;
@@ -27,6 +29,39 @@ public class MeController : ControllerBase
     {
         _mediator = mediator;
         _logger = logger;
+    }
+
+    /// <summary>
+    /// Gets the current user's auth context for this tenant.
+    /// Returns user info, tenant context, roles, leases (for residents), and permissions.
+    /// </summary>
+    /// <remarks>
+    /// Requires X-Tenant-Code header to identify the tenant.
+    ///
+    /// Response includes:
+    /// - User identity (userId, tenantUserId, communityUserId)
+    /// - Tenant context (tenantId, tenantCode, tenantName)
+    /// - Roles in this tenant
+    /// - Leases (for residents - includes unit info)
+    /// - Permissions dictionary for this tenant
+    /// </remarks>
+    [HttpGet("auth")]
+    [ProducesResponseType(typeof(TenantAuthMeResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetMyAuth(CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("GET /tenant/me/auth");
+
+        var result = await _mediator.Send(new GetMyTenantAuthQuery(), cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return Ok(result.Value);
     }
 
     /// <summary>
@@ -151,6 +186,42 @@ public class MeController : ControllerBase
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Updates the current user's party (personal) information.
+    /// Allows residents to enrich their records with name, phone, email, etc.
+    /// </summary>
+    [HttpPut("party")]
+    [ProducesResponseType(typeof(UpdateMyPartyInfoResult), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateMyPartyInfo(
+        [FromBody] UpdateMyPartyInfoRequest request,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("PUT /tenant/me/party");
+
+        var command = new UpdateMyPartyInfoCommand
+        {
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            DateOfBirth = request.DateOfBirth,
+            PhoneNumber = request.PhoneNumber,
+            Email = request.Email
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return result.Error == "Community user not found." || result.Error == "Party not found for community user."
+                ? NotFound(new { error = result.Error })
+                : BadRequest(new { error = result.Error });
+        }
+
+        return Ok(result.Value);
+    }
 }
 
 #region Request Models
@@ -187,6 +258,16 @@ public record UpdateMyNotificationSettingsRequest(
     bool NotifyVisitorAtGate,
     bool NotifyAnnouncements,
     bool NotifyMarketplace);
+
+/// <summary>
+/// Request model for updating party (personal) information.
+/// </summary>
+public record UpdateMyPartyInfoRequest(
+    string? FirstName,
+    string? LastName,
+    DateOnly? DateOfBirth,
+    string? PhoneNumber,
+    string? Email);
 
 #endregion
 

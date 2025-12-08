@@ -3,7 +3,6 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Savi.Api.Configuration;
-using Savi.Application.Tenant.ResidentInvites.Commands.AcceptResidentInvite;
 using Savi.Application.Tenant.ResidentInvites.Commands.CancelResidentInvite;
 using Savi.Application.Tenant.ResidentInvites.Commands.CreateResidentInvite;
 using Savi.Application.Tenant.ResidentInvites.Commands.ResendResidentInvite;
@@ -48,34 +47,6 @@ public class ResidentInvitesController : ControllerBase
     {
         var query = new ValidateResidentInviteQuery(inviteId, token);
         var result = await _mediator.Send(query, cancellationToken);
-
-        if (result.IsFailure)
-        {
-            return BadRequest(new { error = result.Error });
-        }
-
-        return Ok(result.Value);
-    }
-
-    /// <summary>
-    /// Accepts a resident invite (authenticated).
-    /// Called after user signs up/logs in via Firebase.
-    /// </summary>
-    [HttpPost("accept")]
-    [Authorize]
-    [ProducesResponseType(typeof(AcceptResidentInviteResult), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Accept(
-        [FromBody] AcceptInviteRequest request,
-        CancellationToken cancellationToken = default)
-    {
-        _logger.LogInformation(
-            "POST /tenant/resident-invites/accept - Accepting invite {InviteId}",
-            request.InviteId);
-
-        var command = new AcceptResidentInviteCommand(request.InviteId, request.Token);
-        var result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)
         {
@@ -209,11 +180,6 @@ public class ResidentInvitesController : ControllerBase
         return Ok(result.Value);
     }
 }
-
-/// <summary>
-/// Request model for accepting an invite.
-/// </summary>
-public record AcceptInviteRequest(Guid InviteId, string Token);
 
 /// <summary>
 /// Request model for creating a resident invite.

@@ -118,7 +118,7 @@ SAVI Community Management Platform
 
     /// <summary>
     /// Resident invitation template.
-    /// Placeholders: {{RecipientName}}, {{CommunityName}}, {{UnitLabel}}, {{Role}}, {{InvitationUrl}}, {{ExpiryDays}}
+    /// Placeholders: {{RecipientName}}, {{CommunityName}}, {{UnitLabel}}, {{Role}}, {{InvitationUrl}}, {{AccessCode}}, {{ExpiryDays}}
     /// </summary>
     public static readonly EmailTemplate ResidentInvitationTemplate = new()
     {
@@ -151,6 +151,22 @@ SAVI Community Management Platform
                 <p style="color: #4b5563; font-size: 16px; line-height: 1.6; margin: 0 0 30px 0;">
                     Accept this invitation to access the SAVI mobile app, where you can manage your home, submit maintenance requests, book amenities, and stay connected with your community.
                 </p>
+
+                <!-- Access Code Section -->
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin: 0 0 30px 0; background-color: #f0fdf4; border-radius: 8px; border: 1px solid #bbf7d0;">
+                    <tr>
+                        <td style="padding: 24px; text-align: center;">
+                            <p style="color: #166534; font-size: 14px; margin: 0 0 12px 0; font-weight: 500;">Your Access Code</p>
+                            <p style="color: #166534; font-size: 32px; font-weight: 700; letter-spacing: 8px; margin: 0; font-family: 'Courier New', monospace;">{{AccessCode}}</p>
+                            <p style="color: #4ade80; font-size: 12px; margin: 12px 0 0 0;">Enter this code in the SAVI app to join your community</p>
+                        </td>
+                    </tr>
+                </table>
+
+                <p style="color: #6b7280; font-size: 14px; line-height: 1.6; margin: 0 0 20px 0; text-align: center;">
+                    Or click the button below to accept directly:
+                </p>
+
                 <table role="presentation" cellspacing="0" cellpadding="0" style="margin: 0 auto;">
                     <tr>
                         <td style="border-radius: 8px; background-color: #10b981;">
@@ -189,7 +205,10 @@ You've been invited to join {{UnitLabel}} at {{CommunityName}} as a {{Role}}.
 
 Accept this invitation to access the SAVI mobile app, where you can manage your home, submit maintenance requests, book amenities, and stay connected with your community.
 
-Accept your invitation by visiting:
+YOUR ACCESS CODE: {{AccessCode}}
+Enter this code in the SAVI app to join your community.
+
+Or accept your invitation by visiting:
 {{InvitationUrl}}
 
 This invitation will expire in {{ExpiryDays}} days.

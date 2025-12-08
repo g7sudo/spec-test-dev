@@ -56,4 +56,9 @@ public record CreateResidentInviteResult
     /// The invitation URL (only exposed in dev/local environments).
     /// </summary>
     public string? InvitationUrl { get; init; }
+
+    /// <summary>
+    /// The 6-character access code for manual entry (only exposed in dev/local environments).
+    /// </summary>
+    public string? AccessCode { get; init; }
 }

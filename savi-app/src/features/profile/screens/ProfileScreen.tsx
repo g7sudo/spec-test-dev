@@ -7,6 +7,10 @@ import { useTheme } from '@/core/theme';
 import { Screen, Text, Card, Row } from '@/shared/components';
 import { useAuthStore } from '@/state/authStore';
 import { useTenantStore } from '@/state/tenantStore';
+import { usePendingInvite } from '@/core/contexts/PendingInviteContext';
+import { signOut as firebaseSignOut } from '@/services/firebase/auth';
+import { useAppStore } from '@/state/appStore';
+import { navigationRef } from '@/core/navigation/navigationRef';
 import { Image } from 'expo-image';
 
 type ProfileStackParamList = {
@@ -33,10 +37,11 @@ interface MenuItem {
 export const ProfileScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const { user, signOut } = useAuthStore();
-  const { selectedTenant, clearSelectedTenant } = useTenantStore();
+  const { user } = useAuthStore();
+  const { selectedTenant } = useTenantStore();
+  const { clearPendingInvite } = usePendingInvite();
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     Alert.alert(
       'Sign Out',
       'Are you sure you want to sign out?',
@@ -45,9 +50,44 @@ export const ProfileScreen: React.FC = () => {
         {
           text: 'Sign Out',
           style: 'destructive',
-          onPress: () => {
-            signOut();
-            clearSelectedTenant();
+          onPress: async () => {
+            try {
+              // 1. Sign out from Firebase
+              try {
+                await firebaseSignOut();
+              } catch (error) {
+                console.warn('Firebase sign out error:', error);
+                // Continue with logout even if Firebase sign out fails
+              }
+
+              // 2. Clear pending invite context
+              clearPendingInvite();
+
+              // 3. Clear all stores
+              useAuthStore.getState().logout();
+              useTenantStore.getState().clearTenant();
+              useAppStore.getState().setIsAppReady(false);
+
+              // 4. Reset navigation to Splash screen using global navigation ref
+              if (navigationRef.isReady()) {
+                navigationRef.reset({
+                  index: 0,
+                  routes: [{ name: 'Splash' }],
+                });
+              }
+            } catch (error) {
+              console.error('Error during logout:', error);
+              // Even on error, try to clear state and reset navigation
+              useAuthStore.getState().logout();
+              useTenantStore.getState().clearTenant();
+              useAppStore.getState().setIsAppReady(false);
+              if (navigationRef.isReady()) {
+                navigationRef.reset({
+                  index: 0,
+                  routes: [{ name: 'Splash' }],
+                });
+              }
+            }
           },
         },
       ]

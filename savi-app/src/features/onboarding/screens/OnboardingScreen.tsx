@@ -161,13 +161,23 @@ export const OnboardingScreen: React.FC = () => {
 
       <View style={styles.footer}>
         {currentIndex === slides.length - 1 ? (
-          <Button
-            title={t('onboarding.getStarted')}
-            variant="primary"
-            size="large"
-            fullWidth
-            onPress={handleGetStarted}
-          />
+          <>
+            <Button
+              title={t('onboarding.getStarted')}
+              variant="primary"
+              size="large"
+              fullWidth
+              onPress={handleGetStarted}
+            />
+            <Spacer size="sm" />
+            <Button
+              title={t('joinCommunity', { ns: 'invite' })}
+              variant="outline"
+              size="large"
+              fullWidth
+              onPress={() => navigation.navigate('JoinCommunity')}
+            />
+          </>
         ) : (
           <Button
             title={t('next')}

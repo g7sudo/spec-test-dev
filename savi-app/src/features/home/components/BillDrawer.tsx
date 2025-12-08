@@ -160,30 +160,30 @@ export const BillDrawer: React.FC<BillDrawerProps> = ({
       <Animated.View style={[styles.contentWrapper, animatedContentStyle]}>
         <Row style={styles.topRow}>
           <Row style={styles.titleSection}>
-            <View style={styles.iconContainer}>
+        <View style={styles.iconContainer}>
               <Ionicons name="information" size={20} color="#FFFFFF" />
-            </View>
+        </View>
             <Text variant="bodyLarge" weight="bold" style={styles.title}>
               {bill.title}
             </Text>
           </Row>
           <Text variant="bodySmall" weight="semiBold" style={styles.dueDate}>
-            Due date {bill.dueDate}
+              Due date {bill.dueDate}
+            </Text>
+          </Row>
+
+          <Text variant="bodySmall" style={styles.warning}>
+            {t('billWarning')}
           </Text>
-        </Row>
 
-        <Text variant="bodySmall" style={styles.warning}>
-          {t('billWarning')}
-        </Text>
-
-        <Button
-          title={t('payNow')}
-          variant="primary"
-          size="small"
-          onPress={handlePayNow}
-          style={styles.payButton}
+      <Button
+        title={t('payNow')}
+        variant="primary"
+        size="small"
+        onPress={handlePayNow}
+        style={styles.payButton}
           textStyle={styles.payButtonText}
-        />
+      />
       </Animated.View>
     </Animated.View>
   );

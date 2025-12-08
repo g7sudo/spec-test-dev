@@ -49,6 +49,10 @@ public class ResidentInviteConfiguration : IEntityTypeConfiguration<ResidentInvi
             .IsRequired()
             .HasMaxLength(100);
 
+        builder.Property(x => x.AccessCode)
+            .IsRequired()
+            .HasMaxLength(10);
+
         builder.Property(x => x.Email)
             .IsRequired()
             .HasMaxLength(255);
@@ -99,6 +103,7 @@ public class ResidentInviteConfiguration : IEntityTypeConfiguration<ResidentInvi
         builder.HasIndex(x => x.LeaseId);
         builder.HasIndex(x => x.PartyId);
         builder.HasIndex(x => x.InvitationToken).IsUnique();
+        builder.HasIndex(x => x.AccessCode);
         builder.HasIndex(x => x.Email);
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => new { x.LeaseId, x.Status });

@@ -4,11 +4,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Savi.Application.Common.Interfaces;
 using Savi.Application.Tenant.ResidentInvites.Dtos;
+using Savi.Domain.Platform;
 using Savi.Domain.Tenant;
 using Savi.Domain.Tenant.Enums;
 using Savi.MultiTenancy;
 using Savi.SharedKernel.Common;
 using Savi.SharedKernel.Interfaces;
+
+using ResidentInviteEntity = Savi.Domain.Tenant.ResidentInvite;
 
 namespace Savi.Application.Tenant.ResidentInvites.Commands.ResendResidentInvite;
 
@@ -21,6 +24,7 @@ public class ResendResidentInviteCommandHandler
     private const string ResidentInvitationTemplate = "ResidentInvitation";
 
     private readonly ITenantDbContext _dbContext;
+    private readonly IPlatformDbContext _platformDbContext;
     private readonly ICurrentUser _currentUser;
     private readonly ITenantContext _tenantContext;
     private readonly IEmailService _emailService;
@@ -29,6 +33,7 @@ public class ResendResidentInviteCommandHandler
 
     public ResendResidentInviteCommandHandler(
         ITenantDbContext dbContext,
+        IPlatformDbContext platformDbContext,
         ICurrentUser currentUser,
         ITenantContext tenantContext,
         IEmailService emailService,
@@ -36,6 +41,7 @@ public class ResendResidentInviteCommandHandler
         ILogger<ResendResidentInviteCommandHandler> logger)
     {
         _dbContext = dbContext;
+        _platformDbContext = platformDbContext;
         _currentUser = currentUser;
         _tenantContext = tenantContext;
         _emailService = emailService;
@@ -127,10 +133,22 @@ public class ResendResidentInviteCommandHandler
         if (originalInvite.Status == ResidentInviteStatus.Pending)
         {
             originalInvite.Cancel(_currentUser.TenantUserId.Value);
+
+            // Also cancel the old platform invite code
+            var oldPlatformCode = await _platformDbContext.ResidentInviteCodes
+                .FirstOrDefaultAsync(ric =>
+                    ric.InviteId == originalInvite.Id &&
+                    ric.Status == InviteCodeStatus.Active,
+                    cancellationToken);
+
+            if (oldPlatformCode != null)
+            {
+                oldPlatformCode.Cancel();
+            }
         }
 
         // Create a new invite
-        var newInvite = ResidentInvite.Create(
+        var newInvite = ResidentInviteEntity.Create(
             originalInvite.LeaseId,
             originalInvite.PartyId,
             originalInvite.Role,
@@ -140,6 +158,29 @@ public class ResendResidentInviteCommandHandler
 
         _dbContext.Add(newInvite);
         await _dbContext.SaveChangesAsync(cancellationToken);
+
+        // Create platform-level access code record for cross-tenant lookup
+        var platformInviteCode = ResidentInviteCode.Create(
+            newInvite.AccessCode,
+            _tenantContext.TenantId!.Value,
+            _tenantContext.TenantCode ?? string.Empty,
+            _tenantContext.TenantName ?? "Community",
+            newInvite.Id,
+            newInvite.InvitationToken,
+            newInvite.Email,
+            party.PartyName,
+            unitLabel,
+            originalInvite.Role.ToString(),
+            newInvite.ExpiresAt);
+
+        _platformDbContext.Add(platformInviteCode);
+        await _platformDbContext.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation(
+            "Created platform invite code {AccessCode} for tenant {TenantCode}, invite {InviteId} (resend)",
+            newInvite.AccessCode,
+            _tenantContext.TenantCode,
+            newInvite.Id);
 
         // Build invitation URL
         var invitationUrl = BuildInvitationUrl(newInvite.Id, newInvite.InvitationToken);
@@ -169,6 +210,7 @@ public class ResendResidentInviteCommandHandler
                 ["UnitLabel"] = unitLabel,
                 ["Role"] = roleDisplay,
                 ["InvitationUrl"] = invitationUrl,
+                ["AccessCode"] = newInvite.AccessCode,
                 ["ExpiryDays"] = request.ExpirationDays.ToString()
             };
 
@@ -207,7 +249,8 @@ public class ResendResidentInviteCommandHandler
             ExpiresAt = newInvite.ExpiresAt,
             EmailSent = emailSent,
             InvitationToken = _options.ExposeInvitationDetails ? newInvite.InvitationToken : null,
-            InvitationUrl = _options.ExposeInvitationDetails ? invitationUrl : null
+            InvitationUrl = _options.ExposeInvitationDetails ? invitationUrl : null,
+            AccessCode = _options.ExposeInvitationDetails ? newInvite.AccessCode : null
         });
     }
 

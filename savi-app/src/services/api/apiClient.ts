@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'ax
 import { ENV } from '@/core/config/env';
 import { useAuthStore } from '@/state/authStore';
 import { useTenantStore } from '@/state/tenantStore';
+import { useApiLoadingStore } from '@/state/apiLoadingStore';
 
 // Create axios instance
 const apiClient: AxiosInstance = axios.create({
@@ -12,9 +13,12 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
-// Request interceptor - add auth token and tenant ID
+// Request interceptor - add auth token and tenant ID, track loading state
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Track API call start (increment active requests counter)
+    useApiLoadingStore.getState().incrementRequest();
+
     // Add auth token
     const idToken = useAuthStore.getState().idToken;
     if (idToken) {
@@ -27,21 +31,87 @@ apiClient.interceptors.request.use(
       config.headers['X-Tenant-Id'] = currentTenant.id;
     }
 
+    // Log outgoing request
+    const fullUrl = `${config.baseURL || ''}${config.url || ''}`;
+    console.log('[API Client] 📤 OUTGOING REQUEST:', {
+      method: config.method?.toUpperCase(),
+      url: fullUrl,
+      baseURL: config.baseURL,
+      path: config.url,
+      params: config.params,
+      headers: {
+        ...config.headers,
+        Authorization: config.headers.Authorization ? 'Bearer ***' : undefined,
+      },
+      data: config.data,
+      timeout: config.timeout,
+    });
+
     return config;
   },
   (error) => {
+    console.error('[API Client] ❌ REQUEST ERROR:', {
+      message: error.message,
+      config: error.config ? {
+        url: `${error.config.baseURL || ''}${error.config.url || ''}`,
+        method: error.config.method,
+      } : null,
+      error,
+    });
     return Promise.reject(error);
   }
 );
 
-// Response interceptor - handle errors
+// Response interceptor - handle errors and track loading state
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // Track API call end (decrement active requests counter)
+    useApiLoadingStore.getState().decrementRequest();
+
+    // Log successful response
+    const fullUrl = `${response.config.baseURL || ''}${response.config.url || ''}`;
+    console.log('[API Client] ✅ INCOMING RESPONSE:', {
+      method: response.config.method?.toUpperCase(),
+      url: fullUrl,
+      status: response.status,
+      statusText: response.statusText,
+      headers: response.headers,
+      data: response.data,
+    });
+    return response;
+  },
   async (error: AxiosError) => {
+    // Track API call end (decrement active requests counter) - even on error
+    useApiLoadingStore.getState().decrementRequest();
+
     const originalRequest = error.config;
+    const fullUrl = originalRequest ? `${originalRequest.baseURL || ''}${originalRequest.url || ''}` : 'unknown';
+
+    // Log error response
+    console.error('[API Client] ❌ INCOMING ERROR RESPONSE:', {
+      method: originalRequest?.method?.toUpperCase(),
+      url: fullUrl,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      responseData: error.response?.data,
+      requestHeaders: originalRequest?.headers,
+      responseHeaders: error.response?.headers,
+      errorMessage: error.message,
+      errorCode: error.code,
+      isNetworkError: !error.response,
+      isTimeout: error.code === 'ECONNABORTED',
+      config: originalRequest ? {
+        baseURL: originalRequest.baseURL,
+        url: originalRequest.url,
+        params: originalRequest.params,
+        data: originalRequest.data,
+        timeout: originalRequest.timeout,
+      } : null,
+    });
 
     // Handle 401 Unauthorized
     if (error.response?.status === 401) {
+      console.log('[API Client] 🔐 401 Unauthorized - Clearing auth state');
       // Clear auth state and let the app handle navigation
       useAuthStore.getState().logout();
       useTenantStore.getState().clearTenant();
@@ -49,6 +119,7 @@ apiClient.interceptors.response.use(
 
     // Handle 403 Forbidden (tenant access revoked)
     if (error.response?.status === 403) {
+      console.log('[API Client] 🚫 403 Forbidden - Tenant access may be revoked');
       // Could mean tenant access was revoked
       // Let the app handle this based on context
     }

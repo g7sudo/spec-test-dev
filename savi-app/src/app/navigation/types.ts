@@ -14,8 +14,14 @@ export type RootStackParamList = {
 export type AuthStackParamList = {
   Onboarding: undefined;
   Consent: undefined;
-  SignIn: { inviteToken?: string };
-  SignUp: { inviteToken?: string; email?: string };
+  JoinCommunity: undefined;
+  ConfirmInvite: undefined; // Uses PendingInviteContext instead of params
+  SetupAccount: undefined; // Password setup screen (email from context)
+  SetupProfile: { firebaseToken: string; tenantId: string; email: string }; // Profile setup for new users
+  Welcome: { firebaseToken: string }; // Welcome screen after profile setup
+  TenantSelection: { firebaseToken: string }; // Tenant selection screen (legacy, may not be needed)
+  SignIn: { email?: string }; // Removed inviteToken, using context instead
+  SignUp: { email?: string }; // Removed inviteToken, using context instead
   TenantSelect: undefined;
   NoTenant: undefined;
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -13,24 +13,47 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/core/theme';
 import { Screen, Text, Button, TextInput, Row } from '@/shared/components';
 import { AuthStackParamList, RootStackParamList } from '@/app/navigation/types';
+import type { CompositeNavigationProp } from '@react-navigation/native';
+import type { StackNavigationProp } from '@react-navigation/stack';
 import { useTenantStore } from '@/state/tenantStore';
 import { useAppStore } from '@/state/appStore';
 import { useAuthStore } from '@/state/authStore';
 import { useTranslation } from 'react-i18next';
+import { usePendingInvite } from '@/core/contexts/PendingInviteContext';
+import { useInviteAcceptance } from '@/features/invite/hooks/useInviteAcceptance';
+import { useRoute, RouteProp } from '@react-navigation/native';
+import { signInWithEmail, getIdToken } from '@/services/firebase/auth';
+import { initializeFirebase } from '@/services/firebase';
 
+type SignInRouteProp = RouteProp<AuthStackParamList, 'SignIn'>;
 type SignInNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type AuthNavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export const SignInScreen: React.FC = () => {
   const { theme } = useTheme();
   const { t } = useTranslation('auth');
   const navigation = useNavigation<SignInNavigationProp>();
+  const authNavigation = useNavigation<AuthNavigationProp>();
+  const route = useRoute<SignInRouteProp>();
   const { login } = useAuthStore();
+  const { pendingInvite } = usePendingInvite();
+  const { acceptPendingInvite, isLoading: isAcceptingInvite } = useInviteAcceptance();
 
-  const [email, setEmail] = useState('');
+  // Pre-fill email from route params or pending invite
+  const preFilledEmail = route.params?.email || pendingInvite?.email || '';
+
+  const [email, setEmail] = useState(preFilledEmail);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Update email if route param changes
+  React.useEffect(() => {
+    if (preFilledEmail && !email) {
+      setEmail(preFilledEmail);
+    }
+  }, [preFilledEmail]);
 
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -46,11 +69,29 @@ export const SignInScreen: React.FC = () => {
     setError(null);
 
     try {
-      // TODO: Implement Firebase auth sign-in
-      // For now, simulate a successful login
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Initialize Firebase if not already initialized
+      initializeFirebase();
 
-      // Mock login - in production, this would come from Firebase
+      // Sign in with Firebase
+      const user = await signInWithEmail(email, password);
+      
+      // Get Firebase ID token
+      const firebaseToken = await getIdToken();
+
+      // If there's a pending invite, accept it after Firebase auth
+      if (pendingInvite) {
+        try {
+          await acceptPendingInvite(firebaseToken);
+          // Navigation handled by useInviteAcceptance hook
+          return;
+        } catch (inviteError: any) {
+          setError(inviteError.message || t('inviteAcceptError', { ns: 'invite' }));
+          return;
+        }
+      }
+
+      // No pending invite - normal sign in flow
+      // Mock memberships - in production, this would come from backend API
       const memberships = [
         {
           tenantId: 'tenant-1',
@@ -64,13 +105,13 @@ export const SignInScreen: React.FC = () => {
 
       login(
         {
-          uid: 'mock-uid',
-          email: email,
-          displayName: email.split('@')[0],
-          photoURL: null,
-          emailVerified: true,
+          uid: user.uid,
+          email: user.email || email,
+          displayName: user.displayName || email.split('@')[0],
+          photoURL: user.photoURL,
+          emailVerified: user.emailVerified,
         },
-        'mock-id-token',
+        firebaseToken,
         memberships
       );
 
@@ -92,8 +133,8 @@ export const SignInScreen: React.FC = () => {
           routes: [{ name: 'Main' }],
         })
       );
-    } catch (err) {
-      setError(t('signInError'));
+    } catch (err: any) {
+      setError(err.message || t('signInError'));
     } finally {
       setIsLoading(false);
     }
@@ -102,36 +143,6 @@ export const SignInScreen: React.FC = () => {
   const handleForgotPassword = () => {
     // TODO: Navigate to forgot password screen
     console.log('Forgot password');
-  };
-
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // TODO: Implement Google sign-in
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log('Google sign-in');
-    } catch (err) {
-      setError(t('googleSignInError'));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAppleSignIn = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // TODO: Implement Apple sign-in
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log('Apple sign-in');
-    } catch (err) {
-      setError(t('appleSignInError'));
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   return (
@@ -237,50 +248,22 @@ export const SignInScreen: React.FC = () => {
             />
           </View>
 
-          <View style={styles.dividerContainer}>
-            <View
-              style={[styles.divider, { backgroundColor: theme.colors.border }]}
-            />
-            <Text
-              variant="bodySmall"
-              color={theme.colors.textSecondary}
-              style={styles.dividerText}
-            >
-              {t('orContinueWith')}
-            </Text>
-            <View
-              style={[styles.divider, { backgroundColor: theme.colors.border }]}
-            />
-          </View>
-
-          <View style={styles.socialButtons}>
+          <View style={styles.joinCommunitySection}>
             <Button
-              title={t('continueWithGoogle')}
+              title={t('joinCommunity', { ns: 'invite' })}
               variant="outline"
-              size="large"
+              size="medium"
               fullWidth
-              onPress={handleGoogleSignIn}
-              leftIcon="logo-google"
-              style={styles.socialButton}
+              onPress={() => authNavigation.navigate('JoinCommunity')}
+              style={styles.joinCommunityButton}
             />
-            {Platform.OS === 'ios' && (
-              <Button
-                title={t('continueWithApple')}
-                variant="outline"
-                size="large"
-                fullWidth
-                onPress={handleAppleSignIn}
-                leftIcon="logo-apple"
-                style={styles.socialButton}
-              />
-            )}
           </View>
 
           <Row style={styles.signUpRow}>
             <Text variant="body" color={theme.colors.textSecondary}>
               {t('dontHaveAccount')}
             </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Auth', { screen: 'SignUp' })}>
+            <TouchableOpacity onPress={() => {}}>
               <Text
                 variant="body"
                 color={theme.colors.primary}
@@ -348,23 +331,12 @@ const styles = StyleSheet.create({
   signInButton: {
     marginTop: 8,
   },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
+  joinCommunitySection: {
+    marginTop: 24,
+    marginBottom: 8,
   },
-  divider: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: 16,
-  },
-  socialButtons: {
-    gap: 12,
-  },
-  socialButton: {
-    borderWidth: 1,
+  joinCommunityButton: {
+    marginBottom: 8,
   },
   signUpRow: {
     justifyContent: 'center',

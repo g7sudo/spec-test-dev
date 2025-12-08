@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { RootStackParamList } from './types';
 import { useTheme } from '@/core/theme';
 import { navLogger, logError } from '@/core/logger';
+import { navigationRef } from '@/core/navigation/navigationRef';
 
 // Screens
 import { SplashScreen } from '@/features/startup/screens/SplashScreen';
@@ -28,6 +29,7 @@ export const RootNavigator: React.FC = () => {
 
   return (
     <NavigationContainer
+      ref={navigationRef}
       theme={theme.mode === 'dark' ? DarkTheme : DefaultTheme}
       onStateChange={onStateChange}
       onUnhandledAction={(action) => navLogger.warn('Unhandled action:', action)}

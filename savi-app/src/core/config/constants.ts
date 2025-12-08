@@ -40,42 +40,45 @@ export const STORAGE_KEYS = {
 } as const;
 
 // API endpoints (relative paths)
+// Note: All endpoints include /v1 prefix since base URL is /api (without /v1)
+// Base URL format: http://localhost:5024/api
+// Full URL example: http://localhost:5024/api/v1/platform/auth/me
 export const API_ENDPOINTS = {
   // Platform
-  AUTH_ME: '/platform/auth/me',
-  MOBILE_CONFIG: '/platform/mobile-config',
-  INVITATIONS_VALIDATE: '/platform/invitations/validate',
-  INVITATIONS_ACCEPT: '/platform/invitations/accept',
-  DEVICES_REGISTER: '/platform/devices/register',
+  AUTH_ME: '/v1/platform/auth/me',
+  MOBILE_CONFIG: '/v1/platform/mobile-config',
+  INVITATIONS_VALIDATE: '/v1/platform/invitations/validate',
+  INVITATIONS_ACCEPT: '/v1/platform/invitations/accept',
+  DEVICES_REGISTER: '/v1/platform/devices/register',
 
   // Tenant - Profile
-  MY_PROFILE: '/tenant/me/profile',
+  MY_PROFILE: '/v1/tenant/me/profile',
 
   // Tenant - Maintenance
-  MAINTENANCE_REQUESTS: '/tenant/maintenance/requests',
-  MAINTENANCE_MY_REQUESTS: '/tenant/maintenance/requests/my-requests',
-  MAINTENANCE_CATEGORIES: '/tenant/maintenance/categories',
+  MAINTENANCE_REQUESTS: '/v1/tenant/maintenance/requests',
+  MAINTENANCE_MY_REQUESTS: '/v1/tenant/maintenance/requests/my-requests',
+  MAINTENANCE_CATEGORIES: '/v1/tenant/maintenance/categories',
 
   // Tenant - Visitors
-  VISITOR_PASSES: '/tenant/visitors/passes',
+  VISITOR_PASSES: '/v1/tenant/visitors/passes',
 
   // Tenant - Amenities
-  AMENITIES: '/tenant/amenities',
-  AMENITY_BOOKINGS: '/tenant/amenity-bookings',
+  AMENITIES: '/v1/tenant/amenities',
+  AMENITY_BOOKINGS: '/v1/tenant/amenity-bookings',
 
   // Tenant - Announcements
-  ANNOUNCEMENTS_FEED: '/tenant/announcements/feed',
+  ANNOUNCEMENTS_FEED: '/v1/tenant/announcements/feed',
 
   // Tenant - Notifications
-  NOTIFICATIONS: '/tenant/notifications',
-  NOTIFICATIONS_UNREAD_COUNT: '/tenant/notifications/unread/count',
+  NOTIFICATIONS: '/v1/tenant/notifications',
+  NOTIFICATIONS_UNREAD_COUNT: '/v1/tenant/notifications/unread/count',
 
   // Tenant - Community
-  UNITS: '/tenant/community/units',
+  UNITS: '/v1/tenant/community/units',
 
   // Ads
-  ADS_BANNERS: '/ads/banners',
-  ADS_STORIES: '/ads/stories',
+  ADS_BANNERS: '/v1/ads/banners',
+  ADS_STORIES: '/v1/ads/stories',
 } as const;
 
 // Quick action types

@@ -69,6 +69,10 @@ public class PlatformDbContext : DbContext, IPlatformDbContext
     public DbSet<NotificationQueue> NotificationQueueSet => Set<NotificationQueue>();
     IQueryable<NotificationQueue> IPlatformDbContext.NotificationQueue => NotificationQueueSet;
 
+    // Resident invite codes (platform-level lookup)
+    public DbSet<ResidentInviteCode> ResidentInviteCodesSet => Set<ResidentInviteCode>();
+    IQueryable<ResidentInviteCode> IPlatformDbContext.ResidentInviteCodes => ResidentInviteCodesSet;
+
     // Ads / Campaigns
     public DbSet<Advertiser> AdvertisersSet => Set<Advertiser>();
     public DbSet<Campaign> CampaignsSet => Set<Campaign>();

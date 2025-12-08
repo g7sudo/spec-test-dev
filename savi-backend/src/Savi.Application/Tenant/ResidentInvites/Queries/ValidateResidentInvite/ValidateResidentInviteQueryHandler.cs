@@ -123,7 +123,8 @@ public class ValidateResidentInviteQueryHandler
             Email = invite.Email,
             PartyName = partyName,
             Role = invite.Role,
-            ExpiresAt = invite.ExpiresAt
+            ExpiresAt = invite.ExpiresAt,
+            InvitationToken = invite.InvitationToken
         });
     }
 }

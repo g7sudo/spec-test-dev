@@ -2156,6 +2156,11 @@ namespace Savi.Infrastructure.Persistence.Migrations.TenantDb
                     b.Property<Guid?>("AcceptedByUserId")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("AccessCode")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("CancelledAt")
                         .HasColumnType("TEXT");
 
@@ -2219,6 +2224,8 @@ namespace Savi.Infrastructure.Persistence.Migrations.TenantDb
                     b.HasKey("Id");
 
                     b.HasIndex("AcceptedByUserId");
+
+                    b.HasIndex("AccessCode");
 
                     b.HasIndex("CancelledByUserId");
 

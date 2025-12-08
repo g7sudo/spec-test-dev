@@ -11,6 +11,7 @@ import enVisitors from './resources/en/visitors.json';
 import enAmenities from './resources/en/amenities.json';
 import enProfile from './resources/en/profile.json';
 import enAnnouncements from './resources/en/announcements.json';
+import enInvite from './resources/en/invite.json';
 
 import arCommon from './resources/ar/common.json';
 import arAuth from './resources/ar/auth.json';
@@ -20,6 +21,7 @@ import arVisitors from './resources/ar/visitors.json';
 import arAmenities from './resources/ar/amenities.json';
 import arProfile from './resources/ar/profile.json';
 import arAnnouncements from './resources/ar/announcements.json';
+import arInvite from './resources/ar/invite.json';
 
 export const SUPPORTED_LANGUAGES = ['en', 'ar'] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
@@ -34,6 +36,7 @@ const resources = {
     amenities: enAmenities,
     profile: enProfile,
     announcements: enAnnouncements,
+    invite: enInvite,
   },
   ar: {
     common: arCommon,
@@ -44,6 +47,7 @@ const resources = {
     amenities: arAmenities,
     profile: arProfile,
     announcements: arAnnouncements,
+    invite: arInvite,
   },
 };
 
@@ -60,7 +64,7 @@ i18n.use(initReactI18next).init({
   lng: getDeviceLanguage(),
   fallbackLng: 'en',
   defaultNS: 'common',
-  ns: ['common', 'auth', 'home', 'maintenance', 'visitors', 'amenities', 'profile', 'announcements'],
+  ns: ['common', 'auth', 'home', 'maintenance', 'visitors', 'amenities', 'profile', 'announcements', 'invite'],
   interpolation: {
     escapeValue: false,
   },

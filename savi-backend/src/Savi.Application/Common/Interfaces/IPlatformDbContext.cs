@@ -28,6 +28,7 @@ public interface IPlatformDbContext
     IQueryable<PlatformAuditLog> PlatformAuditLogs { get; }
     IQueryable<DeviceRegistration> DeviceRegistrations { get; }
     IQueryable<NotificationQueue> NotificationQueue { get; }
+    IQueryable<ResidentInviteCode> ResidentInviteCodes { get; }
 
     // Ads / Campaigns
     IQueryable<Advertiser> Advertisers { get; }

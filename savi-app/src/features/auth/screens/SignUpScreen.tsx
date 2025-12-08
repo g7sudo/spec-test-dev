@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -12,24 +12,45 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/core/theme';
 import { Screen, Text, Button, TextInput, Row } from '@/shared/components';
-import { AuthStackParamList } from '@/app/navigation/types';
+import { AuthStackParamList, RootStackParamList } from '@/app/navigation/types';
 import { useTranslation } from 'react-i18next';
+import { usePendingInvite } from '@/core/contexts/PendingInviteContext';
+import { useInviteAcceptance } from '@/features/invite/hooks/useInviteAcceptance';
+import { useRoute, RouteProp } from '@react-navigation/native';
+import { signUpWithEmail, getIdToken } from '@/services/firebase/auth';
+import { initializeFirebase } from '@/services/firebase';
 
-type SignUpNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'SignUp'>;
+type SignUpRouteProp = RouteProp<AuthStackParamList, 'SignUp'>;
+type SignUpNavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type AuthNavigationProp = NativeStackNavigationProp<AuthStackParamList>;
 
 export const SignUpScreen: React.FC = () => {
   const { theme } = useTheme();
   const { t } = useTranslation('auth');
   const navigation = useNavigation<SignUpNavigationProp>();
+  const authNavigation = useNavigation<AuthNavigationProp>();
+  const route = useRoute<SignUpRouteProp>();
+  const { pendingInvite } = usePendingInvite();
+  const { acceptPendingInvite, isLoading: isAcceptingInvite } = useInviteAcceptance();
+
+  // Pre-fill email from route params or pending invite
+  const preFilledEmail = route.params?.email || pendingInvite?.email || '';
 
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(preFilledEmail);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Update email if route param changes
+  React.useEffect(() => {
+    if (preFilledEmail && !email) {
+      setEmail(preFilledEmail);
+    }
+  }, [preFilledEmail]);
 
   const isValidEmail = (email: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -51,47 +72,38 @@ export const SignUpScreen: React.FC = () => {
     setError(null);
 
     try {
-      // TODO: Implement Firebase auth sign-up
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Initialize Firebase if not already initialized
+      initializeFirebase();
 
+      // Create Firebase user account
+      const user = await signUpWithEmail(email, password);
+      
+      // Get Firebase ID token
+      const firebaseToken = await getIdToken();
+
+      // If there's a pending invite, accept it after Firebase auth
+      if (pendingInvite) {
+        try {
+          await acceptPendingInvite(firebaseToken);
+          // Navigation handled by useInviteAcceptance hook
+          return;
+        } catch (inviteError: any) {
+          setError(inviteError.message || t('inviteAcceptError', { ns: 'invite' }));
+          return;
+        }
+      }
+
+      // No pending invite - normal sign up flow
       // After sign up, navigate to sign in
       navigation.navigate('SignIn');
-    } catch (err) {
-      setError(t('signUpError'));
+    } catch (err: any) {
+      // Firebase errors are already user-friendly from auth.ts
+      setError(err.message || t('signUpError'));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleSignUp = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // TODO: Implement Google sign-up
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log('Google sign-up');
-    } catch (err) {
-      setError(t('googleSignInError'));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAppleSignUp = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      // TODO: Implement Apple sign-up
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-      console.log('Apple sign-up');
-    } catch (err) {
-      setError(t('appleSignInError'));
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <Screen safeArea style={styles.screen}>
@@ -217,50 +229,22 @@ export const SignUpScreen: React.FC = () => {
             />
           </View>
 
-          <View style={styles.dividerContainer}>
-            <View
-              style={[styles.divider, { backgroundColor: theme.colors.border }]}
-            />
-            <Text
-              variant="bodySmall"
-              color={theme.colors.textSecondary}
-              style={styles.dividerText}
-            >
-              {t('orContinueWith')}
-            </Text>
-            <View
-              style={[styles.divider, { backgroundColor: theme.colors.border }]}
-            />
-          </View>
-
-          <View style={styles.socialButtons}>
+          <View style={styles.joinCommunitySection}>
             <Button
-              title={t('continueWithGoogle')}
+              title={t('joinCommunity', { ns: 'invite' })}
               variant="outline"
-              size="large"
+              size="medium"
               fullWidth
-              onPress={handleGoogleSignUp}
-              leftIcon="logo-google"
-              style={styles.socialButton}
+              onPress={() => authNavigation.navigate('JoinCommunity')}
+              style={styles.joinCommunityButton}
             />
-            {Platform.OS === 'ios' && (
-              <Button
-                title={t('continueWithApple')}
-                variant="outline"
-                size="large"
-                fullWidth
-                onPress={handleAppleSignUp}
-                leftIcon="logo-apple"
-                style={styles.socialButton}
-              />
-            )}
           </View>
 
           <Row style={styles.signInRow}>
             <Text variant="body" color={theme.colors.textSecondary}>
               {t('alreadyHaveAccount')}
             </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('SignIn')}>
+            <TouchableOpacity onPress={() => {}}>
               <Text
                 variant="body"
                 color={theme.colors.primary}
@@ -323,23 +307,12 @@ const styles = StyleSheet.create({
   signUpButton: {
     marginTop: 8,
   },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 24,
+  joinCommunitySection: {
+    marginTop: 24,
+    marginBottom: 8,
   },
-  divider: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: 16,
-  },
-  socialButtons: {
-    gap: 12,
-  },
-  socialButton: {
-    borderWidth: 1,
+  joinCommunityButton: {
+    marginBottom: 8,
   },
   signInRow: {
     justifyContent: 'center',

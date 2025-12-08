@@ -11,6 +11,10 @@ import { queryClient } from '@/services/api';
 import { RootNavigator } from './navigation';
 import { appLogger, logError } from '@/core/logger';
 import { ScrollDirectionProvider } from '@/core/contexts/ScrollDirectionContext';
+import { PendingInviteProvider } from '@/core/contexts/PendingInviteContext';
+import { initializeFirebase } from '@/services/firebase';
+import { LoadingOverlay } from '@/shared/components/feedback/LoadingOverlay';
+import { useIsApiLoading } from '@/state/apiLoadingStore';
 
 // Error Boundary Component
 interface ErrorBoundaryState {
@@ -78,9 +82,30 @@ const errorStyles = StyleSheet.create({
   },
 });
 
+const AppContent: React.FC = () => {
+  // Track global API loading state
+  const isApiLoading = useIsApiLoading();
+
+  return (
+    <>
+      <RootNavigator />
+      {/* Global loading overlay - shows when any API call is active */}
+      <LoadingOverlay visible={isApiLoading} />
+    </>
+  );
+};
+
 export const App: React.FC = () => {
   useEffect(() => {
     appLogger.info('App starting...');
+
+    // Initialize Firebase early in app lifecycle
+    try {
+      initializeFirebase();
+      appLogger.info('Firebase initialized');
+    } catch (error) {
+      appLogger.error('Firebase initialization failed:', error);
+    }
 
     // Log uncaught JS errors
     const originalHandler = ErrorUtils.getGlobalHandler();
@@ -105,7 +130,9 @@ export const App: React.FC = () => {
             <I18nextProvider i18n={i18n}>
               <ThemeProvider>
                 <ScrollDirectionProvider>
-                  <RootNavigator />
+                  <PendingInviteProvider>
+                    <AppContent />
+                  </PendingInviteProvider>
                 </ScrollDirectionProvider>
               </ThemeProvider>
             </I18nextProvider>

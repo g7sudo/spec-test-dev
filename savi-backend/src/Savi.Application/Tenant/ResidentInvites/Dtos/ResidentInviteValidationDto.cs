@@ -51,4 +51,10 @@ public record ResidentInviteValidationDto
     /// When the invite expires.
     /// </summary>
     public DateTime? ExpiresAt { get; init; }
+
+    /// <summary>
+    /// The invitation token needed to accept the invite.
+    /// Used by mobile app after Firebase authentication.
+    /// </summary>
+    public string? InvitationToken { get; init; }
 }
