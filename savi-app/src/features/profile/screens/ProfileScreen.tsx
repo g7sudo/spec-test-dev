@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,7 +12,10 @@ import { signOut as firebaseSignOut } from '@/services/firebase/auth';
 import { useAppStore } from '@/state/appStore';
 import { navigationRef } from '@/core/navigation/navigationRef';
 import { Image } from 'expo-image';
+import * as ImagePicker from 'expo-image-picker';
 import { getUserProfile, type UserProfileResponse } from '@/services/api/profile';
+import { uploadProfilePhoto } from '@/services/api/profilePhoto';
+import { useIsApiLoading } from '@/state/apiLoadingStore';
 
 type ProfileStackParamList = {
   ProfileMain: undefined;
@@ -44,6 +47,9 @@ export const ProfileScreen: React.FC = () => {
   
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const isApiLoading = useIsApiLoading();
 
   useEffect(() => {
     loadProfile();
@@ -67,6 +73,7 @@ export const ProfileScreen: React.FC = () => {
 
     try {
       setIsLoadingProfile(true);
+      setImageError(false); // Reset image error when reloading
       // Authorization header is automatically added by apiClient from auth store
       const profileData = await getUserProfile();
       setProfile(profileData);
@@ -76,6 +83,7 @@ export const ProfileScreen: React.FC = () => {
         lastName: profileData.lastName,
         primaryEmail: profileData.primaryEmail,
         partyName: profileData.partyName,
+        hasProfilePhoto: !!profileData.profilePhotoUrl,
       });
     } catch (error: any) {
       console.error('[ProfileScreen] ❌ Failed to load profile:', {
@@ -84,6 +92,145 @@ export const ProfileScreen: React.FC = () => {
       // Continue without profile data - use auth store data as fallback
     } finally {
       setIsLoadingProfile(false);
+    }
+  };
+
+  const handleImageError = () => {
+    console.log('[ProfileScreen] ⚠️ Profile image failed to load (may be expired)');
+    setImageError(true);
+  };
+
+  const requestImagePickerPermissions = async () => {
+    if (Platform.OS !== 'web') {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'We need access to your photos to change your profile picture.',
+          [{ text: 'OK' }]
+        );
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleChangePhoto = async () => {
+    const hasPermission = await requestImagePickerPermissions();
+    if (!hasPermission) return;
+
+    Alert.alert(
+      'Change Profile Photo',
+      'Choose an option',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Take Photo',
+          onPress: async () => {
+            try {
+              const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+                // No base64 needed - we'll use file URI directly for FormData upload
+              });
+
+              if (!result.canceled && result.assets[0]) {
+                await uploadPhoto(result.assets[0]);
+              }
+            } catch (error: any) {
+              console.error('[ProfileScreen] ❌ Camera error:', error);
+              Alert.alert('Error', 'Failed to take photo. Please try again.');
+            }
+          },
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: async () => {
+            try {
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ['images'],
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.8,
+                // No base64 needed - we'll use file URI directly for FormData upload
+              });
+
+              if (!result.canceled && result.assets[0]) {
+                await uploadPhoto(result.assets[0]);
+              }
+            } catch (error: any) {
+              console.error('[ProfileScreen] ❌ Image picker error:', error);
+              Alert.alert('Error', 'Failed to pick image. Please try again.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const uploadPhoto = async (asset: ImagePicker.ImagePickerAsset) => {
+    const tenantId = selectedTenant?.tenantId || currentTenant?.id;
+    if (!tenantId) {
+      Alert.alert('Error', 'No tenant selected. Please select a community first.');
+      return;
+    }
+
+    // Validate that we have a file URI
+    if (!asset.uri) {
+      Alert.alert('Error', 'No image file available. Please try selecting the image again.');
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+
+    try {
+      // Determine content type from mimeType or URI extension
+      let contentType = asset.mimeType || 'image/jpeg';
+      if (!asset.mimeType && asset.uri) {
+        const extension = asset.uri.split('.').pop()?.toLowerCase();
+        if (extension === 'png') contentType = 'image/png';
+        else if (extension === 'gif') contentType = 'image/gif';
+        else if (extension === 'webp') contentType = 'image/webp';
+        else if (extension === 'jpg' || extension === 'jpeg') contentType = 'image/jpeg';
+      }
+
+      // Generate file name if not provided
+      const fileName = asset.fileName || `profile-photo-${Date.now()}.${contentType.split('/')[1] || 'jpg'}`;
+
+      console.log('[ProfileScreen] 📸 Uploading profile photo:', {
+        uri: asset.uri.substring(0, 50) + '...',
+        fileName,
+        contentType,
+        fileSize: asset.fileSize ? `${(asset.fileSize / 1024).toFixed(2)} KB` : 'unknown',
+      });
+
+      // Upload to API using multipart/form-data (FormData)
+      const response = await uploadProfilePhoto({
+        uri: asset.uri,
+        fileName,
+        contentType,
+      });
+
+      console.log('[ProfileScreen] ✅ Profile photo uploaded:', {
+        documentId: response.documentId,
+        downloadUrl: response.downloadUrl.substring(0, 50) + '...',
+        sizeBytes: response.sizeBytes,
+      });
+
+      // Reload profile to get updated photo URL
+      await loadProfile();
+
+      Alert.alert('Success', 'Profile photo updated successfully!');
+    } catch (error: any) {
+      console.error('[ProfileScreen] ❌ Failed to upload photo:', error);
+      Alert.alert(
+        'Upload Failed',
+        error.message || 'Failed to upload profile photo. Please try again.'
+      );
+    } finally {
+      setIsUploadingPhoto(false);
     }
   };
 
@@ -141,19 +288,7 @@ export const ProfileScreen: React.FC = () => {
   };
 
   const handleSwitchCommunity = () => {
-    Alert.alert(
-      'Switch Community',
-      'Are you sure you want to switch to a different community?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Switch',
-          onPress: () => {
-            clearSelectedTenant();
-          },
-        },
-      ]
-    );
+    navigation.navigate('SwitchCommunity');
   };
 
   const accountMenuItems: MenuItem[] = [
@@ -178,7 +313,7 @@ export const ProfileScreen: React.FC = () => {
       title: 'Household Members',
       subtitle: 'Manage family members',
       icon: 'people-outline',
-      onPress: () => console.log('Household Members'),
+      onPress: () => navigation.navigate('HouseholdMembers'),
       showChevron: true,
     },
     {
@@ -186,7 +321,7 @@ export const ProfileScreen: React.FC = () => {
       title: 'My Units',
       subtitle: 'View linked units',
       icon: 'home-outline',
-      onPress: () => console.log('My Units'),
+      onPress: () => navigation.navigate('LinkedUnits'),
       showChevron: true,
     },
   ];
@@ -207,9 +342,25 @@ export const ProfileScreen: React.FC = () => {
     {
       id: 'settings',
       title: 'App Settings',
-      subtitle: 'Theme, language, notifications',
+      subtitle: 'Theme, language, biometric',
       icon: 'settings-outline',
       onPress: () => navigation.navigate('Settings'),
+      showChevron: true,
+    },
+    {
+      id: 'notifications',
+      title: 'Notifications',
+      subtitle: 'Manage notification preferences',
+      icon: 'notifications-outline',
+      onPress: () => navigation.navigate('Notifications'),
+      showChevron: true,
+    },
+    {
+      id: 'privacy',
+      title: 'Privacy',
+      subtitle: 'Directory visibility and privacy',
+      icon: 'shield-outline',
+      onPress: () => navigation.navigate('Privacy'),
       showChevron: true,
     },
     {
@@ -306,34 +457,53 @@ export const ProfileScreen: React.FC = () => {
           ) : (
             <Row align="center" gap={16}>
               {/* Profile Photo */}
-              {profile?.profilePhotoUrl ? (
-                <Image
-                  source={{ uri: profile.profilePhotoUrl }}
-                  style={styles.avatar}
-                  contentFit="cover"
-                />
-              ) : (
-                <View
-                  style={[
-                    styles.avatarPlaceholder,
-                    { backgroundColor: theme.colors.primaryLight },
-                  ]}
-                >
-                  <Text variant="h2" color={theme.colors.primary}>
-                    {(() => {
-                      // Use displayName, firstName, or fallback to 'U'
-                      const name = profile?.displayName || 
-                                  (profile?.firstName && profile?.lastName 
-                                    ? `${profile.firstName} ${profile.lastName}`
-                                    : profile?.firstName || 
-                                      profile?.partyName || 
-                                      user?.displayName || 
-                                      'U');
-                      return name.charAt(0).toUpperCase();
-                    })()}
-                  </Text>
+              <TouchableOpacity
+                onPress={handleChangePhoto}
+                disabled={isUploadingPhoto || isApiLoading}
+                activeOpacity={0.7}
+                style={styles.avatarContainer}
+              >
+                {profile?.profilePhotoUrl && !imageError ? (
+                  <Image
+                    source={{ uri: profile.profilePhotoUrl }}
+                    style={styles.avatar}
+                    contentFit="cover"
+                    onError={handleImageError}
+                    cachePolicy="memory-disk"
+                  />
+                ) : (
+                  <View
+                    style={[
+                      styles.avatarPlaceholder,
+                      { backgroundColor: theme.colors.primaryLight },
+                    ]}
+                  >
+                    {isUploadingPhoto ? (
+                      <ActivityIndicator size="small" color={theme.colors.primary} />
+                    ) : (
+                      <Text variant="h2" color={theme.colors.primary}>
+                        {(() => {
+                          // Use displayName, firstName, or fallback to 'U'
+                          const name = profile?.displayName || 
+                                      (profile?.firstName && profile?.lastName 
+                                        ? `${profile.firstName} ${profile.lastName}`
+                                        : profile?.firstName || 
+                                          profile?.partyName || 
+                                          user?.displayName || 
+                                          'U');
+                          return name.charAt(0).toUpperCase();
+                        })()}
+                      </Text>
+                    )}
+                  </View>
+                )}
+                {/* Edit Icon Overlay */}
+                <View style={styles.editIconOverlay}>
+                  <View style={[styles.editIconContainer, { backgroundColor: theme.colors.primary }]}>
+                    <Ionicons name="camera" size={16} color="#fff" />
+                  </View>
                 </View>
-              )}
+              </TouchableOpacity>
               
               <View style={styles.profileInfo}>
                 {/* Display Name */}
@@ -467,6 +637,9 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 24,
   },
+  avatarContainer: {
+    position: 'relative',
+  },
   avatar: {
     width: 72,
     height: 72,
@@ -478,6 +651,20 @@ const styles = StyleSheet.create({
     borderRadius: 36,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  editIconOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+  },
+  editIconContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   profileInfo: {
     flex: 1,

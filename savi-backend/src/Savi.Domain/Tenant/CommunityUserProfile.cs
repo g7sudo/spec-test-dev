@@ -74,6 +74,25 @@ public class CommunityUserProfile : BaseEntity
 
     #endregion
 
+    #region App Settings
+
+    /// <summary>
+    /// Theme mode preference (System, Light, Dark).
+    /// </summary>
+    public ThemeMode Theme { get; private set; } = ThemeMode.System;
+
+    /// <summary>
+    /// Whether biometric authentication is enabled.
+    /// </summary>
+    public bool BiometricEnabled { get; private set; } = false;
+
+    /// <summary>
+    /// Preferred locale (e.g., "en-US", "es-ES").
+    /// </summary>
+    public string? Locale { get; private set; }
+
+    #endregion
+
     #region Notification Preferences
 
     /// <summary>
@@ -201,6 +220,21 @@ public class CommunityUserProfile : BaseEntity
     public void SetProfilePhoto(Guid? documentId, Guid? updatedBy)
     {
         ProfilePhotoDocumentId = documentId;
+        MarkAsUpdated(updatedBy);
+    }
+
+    /// <summary>
+    /// Updates app settings (theme, biometric, locale).
+    /// </summary>
+    public void UpdateAppSettings(
+        ThemeMode theme,
+        bool biometricEnabled,
+        string? locale,
+        Guid? updatedBy)
+    {
+        Theme = theme;
+        BiometricEnabled = biometricEnabled;
+        Locale = locale?.Trim();
         MarkAsUpdated(updatedBy);
     }
 }

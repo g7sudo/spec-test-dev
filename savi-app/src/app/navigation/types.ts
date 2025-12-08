@@ -76,6 +76,9 @@ export type ProfileStackParamList = {
   ChangePassword: undefined;
   HouseholdMembers: undefined;
   LinkedUnits: undefined;
+  SwitchCommunity: undefined;
+  Notifications: undefined;
+  Privacy: undefined;
 };
 
 // Screen props helpers

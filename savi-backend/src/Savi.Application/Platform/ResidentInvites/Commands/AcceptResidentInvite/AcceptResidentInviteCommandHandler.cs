@@ -188,13 +188,37 @@ public sealed class AcceptResidentInviteCommandHandler
                 inviteCode.TenantId);
         }
 
-        // 10. Mark ResidentInvite as accepted in Tenant DB
+        // 10. Link LeaseParty to CommunityUser
+        var leaseParty = await tenantDbContext.LeaseParties
+            .FirstOrDefaultAsync(lp =>
+                lp.LeaseId == residentInvite.LeaseId &&
+                lp.PartyId == residentInvite.PartyId &&
+                lp.IsActive,
+                cancellationToken);
+
+        if (leaseParty != null)
+        {
+            leaseParty.LinkToCommunityUser(communityUserId, communityUserId);
+            _logger.LogInformation(
+                "Linked LeaseParty {LeasePartyId} to CommunityUser {CommunityUserId}",
+                leaseParty.Id,
+                communityUserId);
+        }
+        else
+        {
+            _logger.LogWarning(
+                "LeaseParty not found for LeaseId {LeaseId}, PartyId {PartyId}. User won't be linked to lease.",
+                residentInvite.LeaseId,
+                residentInvite.PartyId);
+        }
+
+        // 11. Mark ResidentInvite as accepted in Tenant DB
         residentInvite.Accept(communityUserId);
 
-        // 11. Save Tenant DB changes
+        // 12. Save Tenant DB changes
         await tenantDbContext.SaveChangesAsync(cancellationToken);
 
-        // 12. Create or update UserTenantMembership in Platform DB
+        // 13. Create or update UserTenantMembership in Platform DB
         if (existingMembership != null)
         {
             existingMembership.Accept(_currentUser.UserId);
@@ -210,10 +234,10 @@ public sealed class AcceptResidentInviteCommandHandler
             _platformDbContext.Add(membership);
         }
 
-        // 13. Mark ResidentInviteCode as used in Platform DB
+        // 14. Mark ResidentInviteCode as used in Platform DB
         inviteCode.MarkAsUsed();
 
-        // 14. Save Platform DB changes
+        // 15. Save Platform DB changes
         await _platformDbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(

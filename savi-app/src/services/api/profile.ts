@@ -151,3 +151,92 @@ export async function updateProfile(
   }
 }
 
+/**
+ * Lease information for a unit
+ */
+export interface LeaseInfo {
+  leaseId: string;
+  status: string;
+  startDate: string;
+  endDate: string;
+  role: string;
+  isPrimary: boolean;
+  moveInDate: string;
+  moveOutDate: string | null;
+}
+
+/**
+ * Resident information for a unit
+ */
+export interface ResidentInfo {
+  partyId: string;
+  leasePartyId: string;
+  name: string;
+  role: string;
+  isPrimary: boolean;
+  hasAppAccess: boolean;
+  profilePhotoUrl: string | null;
+}
+
+/**
+ * Unit information with lease and residents
+ */
+export interface UnitInfo {
+  unitId: string;
+  unitNumber: string;
+  blockName: string;
+  floorName: string;
+  unitTypeName: string;
+  areaSqft: number;
+  lease: LeaseInfo;
+  residents: ResidentInfo[];
+}
+
+/**
+ * Response from GET /v1/tenant/me/home endpoint
+ */
+export interface HomeResponse {
+  units: UnitInfo[];
+}
+
+/**
+ * Gets user's home/units information with lease and residents
+ * 
+ * Backend Endpoint: GET /api/v1/tenant/me/home
+ * 
+ * Headers (added automatically by apiClient):
+ * - Authorization: Bearer <firebase-id-token> (from auth store)
+ * - X-Tenant-Id: <tenant-id> (from persisted tenant store)
+ * 
+ * @returns Home response with units, lease details, and residents
+ * @throws ApiError if request fails
+ */
+export async function getHomeInfo(): Promise<HomeResponse> {
+  console.log('[Profile API] 🏠 GET HOME INFO REQUEST:', {
+    timestamp: new Date().toISOString(),
+  });
+
+  try {
+    // Authorization and X-Tenant-Id headers are automatically added by apiClient interceptor
+    const response = await apiClient.get<HomeResponse>(
+      '/v1/tenant/me/home'
+    );
+
+    console.log('[Profile API] ✅ GET HOME INFO RESPONSE:', {
+      status: response.status,
+      unitsCount: response.data.units?.length || 0,
+      timestamp: new Date().toISOString(),
+    });
+
+    return response.data;
+  } catch (error: any) {
+    console.error('[Profile API] ❌ GET HOME INFO ERROR:', {
+      errorType: typeof error,
+      errorMessage: error.message,
+      status: error.response?.status,
+      timestamp: new Date().toISOString(),
+    });
+    throw error;
+  }
+}
+

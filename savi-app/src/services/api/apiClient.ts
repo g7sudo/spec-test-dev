@@ -25,6 +25,26 @@ apiClient.interceptors.request.use(
       config.headers.Authorization = `Bearer ${idToken}`;
     }
 
+    // Handle FormData: React Native's FormData polyfill may not be recognized by axios
+    // Note: React Native's FormData is a polyfill that may not pass instanceof check
+    // so we also check for the _parts property which is RN's internal FormData structure
+    const isFormData = config.data instanceof FormData ||
+                       (config.data && typeof config.data === 'object' && '_parts' in config.data);
+    if (isFormData) {
+      // CRITICAL: Remove the default 'application/json' Content-Type header
+      // Axios should automatically set 'multipart/form-data' with boundary when FormData is detected
+      // However, React Native's FormData polyfill might not be recognized, so we need to help axios
+      if (config.headers['Content-Type'] === 'application/json') {
+        // Remove the default JSON Content-Type - axios will set multipart/form-data with boundary
+        delete config.headers['Content-Type'];
+        // Use AxiosHeaders methods if available
+        if (typeof config.headers.set === 'function') {
+          config.headers.set('Content-Type', undefined);
+        }
+        console.log('[API Client] 📎 FormData detected - removed default Content-Type, axios will set multipart/form-data with boundary');
+      }
+    }
+
     // Add tenant ID header for tenant-scoped requests
     // Platform endpoints (/v1/platform/*) should NOT have X-Tenant-Id
     // Tenant endpoints (/v1/tenant/*) MUST have X-Tenant-Id header

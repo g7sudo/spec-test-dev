@@ -34,7 +34,17 @@ import { VisitorListScreen, VisitorDetailScreen, CreateVisitorScreen } from '@/f
 import { CommunityScreen } from '@/features/community/screens/CommunityScreen';
 
 // Profile Stack Screens
-import { ProfileScreen, SettingsScreen, EditProfileScreen, ChangePasswordScreen } from '@/features/profile/screens';
+import {
+  ProfileScreen,
+  SettingsScreen,
+  EditProfileScreen,
+  ChangePasswordScreen,
+  MyUnitsScreen,
+  HouseholdMembersScreen,
+  SwitchCommunityScreen,
+  NotificationsSettingsScreen,
+  PrivacyScreen,
+} from '@/features/profile/screens';
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 const HomeStack = createNativeStackNavigator<HomeStackParamList>();
@@ -177,6 +187,31 @@ const ProfileStackNavigator: React.FC = () => {
       <ProfileStack.Screen
         name="Settings"
         component={SettingsScreen}
+        options={{ headerShown: false }}
+      />
+      <ProfileStack.Screen
+        name="HouseholdMembers"
+        component={HouseholdMembersScreen}
+        options={{ headerShown: false }}
+      />
+      <ProfileStack.Screen
+        name="LinkedUnits"
+        component={MyUnitsScreen}
+        options={{ headerShown: false }}
+      />
+      <ProfileStack.Screen
+        name="SwitchCommunity"
+        component={SwitchCommunityScreen}
+        options={{ headerShown: false }}
+      />
+      <ProfileStack.Screen
+        name="Notifications"
+        component={NotificationsSettingsScreen}
+        options={{ headerShown: false }}
+      />
+      <ProfileStack.Screen
+        name="Privacy"
+        component={PrivacyScreen}
         options={{ headerShown: false }}
       />
     </ProfileStack.Navigator>

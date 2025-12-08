@@ -2,3 +2,8 @@ export { ProfileScreen } from './ProfileScreen';
 export { SettingsScreen } from './SettingsScreen';
 export { EditProfileScreen } from './EditProfileScreen';
 export { ChangePasswordScreen } from './ChangePasswordScreen';
+export { MyUnitsScreen } from './MyUnitsScreen';
+export { HouseholdMembersScreen } from './HouseholdMembersScreen';
+export { SwitchCommunityScreen } from './SwitchCommunityScreen';
+export { NotificationsSettingsScreen } from './NotificationsScreen';
+export { PrivacyScreen } from './PrivacyScreen';
