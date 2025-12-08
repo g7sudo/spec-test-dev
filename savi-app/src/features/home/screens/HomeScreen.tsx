@@ -210,6 +210,7 @@ export const HomeScreen: React.FC = () => {
         onScroll={handleScroll}
         scrollEventThrottle={16}
         scrollEnabled={true}
+        stickyHeaderIndices={[0]} // Make GreyStrip sticky at top
         // When at top, allow our gesture to take priority
         bounces={true}
         refreshControl={
@@ -220,7 +221,7 @@ export const HomeScreen: React.FC = () => {
           />
         }
       >
-        {/* Grey Strip - Always at top of scrollable content */}
+        {/* Grey Strip - Always sticky at top of scrollable content */}
         <GreyStrip
           isDrawerExpanded={isBillboardExpanded}
           onPullUp={handleCollapseDrawer}
