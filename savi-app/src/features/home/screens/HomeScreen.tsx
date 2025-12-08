@@ -2,6 +2,7 @@ import React, { useCallback, useState, useRef } from 'react';
 import { View, StyleSheet, RefreshControl } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import type { ScrollView as ScrollViewType } from 'react-native-gesture-handler';
+import { useSharedValue } from 'react-native-reanimated';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '@/core/theme';
@@ -32,6 +33,14 @@ export const HomeScreen: React.FC = () => {
   const [isBillboardExpanded, setIsBillboardExpanded] = useState(true);
   const [scrollOffset, setScrollOffset] = useState(0);
   const scrollViewRef = useRef<ScrollViewType>(null);
+  const lastScrollOffset = useRef(0);
+  const scrollStartOffset = useRef(0);
+  
+  // Shared value for scroll offset - used for seamless billboard collapse
+  const scrollOffsetShared = useSharedValue(0);
+  
+  // Threshold for collapse (matches BillDrawer constant)
+  const COLLAPSE_SCROLL_THRESHOLD = 50;
 
   // Debug: Log state changes
   React.useEffect(() => {
@@ -167,17 +176,39 @@ export const HomeScreen: React.FC = () => {
   const handleExpandDrawer = useCallback(() => {
     console.log('[HomeScreen] 🔼 handleExpandDrawer called - setting isBillboardExpanded to true');
     setIsBillboardExpanded(true);
+    // Reset scroll offset when expanding to ensure smooth transition
+    scrollOffsetShared.value = 0;
   }, []);
 
-  // Track scroll position to enable interactions only at top
+  // Handle scroll begin - track scroll start position
+  const handleScrollBeginDrag = useCallback((event: any) => {
+    const offset = event.nativeEvent.contentOffset.y;
+    scrollStartOffset.current = offset;
+    lastScrollOffset.current = offset;
+    
+    console.log('[HomeScreen] 📜 Scroll drag started at offset:', offset, 'isBillboardExpanded:', isBillboardExpanded);
+  }, [isBillboardExpanded]);
+
+  // Track scroll position - update shared value for seamless billboard collapse
   const handleScroll = useCallback((event: any) => {
     const offset = event.nativeEvent.contentOffset.y;
+    
+    // Update shared value for seamless billboard collapse
+    scrollOffsetShared.value = offset;
+    
     setScrollOffset(offset);
-    // Debug log when near top
-    if (offset <= 5) {
-      console.log('[HomeScreen] 📍 Scroll position:', offset, 'isScrollAtTop:', offset <= 1);
+    lastScrollOffset.current = offset;
+    
+    // Auto-collapse when scrolled past threshold (with hysteresis to prevent flickering)
+    if (isBillboardExpanded && offset > COLLAPSE_SCROLL_THRESHOLD) {
+      setIsBillboardExpanded(false);
     }
-  }, []);
+    
+    // Auto-expand when scrolled back to top (with hysteresis)
+    if (!isBillboardExpanded && offset <= 5) {
+      setIsBillboardExpanded(true);
+    }
+  }, [isBillboardExpanded, scrollOffsetShared]);
 
   return (
     <Screen style={styles.screen} safeArea={false}>
@@ -195,6 +226,7 @@ export const HomeScreen: React.FC = () => {
             bill={bill}
             onPayNow={handlePayBill}
             isExpanded={isBillboardExpanded}
+            scrollOffset={scrollOffsetShared}
             onCollapse={handleCollapseDrawer}
             onExpand={handleExpandDrawer}
           />
@@ -208,8 +240,9 @@ export const HomeScreen: React.FC = () => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
+        onScrollBeginDrag={handleScrollBeginDrag}
         scrollEventThrottle={16}
-        scrollEnabled={true}
+        scrollEnabled={true} // Always allow scroll - collapse happens organically
         stickyHeaderIndices={[0]} // Make GreyStrip sticky at top
         // When at top, allow our gesture to take priority
         bounces={true}

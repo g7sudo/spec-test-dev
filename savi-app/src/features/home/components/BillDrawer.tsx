@@ -4,15 +4,19 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
+  useDerivedValue,
   withSpring,
   withTiming,
   cancelAnimation,
+  interpolate,
+  Extrapolate,
 } from 'react-native-reanimated';
 import { useTheme } from '@/core/theme';
 import { Text, Button, Row } from '@/shared/components';
 import { useTranslation } from 'react-i18next';
 
 const DRAWER_HEIGHT = 140; // Height of the drawer when expanded
+const COLLAPSE_SCROLL_THRESHOLD = 50; // Scroll distance needed to fully collapse
 
 interface Bill {
   id: string;
@@ -26,6 +30,7 @@ interface BillDrawerProps {
   bill: Bill | null;
   onPayNow: (billId: string) => void;
   isExpanded: boolean; // Controlled from parent
+  scrollOffset: Animated.SharedValue<number>; // Scroll offset for seamless collapse
   onCollapse?: () => void; // Callback when drawer should collapse
   onExpand?: () => void; // Callback when drawer should expand
 }
@@ -34,62 +39,59 @@ export const BillDrawer: React.FC<BillDrawerProps> = ({
   bill,
   onPayNow,
   isExpanded,
+  scrollOffset,
   onCollapse,
   onExpand,
 }) => {
   const { theme } = useTheme();
   const { t } = useTranslation('home');
 
-  // Animated values for smooth expand/collapse
-  const height = useSharedValue(isExpanded ? DRAWER_HEIGHT : 0);
-  const opacity = useSharedValue(isExpanded ? 1 : 0);
-  const prevExpandedRef = useRef(isExpanded);
-
-  // Debug: Log prop changes
+  // Track expanded state as shared value for useDerivedValue
+  const isExpandedShared = useSharedValue(isExpanded);
+  
+  // Update shared value when prop changes
   useEffect(() => {
-    console.log('[BillDrawer] 📦 Received isExpanded prop:', isExpanded);
-  }, [isExpanded]);
+    isExpandedShared.value = isExpanded;
+  }, [isExpanded, isExpandedShared]);
 
-  // Sync animation when isExpanded prop changes
-  // CRITICAL: Don't include height/opacity in dependencies - they're shared values, not React state
-  useEffect(() => {
-    // Only animate if state actually changed
-    if (prevExpandedRef.current === isExpanded) {
-      return;
+  // Derived height that responds to scroll - seamless collapse as you scroll
+  // When expanded: height follows scroll position directly
+  // When collapsed: height is 0
+  const height = useDerivedValue(() => {
+    // If not expanded, always return 0
+    if (!isExpandedShared.value) {
+      return 0;
     }
     
-    prevExpandedRef.current = isExpanded;
+    // When expanded, reduce height based on scroll offset
+    // Interpolate scroll offset (0 to COLLAPSE_SCROLL_THRESHOLD) to height (DRAWER_HEIGHT to 0)
+    const scroll = Math.max(0, scrollOffset.value); // Ensure non-negative
+    const scrollCollapsedHeight = interpolate(
+      scroll,
+      [0, COLLAPSE_SCROLL_THRESHOLD],
+      [DRAWER_HEIGHT, 0],
+      Extrapolate.CLAMP
+    );
     
-    console.log('[BillDrawer] 🎬 Animation effect triggered, isExpanded:', isExpanded);
-    
-    // Cancel any ongoing animations
-    cancelAnimation(height);
-    cancelAnimation(opacity);
-    
-    if (isExpanded) {
-      console.log('[BillDrawer] ⬆️ Expanding to height:', DRAWER_HEIGHT);
-      height.value = withSpring(DRAWER_HEIGHT, {
-        damping: 25, // Increased damping for less oscillation
-        stiffness: 100,
-        mass: 0.5,
-      });
-      opacity.value = withTiming(1, { duration: 250 });
-    } else {
-      console.log('[BillDrawer] ⬇️ Collapsing to height: 0');
-      height.value = withSpring(0, {
-        damping: 25, // Increased damping for less oscillation
-        stiffness: 100,
-        mass: 0.5,
-      });
-      opacity.value = withTiming(0, { duration: 200 });
-    }
-  }, [isExpanded]); // Only depend on isExpanded
+    return scrollCollapsedHeight;
+  });
+
+  // Opacity follows height for smooth fade
+  const opacity = useDerivedValue(() => {
+    const currentHeight = height.value;
+    return interpolate(
+      currentHeight,
+      [0, DRAWER_HEIGHT],
+      [0, 1],
+      Extrapolate.CLAMP
+    );
+  });
 
   if (!bill) {
     return null;
   }
 
-  // Animated styles for smooth expand/collapse
+  // Animated styles for smooth expand/collapse - responds to scroll seamlessly
   const animatedContainerStyle = useAnimatedStyle(() => {
     const currentHeight = height.value;
     const currentOpacity = opacity.value;
@@ -98,8 +100,8 @@ export const BillDrawer: React.FC<BillDrawerProps> = ({
       height: currentHeight,
       opacity: currentOpacity,
       overflow: 'hidden' as const,
-      // CRITICAL: Animate marginTop smoothly to prevent glitchy behavior
-      marginTop: currentHeight > 10 ? 12 : 0, // Use threshold to prevent flickering
+      // Animate marginTop smoothly based on height
+      marginTop: currentHeight > 10 ? 12 : 0,
       marginBottom: 0,
     };
   });
