@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useRef } from 'react';
-import { View, StyleSheet, RefreshControl, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, RefreshControl } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import type { ScrollView as ScrollViewType } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
@@ -228,30 +228,6 @@ export const HomeScreen: React.FC = () => {
           onPullDown={handleExpandDrawer}
           isScrollAtTop={scrollOffset <= 1} // Allow small threshold for floating point precision
         />
-
-        {/* TEMPORARY DEBUG: Test buttons - Remove after validation */}
-        <View style={{ padding: 16, backgroundColor: '#FFF3CD', marginBottom: 8 }}>
-          <Text style={{ marginBottom: 8, fontWeight: 'bold' }}>
-            Debug: isBillboardExpanded = {isBillboardExpanded ? 'true ✅' : 'false ❌'}
-          </Text>
-          <Text style={{ marginBottom: 8 }}>
-            Scroll Offset: {scrollOffset.toFixed(2)} | isScrollAtTop: {scrollOffset <= 1 ? 'Yes' : 'No'}
-          </Text>
-          <View style={{ flexDirection: 'row', gap: 8 }}>
-            <TouchableOpacity
-              onPress={handleCollapseDrawer}
-              style={{ padding: 8, backgroundColor: '#FF6B6B', borderRadius: 4 }}
-            >
-              <Text style={{ color: 'white' }}>Force Collapse</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={handleExpandDrawer}
-              style={{ padding: 8, backgroundColor: '#51CF66', borderRadius: 4 }}
-            >
-              <Text style={{ color: 'white' }}>Force Expand</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
 
         <HouseholdAvatars
           members={householdMembers}

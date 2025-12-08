@@ -111,11 +111,8 @@ const styles = StyleSheet.create({
     height: 20, // Fixed height for the strip
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5', // Light grey background for the strip - solid color for sticky header
+    backgroundColor: 'transparent', // Transparent background - only handle bar visible
     paddingVertical: 8,
-    // Border at top to separate from drawer area
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
     // Ensure it stays on top when sticky
     zIndex: 10,
     elevation: 10, // For Android
