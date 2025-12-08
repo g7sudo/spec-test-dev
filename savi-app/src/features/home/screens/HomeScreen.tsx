@@ -1,5 +1,7 @@
-import React, { useCallback } from 'react';
-import { ScrollView, StyleSheet, RefreshControl } from 'react-native';
+import React, { useCallback, useState, useRef } from 'react';
+import { View, StyleSheet, RefreshControl, TouchableOpacity, Text } from 'react-native';
+import { ScrollView } from 'react-native-gesture-handler';
+import type { ScrollView as ScrollViewType } from 'react-native-gesture-handler';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '@/core/theme';
@@ -9,6 +11,7 @@ import { QUICK_ACTIONS } from '@/core/config/constants';
 import {
   HomeHeader,
   BillDrawer,
+  GreyStrip,
   HouseholdAvatars,
   QuickActionsGrid,
   MyVisitorsSection,
@@ -24,6 +27,17 @@ type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'HomeMai
 export const HomeScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<HomeNavigationProp>();
+  
+  // Billboard drawer state - expanded by default on fresh load
+  const [isBillboardExpanded, setIsBillboardExpanded] = useState(true);
+  const [scrollOffset, setScrollOffset] = useState(0);
+  const scrollViewRef = useRef<ScrollViewType>(null);
+
+  // Debug: Log state changes
+  React.useEffect(() => {
+    console.log('[HomeScreen] 🎯 State changed: isBillboardExpanded =', isBillboardExpanded);
+  }, [isBillboardExpanded]);
+  
   const {
     bill,
     householdMembers,
@@ -144,12 +158,60 @@ export const HomeScreen: React.FC = () => {
     console.log('Offer pressed:', offerId);
   }, []);
 
+  // Handlers for billboard drawer expand/collapse
+  const handleCollapseDrawer = useCallback(() => {
+    console.log('[HomeScreen] 🔽 handleCollapseDrawer called - setting isBillboardExpanded to false');
+    setIsBillboardExpanded(false);
+  }, []);
+
+  const handleExpandDrawer = useCallback(() => {
+    console.log('[HomeScreen] 🔼 handleExpandDrawer called - setting isBillboardExpanded to true');
+    setIsBillboardExpanded(true);
+  }, []);
+
+  // Track scroll position to enable interactions only at top
+  const handleScroll = useCallback((event: any) => {
+    const offset = event.nativeEvent.contentOffset.y;
+    setScrollOffset(offset);
+    // Debug log when near top
+    if (offset <= 5) {
+      console.log('[HomeScreen] 📍 Scroll position:', offset, 'isScrollAtTop:', offset <= 1);
+    }
+  }, []);
+
   return (
-    <Screen style={styles.screen}>
+    <Screen style={styles.screen} safeArea={false}>
+      {/* Fixed Header Area - Always visible */}
+      <View style={[styles.headerArea, { backgroundColor: '#FFE69C' }]}>
+        <HomeHeader
+          onAvatarPress={handleAvatarPress}
+          onNotificationsPress={handleNotificationsPress}
+          unreadNotifications={unreadNotifications}
+        />
+
+        {/* Billboard Banner - Always rendered but animated */}
+        {bill && (
+          <BillDrawer
+            bill={bill}
+            onPayNow={handlePayBill}
+            isExpanded={isBillboardExpanded}
+            onCollapse={handleCollapseDrawer}
+            onExpand={handleExpandDrawer}
+          />
+        )}
+      </View>
+
+      {/* Scrollable Page Content - Only this area scrolls */}
       <ScrollView
+        ref={scrollViewRef}
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
+        scrollEnabled={true}
+        // When at top, allow our gesture to take priority
+        bounces={true}
         refreshControl={
           <RefreshControl
             refreshing={isLoading}
@@ -158,13 +220,37 @@ export const HomeScreen: React.FC = () => {
           />
         }
       >
-        <HomeHeader
-          onAvatarPress={handleAvatarPress}
-          onNotificationsPress={handleNotificationsPress}
-          unreadNotifications={unreadNotifications}
+        {/* Grey Strip - Always at top of scrollable content */}
+        <GreyStrip
+          isDrawerExpanded={isBillboardExpanded}
+          onPullUp={handleCollapseDrawer}
+          onPullDown={handleExpandDrawer}
+          isScrollAtTop={scrollOffset <= 1} // Allow small threshold for floating point precision
         />
 
-        <BillDrawer bill={bill} onPayNow={handlePayBill} />
+        {/* TEMPORARY DEBUG: Test buttons - Remove after validation */}
+        <View style={{ padding: 16, backgroundColor: '#FFF3CD', marginBottom: 8 }}>
+          <Text style={{ marginBottom: 8, fontWeight: 'bold' }}>
+            Debug: isBillboardExpanded = {isBillboardExpanded ? 'true ✅' : 'false ❌'}
+          </Text>
+          <Text style={{ marginBottom: 8 }}>
+            Scroll Offset: {scrollOffset.toFixed(2)} | isScrollAtTop: {scrollOffset <= 1 ? 'Yes' : 'No'}
+          </Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              onPress={handleCollapseDrawer}
+              style={{ padding: 8, backgroundColor: '#FF6B6B', borderRadius: 4 }}
+            >
+              <Text style={{ color: 'white' }}>Force Collapse</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleExpandDrawer}
+              style={{ padding: 8, backgroundColor: '#51CF66', borderRadius: 4 }}
+            >
+              <Text style={{ color: 'white' }}>Force Expand</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
         <HouseholdAvatars
           members={householdMembers}
@@ -211,9 +297,16 @@ export const HomeScreen: React.FC = () => {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
+  // Fixed header area - contains header and billboard drawer
+  headerArea: {
+    paddingBottom: 0, // No padding - grey strip follows immediately
+  },
+  // Scrollable content area - only this scrolls
   scrollView: {
     flex: 1,
+    backgroundColor: '#FFFFFF',
   },
   scrollContent: {
     paddingBottom: 24,

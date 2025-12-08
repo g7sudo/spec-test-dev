@@ -44,14 +44,13 @@ export const HouseholdAvatars: React.FC<HouseholdAvatarsProps> = ({
                 size="large"
                 name={member.name}
                 imageUrl={member.photoUrl}
+                style={[
+                  styles.avatar,
+                  member.isNew && styles.avatarWithBorder,
+                ]}
               />
               {member.isNew && (
-                <View
-                  style={[
-                    styles.newBadge,
-                    { backgroundColor: theme.colors.primary },
-                  ]}
-                >
+                <View style={styles.newBadge}>
                   <Text
                     variant="caption"
                     color="#FFFFFF"
@@ -83,17 +82,25 @@ const styles = StyleSheet.create({
   avatarWrapper: {
     position: 'relative',
   },
+  avatar: {
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  avatarWithBorder: {
+    borderColor: '#1A1A2E', // Primary color
+  },
   newBadge: {
     position: 'absolute',
-    bottom: -4,
-    left: '50%',
-    transform: [{ translateX: -16 }],
-    paddingHorizontal: 6,
+    top: -4,
+    left: 0,
+    backgroundColor: '#1A1A2E', // Dark Blue/Primary
+    paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: 10,
+    zIndex: 1,
   },
   newBadgeText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: 'bold',
   },
 });

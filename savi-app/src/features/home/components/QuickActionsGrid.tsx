@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { QUICK_ACTIONS } from '@/core/config/constants';
 
 const { width } = Dimensions.get('window');
-const ITEM_WIDTH = (width - 48) / 3;
+const ITEM_WIDTH = (width - 44) / 2; // 16 padding on sides + 12 gap = 44 total spacing
 
 interface QuickAction {
   id: string;
@@ -32,45 +32,45 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({
   const actions: QuickAction[] = [
     {
       id: QUICK_ACTIONS.PRE_REGISTER_VISITOR,
-      icon: 'person-add-outline',
+      icon: 'people',
       labelKey: 'quickActions.preRegisterVisitor',
-      color: theme.colors.primary,
-      backgroundColor: theme.colors.primaryLight,
+      color: '#1A237E', // Dark Blue
+      backgroundColor: '#FFFFFF',
     },
     {
       id: QUICK_ACTIONS.MAINTENANCE_REQUEST,
-      icon: 'construct-outline',
+      icon: 'construct',
       labelKey: 'quickActions.maintenanceRequest',
-      color: '#FF9800',
-      backgroundColor: '#FFF3E0',
+      color: '#1A237E',
+      backgroundColor: '#FFFFFF',
     },
     {
       id: QUICK_ACTIONS.GIVE_FEEDBACK,
-      icon: 'chatbubble-ellipses-outline',
+      icon: 'chatbubble',
       labelKey: 'quickActions.giveFeedback',
-      color: '#9C27B0',
-      backgroundColor: '#F3E5F5',
+      color: '#1A237E',
+      backgroundColor: '#FFFFFF',
     },
     {
       id: QUICK_ACTIONS.BOOK_FACILITY,
-      icon: 'calendar-outline',
+      icon: 'business',
       labelKey: 'quickActions.bookFacility',
-      color: '#2196F3',
-      backgroundColor: '#E3F2FD',
+      color: '#1A237E',
+      backgroundColor: '#FFFFFF',
     },
     {
       id: QUICK_ACTIONS.EMERGENCY,
-      icon: 'warning-outline',
+      icon: 'person',
       labelKey: 'quickActions.emergency',
-      color: '#F44336',
-      backgroundColor: '#FFEBEE',
+      color: '#1A237E',
+      backgroundColor: '#FFFFFF',
     },
     {
       id: QUICK_ACTIONS.ANNOUNCEMENTS,
-      icon: 'megaphone-outline',
+      icon: 'megaphone',
       labelKey: 'quickActions.announcements',
-      color: '#4CAF50',
-      backgroundColor: '#E8F5E9',
+      color: '#1A237E',
+      backgroundColor: '#FFFFFF',
     },
   ];
 
@@ -85,13 +85,16 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({
         onPress={() => onActionPress(action.id)}
         activeOpacity={0.7}
       >
-        <View
-          style={[
-            styles.iconContainer,
-            { backgroundColor: action.backgroundColor },
-          ]}
+        <Text
+          variant="bodyMedium"
+          weight="semiBold"
+          style={styles.label}
+          numberOfLines={2}
         >
-          <Ionicons name={action.icon} size={28} color={action.color} />
+          {t(action.labelKey)}
+        </Text>
+        <View style={styles.iconContainer}>
+          <Ionicons name={action.icon} size={24} color={action.color} />
           {showBadge && (
             <View
               style={[
@@ -105,14 +108,6 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({
             </View>
           )}
         </View>
-        <Text
-          variant="caption"
-          align="center"
-          style={styles.label}
-          numberOfLines={2}
-        >
-          {t(action.labelKey)}
-        </Text>
       </TouchableOpacity>
     );
   };
@@ -120,10 +115,7 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.grid}>
-        {actions.slice(0, 3).map(renderAction)}
-      </View>
-      <View style={styles.grid}>
-        {actions.slice(3, 6).map(renderAction)}
+        {actions.map(renderAction)}
       </View>
     </View>
   );
@@ -136,38 +128,50 @@ const styles = StyleSheet.create({
   },
   grid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    gap: 12,
   },
   actionItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#EEEEEE',
+    // Shadow for iOS
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    // Elevation for Android
+    elevation: 2,
+    height: 72, // Fixed height for consistency
   },
   iconContainer: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
     position: 'relative',
+    marginLeft: 8,
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -4,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    top: -6,
+    right: -6,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: 'bold',
   },
   label: {
-    maxWidth: 80,
+    flex: 1,
+    color: '#1A1A2E',
   },
 });
 

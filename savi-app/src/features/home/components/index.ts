@@ -1,5 +1,6 @@
 export { HomeHeader } from './HomeHeader';
 export { BillDrawer } from './BillDrawer';
+export { GreyStrip } from './GreyStrip';
 export { HouseholdAvatars } from './HouseholdAvatars';
 export { QuickActionsGrid } from './QuickActionsGrid';
 export { MyVisitorsSection } from './MyVisitorsSection';

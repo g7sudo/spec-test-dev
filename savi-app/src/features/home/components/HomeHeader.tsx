@@ -82,16 +82,6 @@ export const HomeHeader: React.FC<HomeHeaderProps> = ({
             </View>
           )}
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.iconButton}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name="ellipse-outline"
-            size={24}
-            color={theme.colors.text}
-          />
-        </TouchableOpacity>
       </Row>
     </Row>
   );
@@ -102,6 +92,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     alignItems: 'center',
+    paddingTop: 60, // Add top padding for status bar if not handled by SafeAreaView
   },
   titleContainer: {
     flex: 1,
@@ -120,20 +111,34 @@ const styles = StyleSheet.create({
   iconButton: {
     padding: 8,
     position: 'relative',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    // Shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   badge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
+    top: 0,
+    right: 0,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 4,
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
   },
   badgeText: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: 'bold',
   },
 });

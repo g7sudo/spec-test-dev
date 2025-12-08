@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/core/theme';
 import { Text, Button } from '@/shared/components';
 
@@ -36,11 +35,11 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({ banner, onPress }) => 
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={handlePress} activeOpacity={0.9}>
-        <LinearGradient
-          colors={banner.gradientColors as [string, string, ...string[]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.banner}
+        <View
+          style={[
+            styles.banner,
+            { backgroundColor: banner.gradientColors[0] || theme.colors.primary },
+          ]}
         >
           <View style={styles.contentContainer}>
             <View style={styles.textContent}>
@@ -73,7 +72,7 @@ export const PromoBanner: React.FC<PromoBannerProps> = ({ banner, onPress }) => 
               />
             )}
           </View>
-        </LinearGradient>
+        </View>
       </TouchableOpacity>
     </View>
   );
