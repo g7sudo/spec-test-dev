@@ -1,0 +1,47 @@
+{
+  "title": "الزوار",
+  "myVisitors": "زواري",
+  "upcomingVisitors": "الزوار القادمون",
+  "pastVisitors": "الزوار السابقون",
+  "preRegister": "تسجيل زائر مسبقاً",
+  "visitorDetails": "تفاصيل الزائر",
+  "noVisitors": "لا يوجد زوار",
+  "noVisitorsDescription": "لم تقم بتسجيل أي زوار مسبقاً بعد.",
+  "create": {
+    "title": "تسجيل زائر مسبقاً",
+    "visitorName": "اسم الزائر",
+    "visitorNamePlaceholder": "أدخل اسم الزائر الكامل",
+    "phoneNumber": "رقم الهاتف",
+    "phoneNumberPlaceholder": "أدخل رقم الهاتف",
+    "visitDate": "تاريخ الزيارة",
+    "visitTime": "وقت الزيارة",
+    "purpose": "غرض الزيارة",
+    "purposePlaceholder": "أدخل غرض الزيارة",
+    "vehicleNumber": "رقم المركبة (اختياري)",
+    "vehicleNumberPlaceholder": "أدخل رقم المركبة",
+    "notes": "ملاحظات إضافية",
+    "notesPlaceholder": "أي معلومات إضافية",
+    "registerVisitor": "تسجيل الزائر",
+    "success": "تم تسجيل الزائر بنجاح"
+  },
+  "detail": {
+    "visitorInfo": "معلومات الزائر",
+    "name": "الاسم",
+    "phone": "الهاتف",
+    "visitDateTime": "تاريخ ووقت الزيارة",
+    "purpose": "الغرض",
+    "vehicleNumber": "رقم المركبة",
+    "status": "الحالة",
+    "accessCode": "رمز الدخول",
+    "shareCode": "مشاركة الرمز",
+    "qrCode": "رمز QR"
+  },
+  "status": {
+    "pending": "قيد الانتظار",
+    "approved": "موافق عليه",
+    "checkedIn": "دخل",
+    "checkedOut": "خرج",
+    "rejected": "مرفوض",
+    "expired": "منتهي الصلاحية"
+  }
+}

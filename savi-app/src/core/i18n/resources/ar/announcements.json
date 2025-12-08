@@ -1,0 +1,34 @@
+{
+  "title": "الإعلانات",
+  "feed": "أخبار المجتمع",
+  "noAnnouncements": "لا توجد إعلانات",
+  "noAnnouncementsDescription": "لا توجد إعلانات في الوقت الحالي.",
+  "detail": {
+    "postedBy": "نشر بواسطة",
+    "postedAt": "نُشر",
+    "likes": "{{count}} إعجاب",
+    "comments": "{{count}} تعليق",
+    "addComment": "أضف تعليقاً...",
+    "sendComment": "إرسال"
+  },
+  "timeAgo": {
+    "justNow": "الآن",
+    "minutesAgo": "منذ {{count}} دقيقة",
+    "hoursAgo": "منذ {{count}} ساعة",
+    "daysAgo": "منذ {{count}} يوم",
+    "weeksAgo": "منذ {{count}} أسبوع"
+  },
+  "actions": {
+    "like": "إعجاب",
+    "unlike": "إلغاء الإعجاب",
+    "comment": "تعليق",
+    "share": "مشاركة"
+  },
+  "categories": {
+    "general": "عام",
+    "maintenance": "صيانة",
+    "security": "أمن",
+    "events": "فعاليات",
+    "emergency": "طوارئ"
+  }
+}

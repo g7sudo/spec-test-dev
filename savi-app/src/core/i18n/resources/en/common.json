@@ -1,0 +1,72 @@
+{
+  "ok": "OK",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "close": "Close",
+  "back": "Back",
+  "next": "Next",
+  "done": "Done",
+  "submit": "Submit",
+  "confirm": "Confirm",
+  "retry": "Retry",
+  "refresh": "Refresh",
+  "skip": "Skip",
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success",
+  "viewAll": "View all",
+  "viewDetails": "View details",
+  "noData": "No data available",
+  "searchPlaceholder": "Search...",
+  "requiredField": "This field is required",
+  "networkError": "Network error. Please check your connection.",
+  "somethingWentWrong": "Something went wrong. Please try again.",
+  "pullToRefresh": "Pull to refresh",
+  "noResults": "No results found",
+  "seeMore": "See more",
+  "seeLess": "See less",
+  "onboarding": {
+    "getStarted": "Get Started",
+    "slide1": {
+      "title": "Welcome to SAVI",
+      "description": "Your community management app that makes resident life easier."
+    },
+    "slide2": {
+      "title": "Maintenance Made Easy",
+      "description": "Submit and track maintenance requests with real-time updates."
+    },
+    "slide3": {
+      "title": "Book Amenities",
+      "description": "Reserve community facilities like gym, pool, and party halls."
+    },
+    "slide4": {
+      "title": "Stay Connected",
+      "description": "Get community updates and connect with your neighbors."
+    }
+  },
+  "consent": {
+    "title": "Before We Continue",
+    "subtitle": "Please review and accept the following to continue.",
+    "termsTitle": "Terms of Service",
+    "termsDescription": "By accepting, you agree to our terms and conditions.",
+    "privacyTitle": "Privacy Policy",
+    "privacyDescription": "We respect your privacy and protect your data.",
+    "notificationsTitle": "Push Notifications",
+    "notificationsDescription": "Stay updated with community announcements and alerts.",
+    "readMore": "Read more",
+    "requiredNote": "* Required to continue",
+    "continue": "Continue"
+  },
+  "tenant": {
+    "selectCommunity": "Select Your Community",
+    "selectCommunitySubtitle": "Choose the community you want to access.",
+    "noCommunities": "You are not linked to any community yet.",
+    "noLinkedCommunity": "No Community Linked",
+    "noLinkedCommunityDescription": "Your account is not linked to any community. Contact your community administrator to get an invitation.",
+    "step1": "Ask your community administrator for an invitation",
+    "step2": "Click the invitation link sent to your email",
+    "step3": "Your community will appear here automatically"
+  }
+}

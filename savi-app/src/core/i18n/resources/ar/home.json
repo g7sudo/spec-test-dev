@@ -1,0 +1,28 @@
+{
+  "billWarning": "ادفع فاتورتك اليوم لتجنب الرسوم المتأخرة.",
+  "payNow": "ادفع الآن",
+  "myVisitors": "زواري",
+  "noVisitors": "لا يوجد زوار بعد",
+  "preRegisterVisitor": "تسجيل زائر مسبقاً",
+  "myRequests": "طلباتي",
+  "noRequests": "لا توجد طلبات بعد",
+  "createRequest": "إنشاء طلب",
+  "communityFeeds": "أخبار المجتمع",
+  "noRecentUpdates": "لا توجد تحديثات حديثة",
+  "featuredForYou": "مميز لك",
+  "quickActions": {
+    "preRegisterVisitor": "تسجيل زائر مسبقاً",
+    "maintenanceRequest": "طلب صيانة",
+    "giveFeedback": "إعطاء ملاحظات",
+    "bookFacility": "حجز مرفق",
+    "emergency": "طوارئ",
+    "announcements": "الإعلانات"
+  },
+  "tabs": {
+    "home": "الرئيسية",
+    "facility": "المرافق",
+    "services": "الخدمات",
+    "community": "المجتمع",
+    "profile": "الملف الشخصي"
+  }
+}

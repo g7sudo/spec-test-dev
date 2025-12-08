@@ -1,0 +1,57 @@
+{
+  "title": "Profile",
+  "myProfile": "My Profile",
+  "editProfile": "Edit Profile",
+  "settings": "Settings",
+  "personalInfo": {
+    "title": "Personal Information",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "aboutMe": "About Me"
+  },
+  "unit": {
+    "title": "My Unit",
+    "unitNumber": "Unit Number",
+    "block": "Block",
+    "floor": "Floor",
+    "community": "Community"
+  },
+  "notifications": {
+    "title": "Notification Settings",
+    "pushNotifications": "Push Notifications",
+    "emailNotifications": "Email Notifications",
+    "maintenanceUpdates": "Maintenance Updates",
+    "visitorAlerts": "Visitor Alerts",
+    "amenityBookings": "Amenity Bookings",
+    "announcements": "Announcements"
+  },
+  "appearance": {
+    "title": "Appearance",
+    "theme": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "language": {
+    "title": "Language",
+    "english": "English",
+    "arabic": "العربية"
+  },
+  "privacy": {
+    "title": "Privacy Settings",
+    "showInDirectory": "Show in Directory",
+    "showPhone": "Show Phone Number",
+    "showEmail": "Show Email"
+  },
+  "switchCommunity": "Switch Community",
+  "about": {
+    "title": "About",
+    "version": "Version",
+    "termsOfService": "Terms of Service",
+    "privacyPolicy": "Privacy Policy",
+    "support": "Support"
+  },
+  "signOut": "Sign Out",
+  "signOutConfirm": "Are you sure you want to sign out?"
+}

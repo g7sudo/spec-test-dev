@@ -1,0 +1,58 @@
+{
+  "title": "Maintenance",
+  "myRequests": "My Requests",
+  "allRequests": "All Requests",
+  "createRequest": "Create Request",
+  "requestDetails": "Request Details",
+  "noRequests": "No maintenance requests",
+  "noRequestsDescription": "You haven't submitted any maintenance requests yet.",
+  "create": {
+    "title": "New Maintenance Request",
+    "category": "Category",
+    "categoryPlaceholder": "Select a category",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe the issue in detail",
+    "location": "Location",
+    "locationPlaceholder": "Where is the issue?",
+    "priority": "Priority",
+    "priorityLow": "Low",
+    "priorityMedium": "Medium",
+    "priorityHigh": "High",
+    "priorityUrgent": "Urgent",
+    "attachPhotos": "Attach Photos",
+    "addPhoto": "Add Photo",
+    "submitRequest": "Submit Request",
+    "success": "Request submitted successfully"
+  },
+  "detail": {
+    "requestId": "Request ID",
+    "status": "Status",
+    "category": "Category",
+    "description": "Description",
+    "location": "Location",
+    "priority": "Priority",
+    "requestedAt": "Requested At",
+    "assignedTo": "Assigned To",
+    "notAssigned": "Not yet assigned",
+    "timeline": "Timeline",
+    "comments": "Comments",
+    "addComment": "Add a comment...",
+    "assessment": "Assessment",
+    "approval": "Approval",
+    "rating": "Rating",
+    "rateService": "Rate this service",
+    "submitRating": "Submit Rating"
+  },
+  "status": {
+    "new": "New",
+    "assigned": "Assigned",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "cancelled": "Cancelled",
+    "rejected": "Rejected"
+  },
+  "actions": {
+    "cancel": "Cancel Request",
+    "cancelConfirm": "Are you sure you want to cancel this request?"
+  }
+}

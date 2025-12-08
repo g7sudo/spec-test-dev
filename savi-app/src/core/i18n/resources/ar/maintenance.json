@@ -1,0 +1,58 @@
+{
+  "title": "الصيانة",
+  "myRequests": "طلباتي",
+  "allRequests": "جميع الطلبات",
+  "createRequest": "إنشاء طلب",
+  "requestDetails": "تفاصيل الطلب",
+  "noRequests": "لا توجد طلبات صيانة",
+  "noRequestsDescription": "لم تقم بتقديم أي طلبات صيانة بعد.",
+  "create": {
+    "title": "طلب صيانة جديد",
+    "category": "الفئة",
+    "categoryPlaceholder": "اختر فئة",
+    "description": "الوصف",
+    "descriptionPlaceholder": "صف المشكلة بالتفصيل",
+    "location": "الموقع",
+    "locationPlaceholder": "أين المشكلة؟",
+    "priority": "الأولوية",
+    "priorityLow": "منخفضة",
+    "priorityMedium": "متوسطة",
+    "priorityHigh": "عالية",
+    "priorityUrgent": "عاجلة",
+    "attachPhotos": "إرفاق صور",
+    "addPhoto": "إضافة صورة",
+    "submitRequest": "إرسال الطلب",
+    "success": "تم إرسال الطلب بنجاح"
+  },
+  "detail": {
+    "requestId": "رقم الطلب",
+    "status": "الحالة",
+    "category": "الفئة",
+    "description": "الوصف",
+    "location": "الموقع",
+    "priority": "الأولوية",
+    "requestedAt": "تاريخ الطلب",
+    "assignedTo": "مُسند إلى",
+    "notAssigned": "لم يُسند بعد",
+    "timeline": "الجدول الزمني",
+    "comments": "التعليقات",
+    "addComment": "أضف تعليقاً...",
+    "assessment": "التقييم",
+    "approval": "الموافقة",
+    "rating": "التقييم",
+    "rateService": "قيّم هذه الخدمة",
+    "submitRating": "إرسال التقييم"
+  },
+  "status": {
+    "new": "جديد",
+    "assigned": "مُسند",
+    "inProgress": "قيد التنفيذ",
+    "completed": "مكتمل",
+    "cancelled": "ملغى",
+    "rejected": "مرفوض"
+  },
+  "actions": {
+    "cancel": "إلغاء الطلب",
+    "cancelConfirm": "هل أنت متأكد من إلغاء هذا الطلب؟"
+  }
+}

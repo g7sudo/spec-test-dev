@@ -1,0 +1,28 @@
+{
+  "billWarning": "Pay your bill today to avoid late charges.",
+  "payNow": "Pay Now",
+  "myVisitors": "My Visitors",
+  "noVisitors": "No visitors yet",
+  "preRegisterVisitor": "Pre-register visitor",
+  "myRequests": "My Requests",
+  "noRequests": "No requests yet",
+  "createRequest": "Create request",
+  "communityFeeds": "Community Feeds",
+  "noRecentUpdates": "No recent updates",
+  "featuredForYou": "FEATURED FOR YOU",
+  "quickActions": {
+    "preRegisterVisitor": "Pre-Register Visitor",
+    "maintenanceRequest": "Maintenance Request",
+    "giveFeedback": "Give Feedback",
+    "bookFacility": "Book Facility",
+    "emergency": "Emergency",
+    "announcements": "Announcements"
+  },
+  "tabs": {
+    "home": "Home",
+    "facility": "Facility",
+    "services": "Services",
+    "community": "Community",
+    "profile": "Profile"
+  }
+}

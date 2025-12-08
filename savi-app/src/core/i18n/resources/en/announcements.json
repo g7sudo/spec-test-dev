@@ -1,0 +1,34 @@
+{
+  "title": "Announcements",
+  "feed": "Community Feed",
+  "noAnnouncements": "No announcements",
+  "noAnnouncementsDescription": "There are no announcements at the moment.",
+  "detail": {
+    "postedBy": "Posted by",
+    "postedAt": "Posted",
+    "likes": "{{count}} likes",
+    "comments": "{{count}} comments",
+    "addComment": "Add a comment...",
+    "sendComment": "Send"
+  },
+  "timeAgo": {
+    "justNow": "Just now",
+    "minutesAgo": "{{count}} minutes ago",
+    "hoursAgo": "{{count}} hours ago",
+    "daysAgo": "{{count}} days ago",
+    "weeksAgo": "{{count}} weeks ago"
+  },
+  "actions": {
+    "like": "Like",
+    "unlike": "Unlike",
+    "comment": "Comment",
+    "share": "Share"
+  },
+  "categories": {
+    "general": "General",
+    "maintenance": "Maintenance",
+    "security": "Security",
+    "events": "Events",
+    "emergency": "Emergency"
+  }
+}

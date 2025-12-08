@@ -1,0 +1,57 @@
+{
+  "title": "الملف الشخصي",
+  "myProfile": "ملفي الشخصي",
+  "editProfile": "تعديل الملف",
+  "settings": "الإعدادات",
+  "personalInfo": {
+    "title": "المعلومات الشخصية",
+    "name": "الاسم",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "aboutMe": "عني"
+  },
+  "unit": {
+    "title": "وحدتي",
+    "unitNumber": "رقم الوحدة",
+    "block": "المبنى",
+    "floor": "الطابق",
+    "community": "المجتمع"
+  },
+  "notifications": {
+    "title": "إعدادات الإشعارات",
+    "pushNotifications": "الإشعارات الفورية",
+    "emailNotifications": "إشعارات البريد الإلكتروني",
+    "maintenanceUpdates": "تحديثات الصيانة",
+    "visitorAlerts": "تنبيهات الزوار",
+    "amenityBookings": "حجوزات المرافق",
+    "announcements": "الإعلانات"
+  },
+  "appearance": {
+    "title": "المظهر",
+    "theme": "السمة",
+    "light": "فاتح",
+    "dark": "داكن",
+    "system": "النظام"
+  },
+  "language": {
+    "title": "اللغة",
+    "english": "English",
+    "arabic": "العربية"
+  },
+  "privacy": {
+    "title": "إعدادات الخصوصية",
+    "showInDirectory": "الظهور في الدليل",
+    "showPhone": "إظهار رقم الهاتف",
+    "showEmail": "إظهار البريد الإلكتروني"
+  },
+  "switchCommunity": "تبديل المجتمع",
+  "about": {
+    "title": "حول",
+    "version": "الإصدار",
+    "termsOfService": "شروط الخدمة",
+    "privacyPolicy": "سياسة الخصوصية",
+    "support": "الدعم"
+  },
+  "signOut": "تسجيل الخروج",
+  "signOutConfirm": "هل أنت متأكد من تسجيل الخروج؟"
+}

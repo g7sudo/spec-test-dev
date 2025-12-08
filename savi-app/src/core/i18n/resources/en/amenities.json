@@ -1,0 +1,51 @@
+{
+  "title": "Amenities",
+  "facilities": "Facilities",
+  "myBookings": "My Bookings",
+  "bookFacility": "Book Facility",
+  "bookingDetails": "Booking Details",
+  "noAmenities": "No amenities available",
+  "noBookings": "No bookings",
+  "noBookingsDescription": "You haven't made any facility bookings yet.",
+  "list": {
+    "gym": "Gym",
+    "pool": "Swimming Pool",
+    "partyHall": "Party Hall",
+    "clubhouse": "Clubhouse",
+    "playground": "Playground",
+    "tennisCourt": "Tennis Court",
+    "badmintonCourt": "Badminton Court"
+  },
+  "booking": {
+    "selectDate": "Select Date",
+    "selectTime": "Select Time Slot",
+    "availableSlots": "Available Slots",
+    "noSlotsAvailable": "No slots available for this date",
+    "duration": "Duration",
+    "guests": "Number of Guests",
+    "purpose": "Purpose (Optional)",
+    "purposePlaceholder": "Enter purpose of booking",
+    "bookingFee": "Booking Fee",
+    "depositAmount": "Deposit Amount",
+    "totalAmount": "Total Amount",
+    "confirmBooking": "Confirm Booking",
+    "success": "Booking confirmed successfully"
+  },
+  "detail": {
+    "facility": "Facility",
+    "dateTime": "Date & Time",
+    "duration": "Duration",
+    "status": "Status",
+    "bookingId": "Booking ID",
+    "guests": "Guests",
+    "cancelBooking": "Cancel Booking",
+    "cancelConfirm": "Are you sure you want to cancel this booking?"
+  },
+  "status": {
+    "pending": "Pending Approval",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "cancelled": "Cancelled",
+    "completed": "Completed"
+  }
+}

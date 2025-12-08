@@ -1,0 +1,51 @@
+{
+  "title": "المرافق",
+  "facilities": "المرافق",
+  "myBookings": "حجوزاتي",
+  "bookFacility": "حجز مرفق",
+  "bookingDetails": "تفاصيل الحجز",
+  "noAmenities": "لا توجد مرافق متاحة",
+  "noBookings": "لا توجد حجوزات",
+  "noBookingsDescription": "لم تقم بأي حجوزات مرافق بعد.",
+  "list": {
+    "gym": "صالة رياضية",
+    "pool": "حمام سباحة",
+    "partyHall": "قاعة حفلات",
+    "clubhouse": "نادي",
+    "playground": "ملعب أطفال",
+    "tennisCourt": "ملعب تنس",
+    "badmintonCourt": "ملعب بادمنتون"
+  },
+  "booking": {
+    "selectDate": "اختر التاريخ",
+    "selectTime": "اختر الفترة الزمنية",
+    "availableSlots": "الفترات المتاحة",
+    "noSlotsAvailable": "لا توجد فترات متاحة لهذا التاريخ",
+    "duration": "المدة",
+    "guests": "عدد الضيوف",
+    "purpose": "الغرض (اختياري)",
+    "purposePlaceholder": "أدخل غرض الحجز",
+    "bookingFee": "رسوم الحجز",
+    "depositAmount": "مبلغ التأمين",
+    "totalAmount": "المبلغ الإجمالي",
+    "confirmBooking": "تأكيد الحجز",
+    "success": "تم تأكيد الحجز بنجاح"
+  },
+  "detail": {
+    "facility": "المرفق",
+    "dateTime": "التاريخ والوقت",
+    "duration": "المدة",
+    "status": "الحالة",
+    "bookingId": "رقم الحجز",
+    "guests": "الضيوف",
+    "cancelBooking": "إلغاء الحجز",
+    "cancelConfirm": "هل أنت متأكد من إلغاء هذا الحجز؟"
+  },
+  "status": {
+    "pending": "في انتظار الموافقة",
+    "approved": "موافق عليه",
+    "rejected": "مرفوض",
+    "cancelled": "ملغى",
+    "completed": "مكتمل"
+  }
+}

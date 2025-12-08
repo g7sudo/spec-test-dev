@@ -1,0 +1,47 @@
+{
+  "title": "Visitors",
+  "myVisitors": "My Visitors",
+  "upcomingVisitors": "Upcoming Visitors",
+  "pastVisitors": "Past Visitors",
+  "preRegister": "Pre-Register Visitor",
+  "visitorDetails": "Visitor Details",
+  "noVisitors": "No visitors",
+  "noVisitorsDescription": "You haven't pre-registered any visitors yet.",
+  "create": {
+    "title": "Pre-Register Visitor",
+    "visitorName": "Visitor Name",
+    "visitorNamePlaceholder": "Enter visitor's full name",
+    "phoneNumber": "Phone Number",
+    "phoneNumberPlaceholder": "Enter phone number",
+    "visitDate": "Visit Date",
+    "visitTime": "Visit Time",
+    "purpose": "Purpose of Visit",
+    "purposePlaceholder": "Enter purpose of visit",
+    "vehicleNumber": "Vehicle Number (Optional)",
+    "vehicleNumberPlaceholder": "Enter vehicle number",
+    "notes": "Additional Notes",
+    "notesPlaceholder": "Any additional information",
+    "registerVisitor": "Register Visitor",
+    "success": "Visitor registered successfully"
+  },
+  "detail": {
+    "visitorInfo": "Visitor Information",
+    "name": "Name",
+    "phone": "Phone",
+    "visitDateTime": "Visit Date & Time",
+    "purpose": "Purpose",
+    "vehicleNumber": "Vehicle Number",
+    "status": "Status",
+    "accessCode": "Access Code",
+    "shareCode": "Share Code",
+    "qrCode": "QR Code"
+  },
+  "status": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "checkedIn": "Checked In",
+    "checkedOut": "Checked Out",
+    "rejected": "Rejected",
+    "expired": "Expired"
+  }
+}
