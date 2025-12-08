@@ -10,6 +10,7 @@ import { i18n } from '@/core/i18n';
 import { queryClient } from '@/services/api';
 import { RootNavigator } from './navigation';
 import { appLogger, logError } from '@/core/logger';
+import { ScrollDirectionProvider } from '@/core/contexts/ScrollDirectionContext';
 
 // Error Boundary Component
 interface ErrorBoundaryState {
@@ -103,7 +104,9 @@ export const App: React.FC = () => {
           <QueryClientProvider client={queryClient}>
             <I18nextProvider i18n={i18n}>
               <ThemeProvider>
-                <RootNavigator />
+                <ScrollDirectionProvider>
+                  <RootNavigator />
+                </ScrollDirectionProvider>
               </ThemeProvider>
             </I18nextProvider>
           </QueryClientProvider>

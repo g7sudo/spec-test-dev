@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { AnimatedTabBar } from './AnimatedTabBar';
 import {
   MainTabParamList,
   HomeStackParamList,
@@ -174,23 +177,64 @@ const ProfileStackNavigator: React.FC = () => {
 export const MainNavigator: React.FC = () => {
   const { theme } = useTheme();
   const { t } = useTranslation('home');
+  const insets = useSafeAreaInsets();
+  
+  // Calculate tab bar height
+  const tabBarHeight = useMemo(() => {
+    return Platform.select({
+      ios: 60 + insets.bottom,
+      android: 60,
+    });
+  }, [insets.bottom]);
+
+  // Base tab bar style
+  // Note: AnimatedTabBar uses absolute positioning, so this style is applied to the inner BottomTabBar
+  const tabBarStyle = useMemo(() => {
+    return {
+      backgroundColor: '#F0F0F0', // Light gray background to match UI design
+      borderTopWidth: 0, // Remove top border for cleaner look
+      height: tabBarHeight,
+      paddingBottom: Platform.select({
+        ios: Math.max(insets.bottom, 8),
+        android: 8,
+      }),
+      paddingTop: 8,
+      paddingHorizontal: 4,
+      // Rounded corners at top for modern look
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      // Shadow/elevation for depth
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 10,
+        },
+        android: {
+          elevation: 6,
+        },
+      }),
+      // Remove default positioning since AnimatedTabBar handles it
+      position: 'relative' as const,
+    };
+  }, [tabBarHeight, insets.bottom]);
 
   return (
     <Tab.Navigator
+      tabBar={(props) => <AnimatedTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: theme.colors.background,
-          borderTopColor: theme.colors.border,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
-        },
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarStyle: tabBarStyle as any,
+        tabBarActiveTintColor: theme.colors.primary, // Dark color for active tab
+        tabBarInactiveTintColor: theme.colors.textSecondary, // Gray for inactive tabs
         tabBarLabelStyle: {
           fontSize: 12,
           fontWeight: '500',
+          marginTop: 4, // Space between icon and label
+        },
+        tabBarIconStyle: {
+          marginTop: 4, // Space above icon
         },
       }}
     >

@@ -9,6 +9,7 @@ import { useTheme } from '@/core/theme';
 import { Screen } from '@/shared/components';
 import { HomeStackParamList } from '@/app/navigation/types';
 import { QUICK_ACTIONS } from '@/core/config/constants';
+import { useScrollDirection } from '@/core/contexts/ScrollDirectionContext';
 import {
   HomeHeader,
   BillDrawer,
@@ -28,6 +29,7 @@ type HomeNavigationProp = NativeStackNavigationProp<HomeStackParamList, 'HomeMai
 export const HomeScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<HomeNavigationProp>();
+  const { setIsScrollingUp, isScrollingUp } = useScrollDirection();
   
   // Billboard drawer state - expanded by default on fresh load
   const [isBillboardExpanded, setIsBillboardExpanded] = useState(true);
@@ -38,6 +40,9 @@ export const HomeScreen: React.FC = () => {
   const stateChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastStateChangeTime = useRef(0);
   const logThrottleRef = useRef(0); // Throttle logging to prevent spam
+  const bottomNavLogThrottleRef = useRef(0); // Throttle bottom nav logging
+  const scrollDirectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastBottomNavDirectionRef = useRef<'up' | 'down' | null>(null); // Track last direction to avoid resetting timeout
   
   // Shared value for scroll offset - used for seamless billboard collapse
   const scrollOffsetShared = useSharedValue(0);
@@ -76,11 +81,14 @@ export const HomeScreen: React.FC = () => {
     console.log('[HomeScreen] 🎯 State changed: isBillboardExpanded =', isBillboardExpanded);
   }, [isBillboardExpanded]);
 
-  // Cleanup timeout on unmount
+  // Cleanup timeouts on unmount
   React.useEffect(() => {
     return () => {
       if (stateChangeTimeoutRef.current) {
         clearTimeout(stateChangeTimeoutRef.current);
+      }
+      if (scrollDirectionTimeoutRef.current) {
+        clearTimeout(scrollDirectionTimeoutRef.current);
       }
     };
   }, []);
@@ -233,6 +241,64 @@ export const HomeScreen: React.FC = () => {
     const offset = event.nativeEvent.contentOffset.y;
     const clampedOffset = Math.max(0, offset); // Clamp to prevent negative values from bounce
     
+    // Detect scroll direction for bottom nav visibility
+    const scrollDelta = clampedOffset - lastScrollOffset.current;
+    const isScrollingUpward = scrollDelta > 2; // Threshold to prevent jitter
+    const isScrollingDownward = scrollDelta < -2;
+    
+    // Log bottom nav scroll detection (throttled)
+    const now = Date.now();
+    if (now - bottomNavLogThrottleRef.current > 100) { // Log max once per 100ms
+      bottomNavLogThrottleRef.current = now;
+      console.log('[HomeScreen] 🧭 BOTTOM NAV SCROLL:', {
+        offset: clampedOffset.toFixed(2),
+        scrollDelta: scrollDelta.toFixed(2),
+        isScrollingUpward,
+        isScrollingDownward,
+        isAboveThreshold: clampedOffset > 10,
+        hasPendingTimeout: !!scrollDirectionTimeoutRef.current,
+      });
+    }
+    
+    // Update bottom nav visibility based on scroll direction
+    // Only hide when scrolling up past a small threshold (to avoid hiding at top)
+    const shouldHide = isScrollingUpward && clampedOffset > 10;
+    const shouldShow = isScrollingDownward || clampedOffset <= 10;
+    
+    // Determine current direction
+    const currentDirection: 'up' | 'down' | null = shouldHide ? 'up' : (shouldShow ? 'down' : null);
+    
+    // Only set timeout if direction changed or no timeout exists
+    const directionChanged = currentDirection !== null && currentDirection !== lastBottomNavDirectionRef.current;
+    
+    if (shouldHide && (directionChanged || !scrollDirectionTimeoutRef.current)) {
+      // Scrolling up - hide bottom nav
+      if (scrollDirectionTimeoutRef.current) {
+        clearTimeout(scrollDirectionTimeoutRef.current);
+        scrollDirectionTimeoutRef.current = null;
+      }
+      lastBottomNavDirectionRef.current = 'up';
+      scrollDirectionTimeoutRef.current = setTimeout(() => {
+        console.log('[HomeScreen] 👆 Setting bottom nav to HIDE (scrolling up)');
+        setIsScrollingUp(true);
+        scrollDirectionTimeoutRef.current = null;
+        lastBottomNavDirectionRef.current = null;
+      }, 50); // Reduced delay for faster response
+    } else if (shouldShow && (directionChanged || !scrollDirectionTimeoutRef.current)) {
+      // Scrolling down or near top - show bottom nav
+      if (scrollDirectionTimeoutRef.current) {
+        clearTimeout(scrollDirectionTimeoutRef.current);
+        scrollDirectionTimeoutRef.current = null;
+      }
+      lastBottomNavDirectionRef.current = 'down';
+      scrollDirectionTimeoutRef.current = setTimeout(() => {
+        console.log('[HomeScreen] 👇 Setting bottom nav to SHOW (scrolling down or at top)');
+        setIsScrollingUp(false);
+        scrollDirectionTimeoutRef.current = null;
+        lastBottomNavDirectionRef.current = null;
+      }, 50); // Reduced delay for faster response
+    }
+    
     // Update shared value for seamless billboard collapse (this drives the smooth animation)
     scrollOffsetShared.value = clampedOffset;
     
@@ -240,34 +306,8 @@ export const HomeScreen: React.FC = () => {
     lastScrollOffset.current = clampedOffset;
     
     // Prevent rapid state changes - enforce minimum interval
-    const now = Date.now();
+    // Reuse 'now' variable declared earlier for bottom nav logging
     const timeSinceLastChange = now - lastStateChangeTime.current;
-    
-    // COMPREHENSIVE LOGGING: Track every scroll event with full state
-    // Throttled to prevent spam and crashes
-    if (now - logThrottleRef.current > 50) { // Log max once per 50ms
-      logThrottleRef.current = now;
-      
-      // Calculate expected animation values for validation
-      const expectedHeight = calculateExpectedHeight(clampedOffset, isBillboardExpanded);
-      const expectedOpacity = calculateExpectedOpacity(clampedOffset, isBillboardExpanded);
-      
-      console.log('[HomeScreen] 📊 SCROLL EVENT:', {
-        offset: offset.toFixed(2),
-        clampedOffset: clampedOffset.toFixed(2),
-        isBillboardExpanded,
-        timeSinceLastChange: timeSinceLastChange.toFixed(0) + 'ms',
-        hasPendingTimeout: !!stateChangeTimeoutRef.current,
-        collapseThreshold: COLLAPSE_SCROLL_THRESHOLD,
-        expandThreshold: EXPAND_THRESHOLD,
-        // Expected animation values (what should be rendered)
-        expectedHeight: expectedHeight.toFixed(2),
-        expectedOpacity: expectedOpacity.toFixed(3),
-        // State change conditions
-        shouldCollapse: isBillboardExpanded && clampedOffset > COLLAPSE_SCROLL_THRESHOLD && timeSinceLastChange > MIN_STATE_CHANGE_INTERVAL && !stateChangeTimeoutRef.current,
-        shouldExpand: !isBillboardExpanded && clampedOffset <= EXPAND_THRESHOLD && offset >= 0 && timeSinceLastChange > MIN_STATE_CHANGE_INTERVAL && !stateChangeTimeoutRef.current,
-      });
-    }
     
     // Auto-collapse state when scrolled past threshold
     // Only trigger if enough time has passed and no pending timeout exists
@@ -351,7 +391,11 @@ export const HomeScreen: React.FC = () => {
       <ScrollView
         ref={scrollViewRef}
         style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          // Remove bottom padding when nav is hidden to eliminate blank space
+          { paddingBottom: isScrollingUp ? 24 : 24 }, // Keep same padding for now, will adjust if needed
+        ]}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}
         onScrollBeginDrag={handleScrollBeginDrag}
