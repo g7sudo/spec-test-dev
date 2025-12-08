@@ -35,17 +35,55 @@ export const HomeScreen: React.FC = () => {
   const scrollViewRef = useRef<ScrollViewType>(null);
   const lastScrollOffset = useRef(0);
   const scrollStartOffset = useRef(0);
+  const stateChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastStateChangeTime = useRef(0);
+  const logThrottleRef = useRef(0); // Throttle logging to prevent spam
   
   // Shared value for scroll offset - used for seamless billboard collapse
   const scrollOffsetShared = useSharedValue(0);
   
   // Threshold for collapse (matches BillDrawer constant)
   const COLLAPSE_SCROLL_THRESHOLD = 50;
+  const EXPAND_THRESHOLD = 5; // Threshold for expand (must be at top)
+  const MIN_STATE_CHANGE_INTERVAL = 300; // Minimum time between state changes (ms)
+  const DRAWER_HEIGHT = 140; // Matches BillDrawer DRAWER_HEIGHT constant
+  
+  // Helper function to calculate expected height based on scroll (for logging)
+  const calculateExpectedHeight = (scroll: number, isExpanded: boolean): number => {
+    if (!isExpanded) return 0;
+    const clampedScroll = Math.max(0, Math.min(scroll, COLLAPSE_SCROLL_THRESHOLD));
+    return DRAWER_HEIGHT - (clampedScroll / COLLAPSE_SCROLL_THRESHOLD) * DRAWER_HEIGHT;
+  };
+  
+  // Helper function to calculate expected opacity based on scroll (for logging)
+  const calculateExpectedOpacity = (scroll: number, isExpanded: boolean): number => {
+    if (!isExpanded) return 0;
+    const clampedScroll = Math.max(0, scroll);
+    if (clampedScroll <= COLLAPSE_SCROLL_THRESHOLD * 0.4) {
+      // Interpolate from 1 to 0.3
+      const t = clampedScroll / (COLLAPSE_SCROLL_THRESHOLD * 0.4);
+      return 1 - (t * 0.7);
+    } else if (clampedScroll <= COLLAPSE_SCROLL_THRESHOLD) {
+      // Interpolate from 0.3 to 0
+      const t = (clampedScroll - COLLAPSE_SCROLL_THRESHOLD * 0.4) / (COLLAPSE_SCROLL_THRESHOLD * 0.6);
+      return 0.3 - (t * 0.3);
+    }
+    return 0;
+  };
 
   // Debug: Log state changes
   React.useEffect(() => {
     console.log('[HomeScreen] 🎯 State changed: isBillboardExpanded =', isBillboardExpanded);
   }, [isBillboardExpanded]);
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (stateChangeTimeoutRef.current) {
+        clearTimeout(stateChangeTimeoutRef.current);
+      }
+    };
+  }, []);
   
   const {
     bill,
@@ -190,23 +228,99 @@ export const HomeScreen: React.FC = () => {
   }, [isBillboardExpanded]);
 
   // Track scroll position - update shared value for seamless billboard collapse
+  // The scroll-driven animation handles the visual collapse, state only tracks for programmatic control
   const handleScroll = useCallback((event: any) => {
     const offset = event.nativeEvent.contentOffset.y;
+    const clampedOffset = Math.max(0, offset); // Clamp to prevent negative values from bounce
     
-    // Update shared value for seamless billboard collapse
-    scrollOffsetShared.value = offset;
+    // Update shared value for seamless billboard collapse (this drives the smooth animation)
+    scrollOffsetShared.value = clampedOffset;
     
-    setScrollOffset(offset);
-    lastScrollOffset.current = offset;
+    setScrollOffset(clampedOffset);
+    lastScrollOffset.current = clampedOffset;
     
-    // Auto-collapse when scrolled past threshold (with hysteresis to prevent flickering)
-    if (isBillboardExpanded && offset > COLLAPSE_SCROLL_THRESHOLD) {
-      setIsBillboardExpanded(false);
+    // Prevent rapid state changes - enforce minimum interval
+    const now = Date.now();
+    const timeSinceLastChange = now - lastStateChangeTime.current;
+    
+    // COMPREHENSIVE LOGGING: Track every scroll event with full state
+    // Throttled to prevent spam and crashes
+    if (now - logThrottleRef.current > 50) { // Log max once per 50ms
+      logThrottleRef.current = now;
+      
+      // Calculate expected animation values for validation
+      const expectedHeight = calculateExpectedHeight(clampedOffset, isBillboardExpanded);
+      const expectedOpacity = calculateExpectedOpacity(clampedOffset, isBillboardExpanded);
+      
+      console.log('[HomeScreen] 📊 SCROLL EVENT:', {
+        offset: offset.toFixed(2),
+        clampedOffset: clampedOffset.toFixed(2),
+        isBillboardExpanded,
+        timeSinceLastChange: timeSinceLastChange.toFixed(0) + 'ms',
+        hasPendingTimeout: !!stateChangeTimeoutRef.current,
+        collapseThreshold: COLLAPSE_SCROLL_THRESHOLD,
+        expandThreshold: EXPAND_THRESHOLD,
+        // Expected animation values (what should be rendered)
+        expectedHeight: expectedHeight.toFixed(2),
+        expectedOpacity: expectedOpacity.toFixed(3),
+        // State change conditions
+        shouldCollapse: isBillboardExpanded && clampedOffset > COLLAPSE_SCROLL_THRESHOLD && timeSinceLastChange > MIN_STATE_CHANGE_INTERVAL && !stateChangeTimeoutRef.current,
+        shouldExpand: !isBillboardExpanded && clampedOffset <= EXPAND_THRESHOLD && offset >= 0 && timeSinceLastChange > MIN_STATE_CHANGE_INTERVAL && !stateChangeTimeoutRef.current,
+      });
     }
     
-    // Auto-expand when scrolled back to top (with hysteresis)
-    if (!isBillboardExpanded && offset <= 5) {
-      setIsBillboardExpanded(true);
+    // Auto-collapse state when scrolled past threshold
+    // Only trigger if enough time has passed and no pending timeout exists
+    if (
+      isBillboardExpanded && 
+      clampedOffset > COLLAPSE_SCROLL_THRESHOLD &&
+      timeSinceLastChange > MIN_STATE_CHANGE_INTERVAL &&
+      !stateChangeTimeoutRef.current
+    ) {
+      console.log('[HomeScreen] ⏳ Setting collapse timeout...');
+      stateChangeTimeoutRef.current = setTimeout(() => {
+        const currentOffset = Math.max(0, scrollOffsetShared.value);
+        console.log('[HomeScreen] ⏰ Collapse timeout fired:', {
+          currentOffset: currentOffset.toFixed(2),
+          threshold: COLLAPSE_SCROLL_THRESHOLD,
+          willCollapse: currentOffset > COLLAPSE_SCROLL_THRESHOLD,
+        });
+        if (currentOffset > COLLAPSE_SCROLL_THRESHOLD) {
+          console.log('[HomeScreen] 📜 ✅ Auto-collapsing billboard at offset:', currentOffset.toFixed(2));
+          lastStateChangeTime.current = Date.now();
+          setIsBillboardExpanded(false);
+        } else {
+          console.log('[HomeScreen] 📜 ❌ Collapse cancelled - offset below threshold');
+        }
+        stateChangeTimeoutRef.current = null;
+      }, 150); // Reduced delay for faster state updates
+    }
+    
+    // Auto-expand state when scrolled back to top
+    if (
+      !isBillboardExpanded && 
+      clampedOffset <= EXPAND_THRESHOLD &&
+      offset >= 0 && // Don't expand on negative bounce
+      timeSinceLastChange > MIN_STATE_CHANGE_INTERVAL &&
+      !stateChangeTimeoutRef.current
+    ) {
+      console.log('[HomeScreen] ⏳ Setting expand timeout...');
+      stateChangeTimeoutRef.current = setTimeout(() => {
+        const currentOffset = Math.max(0, scrollOffsetShared.value);
+        console.log('[HomeScreen] ⏰ Expand timeout fired:', {
+          currentOffset: currentOffset.toFixed(2),
+          threshold: EXPAND_THRESHOLD,
+          willExpand: currentOffset <= EXPAND_THRESHOLD && currentOffset >= 0,
+        });
+        if (currentOffset <= EXPAND_THRESHOLD && currentOffset >= 0) {
+          console.log('[HomeScreen] 📜 ✅ Auto-expanding billboard at offset:', currentOffset.toFixed(2));
+          lastStateChangeTime.current = Date.now();
+          setIsBillboardExpanded(true);
+        } else {
+          console.log('[HomeScreen] 📜 ❌ Expand cancelled - offset above threshold');
+        }
+        stateChangeTimeoutRef.current = null;
+      }, 150); // Reduced delay for faster state updates
     }
   }, [isBillboardExpanded, scrollOffsetShared]);
 
