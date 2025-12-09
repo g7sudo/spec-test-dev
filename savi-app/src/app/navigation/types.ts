@@ -48,6 +48,7 @@ export type FacilityStackParamList = {
   FacilityMain: undefined;
   AmenityDetail: { amenityId: string };
   AmenityBooking: { amenityId: string };
+  MyBookings: undefined;
 };
 
 // Services Stack (Maintenance, Visitors)

@@ -226,6 +226,27 @@ export interface AssignPlatformUserRolesRequest {
 }
 
 /**
+ * Request to create a new role group
+ * POST /api/v1/tenant/rbac/roles
+ */
+export interface CreateRoleGroupRequest {
+  name: string;
+  code?: string | null;
+  description?: string | null;
+  groupType?: RoleGroupType;
+}
+
+/**
+ * Response from creating a role group
+ */
+export interface CreateRoleGroupResponse {
+  id: string;
+  code: string;
+  name: string;
+  groupType: RoleGroupType;
+}
+
+/**
  * Request to update role group permissions
  * PUT /api/v1/tenant/rbac/roles/{id}/permissions
  */

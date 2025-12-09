@@ -9,7 +9,9 @@ using Savi.Application;
 using Savi.Application.Common.Interfaces;
 using Savi.Application.Platform.Tenants;
 using Savi.Application.Tenant.ResidentInvites;
+using Savi.Application.Common.Authorization;
 using Savi.Infrastructure.Auditing;
+using Savi.Infrastructure.Authorization;
 using Savi.Infrastructure.Email;
 using Savi.Infrastructure.Identity;
 using Savi.Infrastructure.Notifications;
@@ -57,6 +59,9 @@ public static class ServiceCollectionExtensions
 
         // Add ICurrentUser implementation
         services.AddScoped<ICurrentUser, CurrentUser>();
+
+        // Add Resource Ownership Checker for permission-based access control
+        services.AddScoped<IResourceOwnershipChecker, ResourceOwnershipChecker>();
 
         // Add Platform DbContext
         services.AddDbContext<PlatformDbContext>(options =>

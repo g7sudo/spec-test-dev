@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface User {
-  uid: string;
+  userId: string; // Contains communityUserId from tenant auth (tenant-level, NOT platform-level userId)
   email: string;
   displayName: string | null;
   photoURL: string | null;
@@ -112,6 +112,20 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {
+        // Migrate old uid field to userId if needed (for existing stored data)
+        if (state?.user && 'uid' in state.user && !('userId' in state.user)) {
+          console.log('[AuthStore] 🔄 Migrating uid to userId:', {
+            oldUid: (state.user as any).uid,
+          });
+          state.user = {
+            ...state.user,
+            userId: (state.user as any).uid,
+          } as User;
+          // Remove old uid field
+          delete (state.user as any).uid;
+          // Save migrated user back to store
+          state.setUser(state.user);
+        }
         state?.setHasHydrated(true);
         state?.setIsAuthLoading(false);
       },

@@ -5,4 +5,5 @@
 export { PermissionMatrix } from './PermissionMatrix';
 export { ManageUserRolesDialog } from './ManageUserRolesDialog';
 export { ManageUserRoleGroupsDialog } from './ManageUserRoleGroupsDialog';
+export { RoleGroupFormDialog } from './RoleGroupFormDialog';
 

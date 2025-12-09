@@ -155,6 +155,20 @@ public static class Permissions
 
             /// <summary>Permission to assign maintenance staff to requests.</summary>
             public const string RequestAssign = "TENANT_MAINTENANCE_REQUEST_ASSIGN";
+
+            // Granular maintenance request permissions (Own/Unit level)
+
+            /// <summary>Permission to view only own maintenance requests.</summary>
+            public const string RequestViewOwn = "TENANT_MAINTENANCE_REQUEST_VIEW_OWN";
+
+            /// <summary>Permission to view maintenance requests for user's unit(s).</summary>
+            public const string RequestViewUnit = "TENANT_MAINTENANCE_REQUEST_VIEW_UNIT";
+
+            /// <summary>Permission to create maintenance requests for self only.</summary>
+            public const string RequestCreateOwn = "TENANT_MAINTENANCE_REQUEST_CREATE_OWN";
+
+            /// <summary>Permission to create maintenance requests for user's unit.</summary>
+            public const string RequestCreateUnit = "TENANT_MAINTENANCE_REQUEST_CREATE_UNIT";
         }
 
         /// <summary>
@@ -170,6 +184,26 @@ public static class Permissions
 
             /// <summary>Permission to manage all visitor passes (security role).</summary>
             public const string Manage = "TENANT_VISITOR_MANAGE";
+
+            // Granular visitor pass permissions (Own/Unit level)
+
+            /// <summary>Permission to view only own visitor passes.</summary>
+            public const string ViewOwn = "TENANT_VISITOR_VIEW_OWN";
+
+            /// <summary>Permission to view visitor passes for user's unit(s).</summary>
+            public const string ViewUnit = "TENANT_VISITOR_VIEW_UNIT";
+
+            /// <summary>Permission to create visitor passes for self only.</summary>
+            public const string CreateOwn = "TENANT_VISITOR_CREATE_OWN";
+
+            /// <summary>Permission to create visitor passes for user's unit.</summary>
+            public const string CreateUnit = "TENANT_VISITOR_CREATE_UNIT";
+
+            /// <summary>Permission to manage only own visitor passes.</summary>
+            public const string ManageOwn = "TENANT_VISITOR_MANAGE_OWN";
+
+            /// <summary>Permission to manage visitor passes for user's unit.</summary>
+            public const string ManageUnit = "TENANT_VISITOR_MANAGE_UNIT";
         }
 
         /// <summary>
@@ -188,6 +222,26 @@ public static class Permissions
 
             /// <summary>Permission to approve/reject bookings.</summary>
             public const string ApproveBookings = "TENANT_AMENITY_APPROVE_BOOKINGS";
+
+            // Granular booking permissions (Own/Unit level)
+
+            /// <summary>Permission to view only own amenity bookings.</summary>
+            public const string BookingViewOwn = "TENANT_AMENITY_BOOKING_VIEW_OWN";
+
+            /// <summary>Permission to view bookings for user's unit(s).</summary>
+            public const string BookingViewUnit = "TENANT_AMENITY_BOOKING_VIEW_UNIT";
+
+            /// <summary>Permission to create bookings for self only.</summary>
+            public const string BookingCreateOwn = "TENANT_AMENITY_BOOKING_CREATE_OWN";
+
+            /// <summary>Permission to create bookings for anyone in user's unit.</summary>
+            public const string BookingCreateUnit = "TENANT_AMENITY_BOOKING_CREATE_UNIT";
+
+            /// <summary>Permission to cancel/edit only own bookings.</summary>
+            public const string BookingManageOwn = "TENANT_AMENITY_BOOKING_MANAGE_OWN";
+
+            /// <summary>Permission to cancel/edit bookings for user's unit.</summary>
+            public const string BookingManageUnit = "TENANT_AMENITY_BOOKING_MANAGE_UNIT";
         }
 
         /// <summary>
@@ -424,6 +478,23 @@ public static class Permissions
             Tenant.Maintenance.RequestAssign, PermissionScope.Tenant, "Maintenance", "Assign",
             "Assign maintenance staff to requests.");
 
+        // Tenant permissions - Maintenance (Own/Unit level)
+        yield return new PermissionDefinition(
+            Tenant.Maintenance.RequestViewOwn, PermissionScope.Tenant, "Maintenance", "ViewOwn",
+            "View only own maintenance requests.");
+
+        yield return new PermissionDefinition(
+            Tenant.Maintenance.RequestViewUnit, PermissionScope.Tenant, "Maintenance", "ViewUnit",
+            "View maintenance requests for user's unit(s).");
+
+        yield return new PermissionDefinition(
+            Tenant.Maintenance.RequestCreateOwn, PermissionScope.Tenant, "Maintenance", "CreateOwn",
+            "Create maintenance requests for self only.");
+
+        yield return new PermissionDefinition(
+            Tenant.Maintenance.RequestCreateUnit, PermissionScope.Tenant, "Maintenance", "CreateUnit",
+            "Create maintenance requests for user's unit.");
+
         // Tenant permissions - Visitors
         yield return new PermissionDefinition(
             Tenant.Visitors.View, PermissionScope.Tenant, "Visitors", "View",
@@ -436,6 +507,31 @@ public static class Permissions
         yield return new PermissionDefinition(
             Tenant.Visitors.Manage, PermissionScope.Tenant, "Visitors", "Manage",
             "Manage all visitor passes (security role).");
+
+        // Tenant permissions - Visitors (Own/Unit level)
+        yield return new PermissionDefinition(
+            Tenant.Visitors.ViewOwn, PermissionScope.Tenant, "Visitors", "ViewOwn",
+            "View only own visitor passes.");
+
+        yield return new PermissionDefinition(
+            Tenant.Visitors.ViewUnit, PermissionScope.Tenant, "Visitors", "ViewUnit",
+            "View visitor passes for user's unit(s).");
+
+        yield return new PermissionDefinition(
+            Tenant.Visitors.CreateOwn, PermissionScope.Tenant, "Visitors", "CreateOwn",
+            "Create visitor passes for self only.");
+
+        yield return new PermissionDefinition(
+            Tenant.Visitors.CreateUnit, PermissionScope.Tenant, "Visitors", "CreateUnit",
+            "Create visitor passes for user's unit.");
+
+        yield return new PermissionDefinition(
+            Tenant.Visitors.ManageOwn, PermissionScope.Tenant, "Visitors", "ManageOwn",
+            "Manage only own visitor passes.");
+
+        yield return new PermissionDefinition(
+            Tenant.Visitors.ManageUnit, PermissionScope.Tenant, "Visitors", "ManageUnit",
+            "Manage visitor passes for user's unit.");
 
         // Tenant permissions - Amenities
         yield return new PermissionDefinition(
@@ -453,6 +549,31 @@ public static class Permissions
         yield return new PermissionDefinition(
             Tenant.Amenities.ApproveBookings, PermissionScope.Tenant, "Amenities", "ApproveBookings",
             "Approve or reject amenity bookings.");
+
+        // Tenant permissions - Amenities Bookings (Own/Unit level)
+        yield return new PermissionDefinition(
+            Tenant.Amenities.BookingViewOwn, PermissionScope.Tenant, "Amenities", "BookingViewOwn",
+            "View only own amenity bookings.");
+
+        yield return new PermissionDefinition(
+            Tenant.Amenities.BookingViewUnit, PermissionScope.Tenant, "Amenities", "BookingViewUnit",
+            "View amenity bookings for user's unit(s).");
+
+        yield return new PermissionDefinition(
+            Tenant.Amenities.BookingCreateOwn, PermissionScope.Tenant, "Amenities", "BookingCreateOwn",
+            "Create amenity bookings for self only.");
+
+        yield return new PermissionDefinition(
+            Tenant.Amenities.BookingCreateUnit, PermissionScope.Tenant, "Amenities", "BookingCreateUnit",
+            "Create amenity bookings for anyone in user's unit.");
+
+        yield return new PermissionDefinition(
+            Tenant.Amenities.BookingManageOwn, PermissionScope.Tenant, "Amenities", "BookingManageOwn",
+            "Cancel/edit only own amenity bookings.");
+
+        yield return new PermissionDefinition(
+            Tenant.Amenities.BookingManageUnit, PermissionScope.Tenant, "Amenities", "BookingManageUnit",
+            "Cancel/edit amenity bookings for user's unit.");
 
         // Tenant permissions - Announcements
         yield return new PermissionDefinition(

@@ -69,11 +69,6 @@ public sealed record TenantContextDto
     public Guid TenantId { get; init; }
 
     /// <summary>
-    /// Tenant code/slug.
-    /// </summary>
-    public string TenantCode { get; init; } = string.Empty;
-
-    /// <summary>
     /// Tenant display name.
     /// </summary>
     public string TenantName { get; init; } = string.Empty;

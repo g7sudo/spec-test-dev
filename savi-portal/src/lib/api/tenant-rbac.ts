@@ -25,6 +25,9 @@ import {
   RoleGroupAssignment,
   ListRbacUsersParams,
   PagedResult,
+  RoleGroupType,
+  CreateRoleGroupRequest,
+  CreateRoleGroupResponse,
 } from '@/types/rbac';
 
 // ============================================
@@ -56,6 +59,15 @@ export async function listTenantRoleGroups(): Promise<RoleGroup[]> {
 }
 
 /**
+ * Creates a new role group in the tenant
+ */
+export async function createTenantRoleGroup(
+  request: CreateRoleGroupRequest
+): Promise<CreateRoleGroupResponse> {
+  return httpClient.post<CreateRoleGroupResponse>(`${RBAC_BASE}/roles`, request);
+}
+
+/**
  * Gets a role group by ID with all permissions
  */
 export async function getRoleGroupById(id: string): Promise<RoleGroupDetail> {
@@ -71,8 +83,8 @@ export async function updateRoleGroupPermissions(
   id: string,
   permissions: string[]
 ): Promise<void> {
-  const request: UpdateRoleGroupPermissionsRequest = { permissions };
-  return httpClient.put<void>(`${RBAC_BASE}/roles/${id}/permissions`, request);
+  // Backend expects raw array, not wrapped in object
+  return httpClient.put<void>(`${RBAC_BASE}/roles/${id}/permissions`, permissions);
 }
 
 /**

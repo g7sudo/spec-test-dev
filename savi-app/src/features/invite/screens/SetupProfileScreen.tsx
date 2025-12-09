@@ -23,7 +23,7 @@ import { AuthStackParamList } from '@/app/navigation/types';
 import { useTranslation } from 'react-i18next';
 import { updateProfile, getUserProfile } from '@/services/api/profile';
 import { useIsApiLoading } from '@/state/apiLoadingStore';
-import { getAuthMe } from '@/services/api/auth';
+import { getAuthMe, getTenantAuth } from '@/services/api/auth';
 import { useAuthStore } from '@/state/authStore';
 import { useTenantStore } from '@/state/tenantStore';
 import { useAppStore } from '@/state/appStore';
@@ -152,12 +152,26 @@ export const SetupProfileScreen: React.FC = () => {
         const userPhoneNumber = userProfile?.primaryPhone || phoneNumber;
         const userEmail = userProfile?.primaryEmail || authMeResponse.email;
 
+        // Use communityUserId from userProfile if available, otherwise fetch from tenantAuth
+        let communityUserId: string;
+        if (userProfile?.communityUserId) {
+          communityUserId = userProfile.communityUserId;
+        } else {
+          // Fetch tenant auth to get communityUserId
+          const tenantAuthData = await getTenantAuth();
+          if (!tenantAuthData?.communityUserId) {
+            throw new Error('Unable to get community user ID. Please try again.');
+          }
+          communityUserId = tenantAuthData.communityUserId;
+        }
+
         login(
           {
-            id: authMeResponse.userId,
+            userId: communityUserId, // Store communityUserId as userId in authStore
             email: userEmail,
             displayName: displayName,
-            phoneNumber: userPhoneNumber,
+            photoURL: null,
+            emailVerified: true,
           },
           currentFirebaseToken,
           [membership]

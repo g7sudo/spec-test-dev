@@ -18,7 +18,7 @@ import { useTheme } from '@/core/theme';
 import { Screen, Text, Button } from '@/shared/components';
 import { AuthStackParamList } from '@/app/navigation/types';
 import { useTranslation } from 'react-i18next';
-import { getAuthMe } from '@/services/api/auth';
+import { getAuthMe, getTenantAuth } from '@/services/api/auth';
 import { getUserProfile } from '@/services/api/profile';
 import { useAuthStore } from '@/state/authStore';
 import { useTenantStore } from '@/state/tenantStore';
@@ -120,12 +120,26 @@ export const WelcomeScreen: React.FC = () => {
         const phoneNumber = userProfile?.primaryPhone || authMeResponse.phoneNumber;
         const email = userProfile?.primaryEmail || authMeResponse.email;
 
+        // Use communityUserId from userProfile if available, otherwise fetch from tenantAuth
+        let communityUserId: string;
+        if (userProfile?.communityUserId) {
+          communityUserId = userProfile.communityUserId;
+        } else {
+          // Fetch tenant auth to get communityUserId
+          const tenantAuthData = await getTenantAuth();
+          if (!tenantAuthData?.communityUserId) {
+            throw new Error('Unable to get community user ID. Please try again.');
+          }
+          communityUserId = tenantAuthData.communityUserId;
+        }
+
         login(
           {
-            id: authMeResponse.userId,
+            userId: communityUserId, // Store communityUserId as userId in authStore
             email: email,
             displayName: displayName,
-            phoneNumber: phoneNumber,
+            photoURL: null,
+            emailVerified: true,
           },
           currentFirebaseToken,
           [membership]

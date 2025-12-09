@@ -41,6 +41,7 @@ apiClient.interceptors.request.use(
         if (typeof config.headers.set === 'function') {
           config.headers.set('Content-Type', undefined);
         }
+
         console.log('[API Client] 📎 FormData detected - removed default Content-Type, axios will set multipart/form-data with boundary');
       }
     }
@@ -182,6 +183,7 @@ apiClient.interceptors.response.use(
 
 // Helper to extract error message
 function getErrorMessage(error: AxiosError): string {
+  // Check response data first
   if (error.response?.data) {
     const data = error.response.data as any;
     if (data.message) return data.message;
@@ -190,14 +192,43 @@ function getErrorMessage(error: AxiosError): string {
     if (typeof data === 'string') return data;
   }
 
+  // For 401 errors, check www-authenticate header for error details
+  if (error.response?.status === 401) {
+    const wwwAuthenticate = error.response.headers['www-authenticate'];
+    if (wwwAuthenticate) {
+      // Extract error_description from www-authenticate header
+      // Format: Bearer error="invalid_token", error_description="The token expired at '12/08/2025 20:31:54'"
+      const errorDescMatch = wwwAuthenticate.match(/error_description="([^"]+)"/);
+      if (errorDescMatch && errorDescMatch[1]) {
+        return errorDescMatch[1];
+      }
+
+      // Fallback: extract error code
+      const errorMatch = wwwAuthenticate.match(/error="([^"]+)"/);
+      if (errorMatch && errorMatch[1]) {
+        return `Authentication error: ${errorMatch[1]}`;
+      }
+    }
+
+    return 'Your session has expired. Please sign in again.';
+  }
+
+  // For 403 errors, provide specific message
+  if (error.response?.status === 403) {
+    return 'You do not have permission to access this resource.';
+  }
+
+  // Network errors
   if (error.message === 'Network Error') {
     return 'Network error. Please check your connection.';
   }
 
+  // Timeout errors
   if (error.code === 'ECONNABORTED') {
     return 'Request timeout. Please try again.';
   }
 
+  // Generic fallback
   return 'Something went wrong. Please try again.';
 }
 

@@ -76,14 +76,14 @@ export async function getPlatformRoleById(id: string): Promise<PlatformRoleDetai
 /**
  * Updates permissions for a platform role
  * @param id - Role ID
- * @param permissions - List of permission keys to enable
+ * @param permissionIds - List of permission IDs (GUIDs) to enable
  */
 export async function updatePlatformRolePermissions(
   id: string,
-  permissions: string[]
+  permissionIds: string[]
 ): Promise<void> {
-  const request: UpdateRolePermissionsRequest = { permissions };
-  return httpClient.put<void>(`${RBAC_BASE}/roles/${id}/permissions`, request);
+  // Backend expects raw array of permission IDs (GUIDs)
+  return httpClient.put<void>(`${RBAC_BASE}/roles/${id}/permissions`, permissionIds);
 }
 
 /**

@@ -1,113 +1,330 @@
-import React from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+/**
+ * FacilityScreen
+ * 
+ * Main screen for viewing all available amenities/facilities.
+ * Displays a list of amenities with images, status, and basic info.
+ * Users can tap on an amenity to view details and book if available.
+ */
+
+import React, { useCallback, useRef, useEffect } from 'react';
+import { View, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useTheme } from '@/core/theme';
 import { Screen, Text, Card, Row } from '@/shared/components';
+import { ErrorState, EmptyState } from '@/shared/components/feedback';
+import { useAmenities } from '../hooks';
+import { AmenitySummaryDto } from '@/services/api/amenities';
+import { FacilityStackParamList } from '@/app/navigation/types';
+import { useScrollDirection } from '@/core/contexts/ScrollDirectionContext';
 
-interface Facility {
-  id: string;
-  name: string;
-  description: string;
-  imageUrl: string;
-  isAvailable: boolean;
-}
+type NavigationProp = NativeStackNavigationProp<FacilityStackParamList>;
 
-const mockFacilities: Facility[] = [
-  {
-    id: '1',
-    name: 'Swimming Pool',
-    description: 'Olympic-sized swimming pool with lifeguard',
-    imageUrl: 'https://picsum.photos/400/200?random=1',
-    isAvailable: true,
-  },
-  {
-    id: '2',
-    name: 'Gym',
-    description: 'Fully equipped fitness center',
-    imageUrl: 'https://picsum.photos/400/200?random=2',
-    isAvailable: true,
-  },
-  {
-    id: '3',
-    name: 'Party Hall',
-    description: 'Multi-purpose hall for events',
-    imageUrl: 'https://picsum.photos/400/200?random=3',
-    isAvailable: false,
-  },
-  {
-    id: '4',
-    name: 'Tennis Court',
-    description: 'Professional tennis court',
-    imageUrl: 'https://picsum.photos/400/200?random=4',
-    isAvailable: true,
-  },
-];
+// Placeholder image URL for amenities without primary image
+const PLACEHOLDER_IMAGE_URL = 'https://picsum.photos/400/200.jpg';
 
 export const FacilityScreen: React.FC = () => {
   const { theme } = useTheme();
+  const navigation = useNavigation<NavigationProp>();
+  const { setIsScrollingUp } = useScrollDirection();
+  
+  // Refs for scroll tracking
+  const lastScrollOffset = useRef(0);
+  const scrollDirectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastBottomNavDirectionRef = useRef<'up' | 'down' | null>(null);
+  
+  // Fetch amenities using React Query hook
+  const {
+    data: amenitiesData,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    isRefetching,
+  } = useAmenities({
+    isVisibleInApp: true, // Only show amenities visible in app
+    page: 1,
+    pageSize: 50, // Load enough amenities for initial view
+  });
 
-  const handleFacilityPress = (facilityId: string) => {
-    console.log('Book facility:', facilityId);
+  /**
+   * Handle amenity card press - navigate to detail screen
+   */
+  const handleAmenityPress = (amenityId: string) => {
+    navigation.navigate('AmenityDetail', { amenityId });
   };
 
-  const renderFacility = ({ item }: { item: Facility }) => (
+  /**
+   * Handle my bookings press - navigate to bookings screen
+   */
+  const handleMyBookingsPress = () => {
+    navigation.navigate('MyBookings');
+  };
+
+  /**
+   * Handle pull to refresh - ensure refetch completes properly
+   */
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+    } catch (error) {
+      console.error('[FacilityScreen] ❌ Refresh error:', error);
+      // Error is already handled by React Query, just ensure it completes
+    }
+  };
+
+  /**
+   * Handle scroll begin drag - reset scroll tracking
+   */
+  const handleScrollBeginDrag = useCallback((event: any) => {
+    const offset = event.nativeEvent.contentOffset.y;
+    lastScrollOffset.current = offset;
+  }, []);
+
+  /**
+   * Handle scroll - detect scroll direction and update nav bar visibility
+   */
+  const handleScroll = useCallback((event: any) => {
+    const offset = event.nativeEvent.contentOffset.y;
+    const clampedOffset = Math.max(0, offset); // Clamp to prevent negative values from bounce
+    
+    // Detect scroll direction for bottom nav visibility
+    const scrollDelta = clampedOffset - lastScrollOffset.current;
+    const isScrollingUpward = scrollDelta > 2; // Threshold to prevent jitter
+    const isScrollingDownward = scrollDelta < -2;
+    
+    // Update bottom nav visibility based on scroll direction
+    // Only hide when scrolling up past a small threshold (to avoid hiding at top)
+    const shouldHide = isScrollingUpward && clampedOffset > 10;
+    const shouldShow = isScrollingDownward || clampedOffset <= 10;
+    
+    // Determine current direction
+    const currentDirection: 'up' | 'down' | null = shouldHide ? 'up' : (shouldShow ? 'down' : null);
+    
+    // Only set timeout if direction changed or no timeout exists
+    const directionChanged = currentDirection !== null && currentDirection !== lastBottomNavDirectionRef.current;
+    
+    if (shouldHide && (directionChanged || !scrollDirectionTimeoutRef.current)) {
+      // Scrolling up - hide bottom nav
+      if (scrollDirectionTimeoutRef.current) {
+        clearTimeout(scrollDirectionTimeoutRef.current);
+        scrollDirectionTimeoutRef.current = null;
+      }
+
+      lastBottomNavDirectionRef.current = 'up';
+      scrollDirectionTimeoutRef.current = setTimeout(() => {
+        setIsScrollingUp(true);
+        scrollDirectionTimeoutRef.current = null;
+        lastBottomNavDirectionRef.current = null;
+      }, 50); // Small delay for smoother response
+    } else if (shouldShow && (directionChanged || !scrollDirectionTimeoutRef.current)) {
+      // Scrolling down or near top - show bottom nav
+      if (scrollDirectionTimeoutRef.current) {
+        clearTimeout(scrollDirectionTimeoutRef.current);
+        scrollDirectionTimeoutRef.current = null;
+      }
+
+      lastBottomNavDirectionRef.current = 'down';
+      scrollDirectionTimeoutRef.current = setTimeout(() => {
+        setIsScrollingUp(false);
+        scrollDirectionTimeoutRef.current = null;
+        lastBottomNavDirectionRef.current = null;
+      }, 50); // Small delay for smoother response
+    }
+    
+    // Update last scroll offset
+    lastScrollOffset.current = clampedOffset;
+  }, [setIsScrollingUp]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollDirectionTimeoutRef.current) {
+        clearTimeout(scrollDirectionTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  /**
+   * Get image URL for amenity, fallback to placeholder if null
+   */
+  const getImageUrl = (amenity: AmenitySummaryDto): string => {
+    return amenity.primaryImageUrl || PLACEHOLDER_IMAGE_URL;
+  };
+
+  /**
+   * Get status badge color based on availability
+   */
+  const getStatusBadgeStyle = (isAvailable: boolean) => ({
+    backgroundColor: isAvailable
+      ? theme.colors.successLight
+      : theme.colors.errorLight,
+  });
+
+  /**
+   * Get status text color based on availability
+   */
+  const getStatusTextColor = (isAvailable: boolean) =>
+    isAvailable ? theme.colors.success : theme.colors.error;
+
+  /**
+   * Render amenity card item
+   */
+  const renderAmenity = ({ item }: { item: AmenitySummaryDto }) => (
     <TouchableOpacity
-      onPress={() => handleFacilityPress(item.id)}
+      onPress={() => handleAmenityPress(item.id)}
       activeOpacity={0.7}
     >
-      <Card style={styles.facilityCard}>
+      <Card style={styles.amenityCard}>
         <Image
-          source={{ uri: item.imageUrl }}
-          style={styles.facilityImage}
+          source={{ uri: getImageUrl(item) }}
+          style={styles.amenityImage}
           contentFit="cover"
+          placeholder={{ blurhash: 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.' }}
+          transition={200}
         />
-        <View style={styles.facilityContent}>
+        <View style={styles.amenityContent}>
           <Row style={styles.titleRow}>
-            <Text variant="bodyLarge" weight="semiBold">
-              {item.name}
-            </Text>
+            <View style={styles.titleContainer}>
+              <Text variant="bodyLarge" weight="semiBold" numberOfLines={1}>
+                {item.name}
+              </Text>
+              {item.locationText && (
+                <Text
+                  variant="caption"
+                  color={theme.colors.textSecondary}
+                  numberOfLines={1}
+                >
+                  {item.locationText}
+                </Text>
+              )}
+            </View>
             <View
               style={[
                 styles.statusBadge,
-                {
-                  backgroundColor: item.isAvailable
-                    ? theme.colors.successLight
-                    : theme.colors.errorLight,
-                },
+                getStatusBadgeStyle(item.isAvailableForBooking),
               ]}
             >
               <Text
                 variant="caption"
-                color={item.isAvailable ? theme.colors.success : theme.colors.error}
+                color={getStatusTextColor(item.isAvailableForBooking)}
+                weight="medium"
               >
-                {item.isAvailable ? 'Available' : 'Unavailable'}
+                {item.isAvailableForBooking ? 'Available' : 'Unavailable'}
               </Text>
             </View>
           </Row>
-          <Text
-            variant="bodySmall"
-            color={theme.colors.textSecondary}
-            numberOfLines={2}
-          >
-            {item.description}
-          </Text>
+          <Row style={styles.metaRow}>
+            {item.isBookable && (
+              <View style={styles.metaItem}>
+                <Ionicons
+                  name="calendar-outline"
+                  size={14}
+                  color={theme.colors.primary}
+                />
+                <Text variant="caption" color={theme.colors.primary} style={styles.metaText}>
+                  Bookable
+                </Text>
+              </View>
+            )}
+            {item.depositRequired && (
+              <View style={styles.metaItem}>
+                <Ionicons
+                  name="card-outline"
+                  size={14}
+                  color={theme.colors.warning}
+                />
+                <Text variant="caption" color={theme.colors.warning} style={styles.metaText}>
+                  Deposit Required
+                </Text>
+              </View>
+            )}
+          </Row>
         </View>
       </Card>
     </TouchableOpacity>
   );
 
+  // Loading state
+  if (isLoading && !amenitiesData) {
+    return (
+      <Screen safeArea style={styles.screen}>
+        <View style={styles.header}>
+          <Text variant="h2">Facilities</Text>
+        </View>
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text
+            variant="body"
+            color={theme.colors.textSecondary}
+            style={styles.loadingText}
+          >
+            Loading facilities...
+          </Text>
+        </View>
+      </Screen>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <Screen safeArea style={styles.screen}>
+        <View style={styles.header}>
+          <Text variant="h2">Facilities</Text>
+        </View>
+        <ErrorState
+          title="Unable to Load Facilities"
+          message={error?.message || 'Something went wrong. Please try again.'}
+          onRetry={() => refetch()}
+        />
+      </Screen>
+    );
+  }
+
+  const amenities = amenitiesData?.items || [];
+
   return (
     <Screen safeArea style={styles.screen}>
       <View style={styles.header}>
-        <Text variant="h2">Facilities</Text>
+        <Text variant="h2" style={styles.headerTitle}>Facilities</Text>
+        <TouchableOpacity
+          onPress={handleMyBookingsPress}
+          style={styles.bookingsButton}
+        >
+          <Ionicons name="calendar-outline" size={24} color={theme.colors.primary} />
+        </TouchableOpacity>
       </View>
       <FlatList
-        data={mockFacilities}
-        renderItem={renderFacility}
+        data={amenities}
+        renderItem={renderAmenity}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={
+          amenities.length === 0 ? styles.emptyListContent : styles.listContent
+        }
+
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        onScrollBeginDrag={handleScrollBeginDrag}
+        scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetching}
+            onRefresh={handleRefresh}
+            tintColor={theme.colors.primary}
+          />
+        }
+
+        ListEmptyComponent={
+          <EmptyState
+            title="No Facilities Available"
+            message="There are no facilities available at this time."
+            icon="business-outline"
+          />
+        }
+
       />
     </Screen>
   );
@@ -118,33 +335,74 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 16,
+  },
+  headerTitle: {
+    flex: 1,
+  },
+  bookingsButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
   },
   listContent: {
     paddingHorizontal: 16,
     paddingBottom: 24,
   },
-  facilityCard: {
+  emptyListContent: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+  },
+  amenityCard: {
     marginBottom: 16,
     overflow: 'hidden',
   },
-  facilityImage: {
+  amenityImage: {
     width: '100%',
     height: 150,
   },
-  facilityContent: {
+  amenityContent: {
     padding: 16,
   },
   titleRow: {
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: 8,
+  },
+  titleContainer: {
+    flex: 1,
+    marginRight: 8,
   },
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
+  },
+  metaRow: {
+    marginTop: 8,
+    gap: 12,
+  },
+  metaItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    marginLeft: 2,
   },
 });
 

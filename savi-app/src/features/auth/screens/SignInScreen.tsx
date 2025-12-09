@@ -24,8 +24,7 @@ import { useInviteAcceptance } from '@/features/invite/hooks/useInviteAcceptance
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { signInWithEmail, getIdToken } from '@/services/firebase/auth';
 import { initializeFirebase } from '@/services/firebase';
-import { getAuthMe } from '@/services/api/auth';
-import { getUserProfile } from '@/services/api/profile';
+import { getAuthMe, getTenantAuth } from '@/services/api/auth';
 
 type SignInRouteProp = RouteProp<AuthStackParamList, 'SignIn'>;
 type SignInNavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -104,6 +103,7 @@ export const SignInScreen: React.FC = () => {
       });
 
       // Create memberships from tenant memberships
+      // Will be updated with unit info after tenant auth call
       const memberships = authMeResponse.tenantMemberships.map((tenant) => ({
         tenantId: tenant.tenantId,
         tenantName: tenant.tenantName,
@@ -113,69 +113,123 @@ export const SignInScreen: React.FC = () => {
         unitName: '',
       }));
 
-      // Get detailed profile if tenant memberships exist
-      let userProfile = null;
+      // Get tenant auth data if tenant memberships exist
+      let tenantAuthData = null;
+      let selectedUnitId = '';
+      let selectedUnitLabel = '';
+      
       if (memberships.length > 0) {
         try {
           // Select first tenant so apiClient can add X-Tenant-Id header
           const firstTenant = authMeResponse.tenantMemberships[0];
-          useTenantStore.getState().selectTenant(
-            {
-              id: firstTenant.tenantId,
-              name: firstTenant.tenantName,
-              slug: firstTenant.tenantSlug,
-            },
-            {
-              id: '',
-              name: '',
-            }
-          );
-
+          
           // Store token in auth store first (apiClient reads from store)
           useAuthStore.getState().setIdToken(firebaseToken);
           
-          // Fetch detailed profile (apiClient will use token from store)
-          userProfile = await getUserProfile();
-          console.log('[SignInScreen] ✅ Tenant profile loaded:', {
-            id: userProfile.id,
-            displayName: userProfile.displayName,
-            firstName: userProfile.firstName,
-            lastName: userProfile.lastName,
+          // Set tenant in store so apiClient can add X-Tenant-Id header
+          useTenantStore.getState().setCurrentTenant({
+            id: firstTenant.tenantId,
+            name: firstTenant.tenantName,
+            slug: firstTenant.tenantSlug,
           });
-        } catch (profileError: any) {
-          console.warn('[SignInScreen] ⚠️ Failed to load tenant profile:', {
-            error: profileError.message,
+          
+          // Fetch tenant auth data (apiClient will use token and tenant from store)
+          tenantAuthData = await getTenantAuth();
+          
+          console.log('[SignInScreen] ✅ Tenant auth data loaded:', {
+            userId: tenantAuthData.userId, // Platform-level (NOT used)
+            tenantUserId: tenantAuthData.tenantUserId,
+            communityUserId: tenantAuthData.communityUserId, // Will be stored as userId in authStore
+            tenantId: tenantAuthData.tenant.tenantId,
+            tenantCode: tenantAuthData.tenant.tenantCode,
+            leasesCount: tenantAuthData.leases?.length || 0,
           });
-          // Continue without tenant profile - not critical
+          
+          // Extract unit from leases (use primary lease or first lease)
+          const primaryLease = tenantAuthData.leases.find(lease => lease.isPrimary);
+          const selectedLease = primaryLease || tenantAuthData.leases[0];
+          
+          if (selectedLease) {
+            selectedUnitId = selectedLease.unitId;
+            selectedUnitLabel = selectedLease.unitLabel;
+            
+            console.log('[SignInScreen] ✅ Unit selected from lease:', {
+              unitId: selectedUnitId,
+              unitLabel: selectedUnitLabel,
+              isPrimary: selectedLease.isPrimary,
+              role: selectedLease.role,
+            });
+            
+            // Set current unit in tenant store (persisted to AsyncStorage)
+            useTenantStore.getState().setCurrentUnit({
+              id: selectedUnitId,
+              unitNumber: selectedUnitLabel,
+            });
+            
+            console.log('[SignInScreen] 💾 Unit stored in tenant store:', {
+              unitId: selectedUnitId,
+              unitNumber: selectedUnitLabel,
+              storeState: useTenantStore.getState().currentUnit,
+            });
+          }
+        } catch (tenantAuthError: any) {
+          console.warn('[SignInScreen] ⚠️ Failed to load tenant auth data:', {
+            error: tenantAuthError.message,
+            status: tenantAuthError.response?.status,
+          });
+          // Continue with login even if tenant auth fetch fails
         }
       }
 
-      // Use profile data if available, otherwise use platform data
-      const displayName = userProfile?.displayName || 
-                         userProfile?.firstName && userProfile?.lastName 
-                           ? `${userProfile.firstName} ${userProfile.lastName}`
-                           : authMeResponse.displayName || 
-                             user.displayName || 
-                             email.split('@')[0];
+      // Use tenant auth data if available, otherwise use platform data
+      const displayName = tenantAuthData?.displayName || 
+                         authMeResponse.displayName || 
+                         user.displayName || 
+                         email.split('@')[0];
       
-      const phoneNumber = userProfile?.primaryPhone || authMeResponse.phoneNumber;
-      const userEmail = userProfile?.primaryEmail || authMeResponse.email || user.email || email;
+      const phoneNumber = tenantAuthData?.phoneNumber || authMeResponse.phoneNumber;
+      const userEmail = tenantAuthData?.email || authMeResponse.email || user.email || email;
 
+      // Update memberships with unit info from tenant auth if available
+      if (tenantAuthData && memberships.length > 0) {
+        const firstMembership = memberships[0];
+        firstMembership.unitId = selectedUnitId;
+        firstMembership.unitName = selectedUnitLabel;
+      }
+
+      // ALWAYS use communityUserId from tenantAuthData (tenant-level)
+      // NEVER use platform-level userId from authMeResponse
+      if (!tenantAuthData?.communityUserId) {
+        throw new Error('Unable to get community user ID. Please try again.');
+      }
+      
+      const communityUserId = tenantAuthData.communityUserId;
+      
       login(
         {
-          id: authMeResponse.userId,
+          userId: communityUserId, // Store communityUserId as userId in authStore
           email: userEmail,
           displayName: displayName,
-          phoneNumber: phoneNumber,
+          photoURL: null,
+          emailVerified: true,
         },
         firebaseToken,
         memberships
       );
+      
+      console.log('[SignInScreen] 💾 Login data stored:', {
+        userId: communityUserId, // This is communityUserId stored as userId
+        email: userEmail,
+        displayName: displayName,
+        membershipsCount: memberships.length,
+        unitId: selectedUnitId,
+        unitLabel: selectedUnitLabel,
+      });
 
-      // Auto-select tenant if only one membership (already selected above if fetching profile)
-      if (memberships.length === 1 && !userProfile) {
+      // Auto-select tenant if only one membership (already selected above if fetching tenant auth)
+      if (memberships.length === 1 && !tenantAuthData) {
         const membership = memberships[0];
-        useTenantStore.getState().selectTenant({
+        useTenantStore.getState().setCurrentTenant({
           id: membership.tenantId,
           name: membership.tenantName,
           slug: membership.tenantSlug,

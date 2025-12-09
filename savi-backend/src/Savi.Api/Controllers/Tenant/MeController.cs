@@ -2,6 +2,13 @@ using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Savi.Api.Configuration;
+using Savi.Application.Tenant.Amenities.Dtos;
+using Savi.Application.Tenant.Amenities.Queries.GetMyBookings;
+using Savi.Application.Tenant.Maintenance.Requests.Dtos;
+using Savi.Application.Tenant.Maintenance.Requests.Queries.GetMyRequests;
+using Savi.Application.Tenant.Visitors.Dtos;
+using Savi.Application.Tenant.Visitors.Queries.GetMyVisitors;
 using Savi.Application.Tenant.Auth.Queries.GetMyTenantAuth;
 using Savi.Application.Tenant.Me.Commands.UpdateMyAppSettings;
 using Savi.Application.Tenant.Me.Commands.UpdateMyNotificationSettings;
@@ -16,6 +23,8 @@ using Savi.Application.Tenant.Me.Queries.GetMyNotificationSettings;
 using Savi.Application.Tenant.Me.Queries.GetMyPrivacySettings;
 using Savi.Application.Tenant.Me.Queries.GetMyProfile;
 using Savi.Domain.Tenant.Enums;
+using Savi.SharedKernel.Authorization;
+using Savi.SharedKernel.Common;
 
 namespace Savi.Api.Controllers.Tenant;
 
@@ -415,6 +424,153 @@ public class MeController : ControllerBase
             return result.Error == "Community user not found." || result.Error == "Party not found for community user."
                 ? NotFound(new { error = result.Error })
                 : BadRequest(new { error = result.Error });
+        }
+
+        return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Gets amenity bookings based on user's permission level.
+    /// - CanViewAll: Returns all bookings
+    /// - CanViewUnit: Returns bookings for user's units
+    /// - CanViewOwn: Returns only user's own bookings
+    /// </summary>
+    /// <remarks>
+    /// Requires one of: TENANT_AMENITY_VIEW, TENANT_AMENITY_BOOKING_VIEW_UNIT, or TENANT_AMENITY_BOOKING_VIEW_OWN permission.
+    /// The response is filtered based on the user's highest permission level.
+    /// </remarks>
+    [HttpGet("bookings")]
+    [HasAnyPermission(
+        Permissions.Tenant.Amenities.View,
+        Permissions.Tenant.Amenities.Manage,
+        Permissions.Tenant.Amenities.BookingViewUnit,
+        Permissions.Tenant.Amenities.BookingViewOwn)]
+    [ProducesResponseType(typeof(PagedResult<AmenityBookingSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetMyBookings(
+        [FromQuery] Guid? amenityId = null,
+        [FromQuery] AmenityBookingStatus? status = null,
+        [FromQuery] DateOnly? fromDate = null,
+        [FromQuery] DateOnly? toDate = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("GET /tenant/me/bookings");
+
+        var query = new GetMyBookingsQuery(
+            AmenityId: amenityId,
+            Status: status,
+            FromDate: fromDate,
+            ToDate: toDate,
+            Page: page,
+            PageSize: pageSize);
+
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Gets visitor passes based on user's permission level.
+    /// - CanViewAll: Returns all visitor passes
+    /// - CanViewUnit: Returns visitor passes for user's units
+    /// - CanViewOwn: Returns only visitor passes created by the user
+    /// </summary>
+    /// <remarks>
+    /// Requires one of: TENANT_VISITOR_VIEW, TENANT_VISITOR_VIEW_UNIT, or TENANT_VISITOR_VIEW_OWN permission.
+    /// The response is filtered based on the user's highest permission level.
+    /// </remarks>
+    [HttpGet("visitors")]
+    [HasAnyPermission(
+        Permissions.Tenant.Visitors.View,
+        Permissions.Tenant.Visitors.Manage,
+        Permissions.Tenant.Visitors.ViewUnit,
+        Permissions.Tenant.Visitors.ViewOwn)]
+    [ProducesResponseType(typeof(PagedResult<VisitorPassSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetMyVisitors(
+        [FromQuery] VisitorPassStatus? status = null,
+        [FromQuery] VisitorType? visitType = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("GET /tenant/me/visitors");
+
+        var query = new GetMyVisitorsQuery(
+            Status: status,
+            VisitType: visitType,
+            FromDate: fromDate,
+            ToDate: toDate,
+            Page: page,
+            PageSize: pageSize);
+
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Gets maintenance requests based on user's permission level.
+    /// - CanViewAll: Returns all maintenance requests
+    /// - CanViewUnit: Returns maintenance requests for user's units
+    /// - CanViewOwn: Returns only maintenance requests submitted by the user
+    /// </summary>
+    /// <remarks>
+    /// Requires one of: TENANT_MAINTENANCE_REQUEST_VIEW, TENANT_MAINTENANCE_REQUEST_VIEW_UNIT, or TENANT_MAINTENANCE_REQUEST_VIEW_OWN permission.
+    /// The response is filtered based on the user's highest permission level.
+    /// </remarks>
+    [HttpGet("requests")]
+    [HasAnyPermission(
+        Permissions.Tenant.Maintenance.RequestView,
+        Permissions.Tenant.Maintenance.RequestManage,
+        Permissions.Tenant.Maintenance.RequestViewUnit,
+        Permissions.Tenant.Maintenance.RequestViewOwn)]
+    [ProducesResponseType(typeof(PagedResult<MaintenanceRequestSummaryDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> GetMyRequests(
+        [FromQuery] MaintenanceStatus? status = null,
+        [FromQuery] MaintenancePriority? priority = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("GET /tenant/me/requests");
+
+        var query = new GetMyRequestsQuery(
+            Status: status,
+            Priority: priority,
+            FromDate: fromDate,
+            ToDate: toDate,
+            Page: page,
+            PageSize: pageSize);
+
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new { error = result.Error });
         }
 
         return Ok(result.Value);

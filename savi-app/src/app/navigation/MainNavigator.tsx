@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { Platform } from 'react-native';
@@ -24,6 +25,8 @@ import { CreateMaintenanceScreen } from '@/features/maintenance/screens/CreateMa
 
 // Facility Stack Screens
 import { FacilityScreen } from '@/features/facility/screens/FacilityScreen';
+import { AmenityDetailScreen } from '@/features/facility/screens/AmenityDetailScreen';
+import { MyBookingsScreen } from '@/features/facility/screens/MyBookingsScreen';
 
 // Services Stack Screens
 import { ServicesScreen } from '@/features/services/screens/ServicesScreen';
@@ -96,6 +99,16 @@ const FacilityStackNavigator: React.FC = () => {
       }}
     >
       <FacilityStack.Screen name="FacilityMain" component={FacilityScreen} />
+      <FacilityStack.Screen
+        name="AmenityDetail"
+        component={AmenityDetailScreen}
+        options={{ headerShown: false }}
+      />
+      <FacilityStack.Screen
+        name="MyBookings"
+        component={MyBookingsScreen}
+        options={{ headerShown: false }}
+      />
     </FacilityStack.Navigator>
   );
 };
@@ -224,24 +237,28 @@ export const MainNavigator: React.FC = () => {
   const { t } = useTranslation('home');
   const insets = useSafeAreaInsets();
   
-  // Calculate tab bar height
+  // Calculate tab bar height consistently
+  // Base height: 60 (8 padding top + 44 content + 8 padding bottom)
+  // Plus safe area bottom inset on iOS
+  const baseHeight = 60;
   const tabBarHeight = useMemo(() => {
     return Platform.select({
-      ios: 60 + insets.bottom,
-      android: 60,
+      ios: baseHeight + insets.bottom,
+      android: baseHeight,
     });
   }, [insets.bottom]);
 
   // Base tab bar style
   // Note: AnimatedTabBar uses absolute positioning, so this style is applied to the inner BottomTabBar
+  // Height already includes safe area bottom inset, so paddingBottom should only account for content padding
   const tabBarStyle = useMemo(() => {
     return {
       backgroundColor: '#F0F0F0', // Light gray background to match UI design
       borderTopWidth: 0, // Remove top border for cleaner look
-      height: tabBarHeight,
+      height: tabBarHeight, // Total height including safe area
       paddingBottom: Platform.select({
-        ios: Math.max(insets.bottom, 8),
-        android: 8,
+        ios: Math.max(insets.bottom, 8), // Safe area bottom + minimum content padding
+        android: 8, // Content padding on Android
       }),
       paddingTop: 8,
       paddingHorizontal: 4,
@@ -296,11 +313,18 @@ export const MainNavigator: React.FC = () => {
       <Tab.Screen
         name="FacilityTab"
         component={FacilityStackNavigator}
-        options={{
-          tabBarLabel: t('tabs.facility'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="business-outline" size={size} color={color} />
-          ),
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? 'FacilityMain';
+          // Hide tab bar on detail screens
+          const hideTabBar = routeName === 'AmenityDetail' || routeName === 'MyBookings' || routeName === 'AmenityBooking';
+          
+          return {
+            tabBarLabel: t('tabs.facility'),
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="business-outline" size={size} color={color} />
+            ),
+            tabBarStyle: hideTabBar ? { display: 'none' } : undefined,
+          };
         }}
       />
       <Tab.Screen

@@ -255,12 +255,12 @@ export default function PlatformRoleDetailPage() {
     setSaveError(null);
     
     try {
-      // Get all enabled permission keys
-      const enabledKeys = currentPermissions
+      // Get all enabled permission IDs (backend expects GUIDs)
+      const enabledIds = currentPermissions
         .filter((p) => p.isEnabled)
-        .map((p) => p.key);
+        .map((p) => p.id);
       
-      await updatePlatformRolePermissions(roleId, enabledKeys);
+      await updatePlatformRolePermissions(roleId, enabledIds);
       
       // Clear changes and refresh
       setPermissionChanges(new Map());

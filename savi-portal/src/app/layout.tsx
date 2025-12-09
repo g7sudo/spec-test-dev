@@ -8,8 +8,8 @@ import { AppProviders } from '@/providers/AppProviders';
  */
 
 export const metadata: Metadata = {
-  title: 'SAVI - Community Management',
-  description: 'Multi-tenant community management platform',
+  title: 'SPEC TESTING',
+  description: 'SPEC TESTING',
 };
 
 export default function RootLayout({
@@ -27,4 +27,3 @@ export default function RootLayout({
     </html>
   );
 }
-

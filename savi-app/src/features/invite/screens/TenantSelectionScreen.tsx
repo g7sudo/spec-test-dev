@@ -20,7 +20,7 @@ import { useTheme } from '@/core/theme';
 import { Screen, Text } from '@/shared/components';
 import { AuthStackParamList } from '@/app/navigation/types';
 import { useTranslation } from 'react-i18next';
-import { getAuthMe, type AuthMeResponse } from '@/services/api/auth';
+import { getAuthMe, getTenantAuth, type AuthMeResponse } from '@/services/api/auth';
 import { usePendingInvite } from '@/core/contexts/PendingInviteContext';
 import { acceptInvite } from '@/services/api/residentInvite';
 import { getIdToken } from '@/services/firebase';
@@ -147,13 +147,21 @@ export const TenantSelectionScreen: React.FC = () => {
         unitName: pendingInvite.unitLabel || '',
       };
 
+      // Fetch tenant auth to get communityUserId (tenant-level, not platform-level)
+      const tenantAuthData = await getTenantAuth();
+      if (!tenantAuthData?.communityUserId) {
+        throw new Error('Unable to get community user ID. Please try again.');
+      }
+      const communityUserId = tenantAuthData.communityUserId;
+
       // Update auth store
       login(
         {
-          id: authMeResponse.userId,
+          userId: communityUserId, // Store communityUserId as userId in authStore
           email: authMeResponse.email,
           displayName: authMeResponse.displayName,
-          phoneNumber: authMeResponse.phoneNumber,
+          photoURL: null,
+          emailVerified: true,
         },
         currentFirebaseToken,
         [membership]

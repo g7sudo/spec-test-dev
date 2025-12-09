@@ -60,7 +60,6 @@ public sealed class GetMyTenantAuthQueryHandler
             {
                 u.Id,
                 u.Email,
-                u.FullName,
                 u.PhoneNumber
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -71,26 +70,39 @@ public sealed class GetMyTenantAuthQueryHandler
             return Result.Failure<TenantAuthMeResponseDto>("User not found.");
         }
 
-        // Get community user ID (for residents)
+        // Get community user with profile (for display name)
         Guid? communityUserId = null;
+        Guid? partyId = null;
+        string? displayName = null;
+
         var communityUser = await _tenantDbContext.CommunityUsers
             .AsNoTracking()
             .Where(cu => cu.PlatformUserId == _currentUser.UserId && cu.IsActive)
-            .Select(cu => new { cu.Id })
+            .Select(cu => new { cu.Id, cu.PartyId })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (communityUser != null)
         {
             communityUserId = communityUser.Id;
+            partyId = communityUser.PartyId;
+
+            // Get display name from CommunityUserProfile
+            var profile = await _tenantDbContext.CommunityUserProfiles
+                .AsNoTracking()
+                .Where(p => p.CommunityUserId == communityUser.Id && p.IsActive)
+                .Select(p => new { p.DisplayName })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            displayName = profile?.DisplayName;
         }
 
-        // Get user's leases (for residents)
+        // Get user's leases via PartyId path: CommunityUser.PartyId -> LeaseParty.PartyId -> Lease -> Unit
         var leases = new List<UserLeaseDto>();
-        if (communityUserId.HasValue)
+        if (partyId.HasValue)
         {
             leases = await _tenantDbContext.LeaseParties
                 .AsNoTracking()
-                .Where(lp => lp.CommunityUserId == communityUserId && lp.IsActive)
+                .Where(lp => lp.PartyId == partyId && lp.IsActive)
                 .Join(
                     _tenantDbContext.Leases.AsNoTracking().Where(l => l.IsActive),
                     lp => lp.LeaseId,
@@ -122,7 +134,6 @@ public sealed class GetMyTenantAuthQueryHandler
         var tenantContext = new TenantContextDto
         {
             TenantId = _tenantContext.TenantId.Value,
-            TenantCode = _tenantContext.TenantCode ?? string.Empty,
             TenantName = _tenantContext.TenantName ?? "Community"
         };
 
@@ -134,7 +145,7 @@ public sealed class GetMyTenantAuthQueryHandler
             UserId = platformUser.Id,
             TenantUserId = _currentUser.TenantUserId,
             CommunityUserId = communityUserId,
-            DisplayName = platformUser.FullName,
+            DisplayName = displayName,
             Email = platformUser.Email,
             PhoneNumber = platformUser.PhoneNumber,
             Tenant = tenantContext,

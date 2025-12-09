@@ -104,8 +104,12 @@ export const Button: React.FC<ButtonProps> = ({
   const currentSize = sizeStyles[size];
   const isDisabled = disabled || loading;
 
+  // Extract onPress from props to avoid override
+  const { onPress: originalOnPress, ...restProps } = props;
+
   return (
     <TouchableOpacity
+      {...restProps}
       style={[
         styles.button,
         currentSize,
@@ -120,7 +124,7 @@ export const Button: React.FC<ButtonProps> = ({
       ]}
       disabled={isDisabled}
       activeOpacity={0.7}
-      {...props}
+      onPress={originalOnPress}
     >
       {loading ? (
         <ActivityIndicator color={currentVariant.textColor} size="small" />

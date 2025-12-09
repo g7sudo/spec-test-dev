@@ -11,8 +11,9 @@ public static class AuthorizationConfiguration
 {
     /// <summary>
     /// Adds permission-based authorization policies.
-    /// 
+    ///
     /// Creates one policy per permission key from the Permissions catalog.
+    /// Also registers the AnyOfPolicyProvider for HasAnyPermission attribute support.
     /// </summary>
     public static IServiceCollection AddSaviAuthorization(this IServiceCollection services)
     {
@@ -31,6 +32,12 @@ public static class AuthorizationConfiguration
 
         // Register the permission requirement handler
         services.AddScoped<IAuthorizationHandler, PermissionRequirementHandler>();
+
+        // Register the AnyPermission requirement handler for HasAnyPermission attribute
+        services.AddScoped<IAuthorizationHandler, AnyPermissionRequirementHandler>();
+
+        // Register the custom policy provider for "AnyOf:" policies
+        services.AddSingleton<IAuthorizationPolicyProvider, AnyOfPolicyProvider>();
 
         return services;
     }

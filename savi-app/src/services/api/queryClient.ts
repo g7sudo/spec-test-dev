@@ -81,6 +81,8 @@ export const queryKeys = {
       all: ['amenityBookings'] as const,
       list: (filters?: Record<string, unknown>) =>
         [...queryKeys.amenities.bookings.all, 'list', filters] as const,
+      myBookings: (filters?: Record<string, unknown>) =>
+        [...queryKeys.amenities.bookings.all, 'myBookings', filters] as const,
       detail: (id: string) =>
         [...queryKeys.amenities.bookings.all, 'detail', id] as const,
     },

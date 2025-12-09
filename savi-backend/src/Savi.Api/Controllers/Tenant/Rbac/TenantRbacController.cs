@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Savi.Api.Configuration;
 using Savi.Application.Tenant.Rbac.Commands.AssignCommunityUserRoles;
+using Savi.Application.Tenant.Rbac.Commands.CreateRoleGroup;
 using Savi.Application.Tenant.Rbac.Commands.UpdateRoleGroupPermissions;
 using Savi.Application.Tenant.Rbac.Dtos;
 using Savi.Application.Tenant.Rbac.Queries.GetRoleGroupDetail;
@@ -72,6 +73,35 @@ public class TenantRbacController : ControllerBase
         var result = await _mediator.Send(query, cancellationToken);
 
         return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Creates a new role group in the tenant.
+    /// </summary>
+    /// <param name="command">The create role group command.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The created role group info.</returns>
+    [HttpPost("roles")]
+    [HasPermission(Permissions.Tenant.Rbac.Manage)]
+    [ProducesResponseType(typeof(CreateRoleGroupResult), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CreateRole(
+        [FromBody] CreateRoleGroupCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("POST /tenant/rbac/roles - Creating role group: {Name}", command.Name);
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (!result.IsSuccess)
+            return BadRequest(result.Error);
+
+        return CreatedAtAction(
+            nameof(GetRoleDetail),
+            new { id = result.Value.Id },
+            result.Value);
     }
 
     /// <summary>

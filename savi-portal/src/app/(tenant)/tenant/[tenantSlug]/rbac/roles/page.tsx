@@ -19,6 +19,7 @@ import {
   AlertCircle,
   Key,
   Lock,
+  Plus,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,7 @@ import {
   getRoleGroupTypeLabel,
   getRoleGroupTypeColor,
 } from '@/types/rbac';
+import { RoleGroupFormDialog } from '@/components/rbac';
 
 // ============================================
 // Role Group Card Component
@@ -131,6 +133,7 @@ export default function TenantRolesPage() {
   const [roleGroups, setRoleGroups] = useState<RoleGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   
   // Permissions
   const permissions = profile?.permissions || {};
@@ -175,14 +178,20 @@ export default function TenantRolesPage() {
           </p>
         </div>
         
-        {/* Optional: Link to view all permissions */}
+        {/* Actions */}
         {canManage && (
-          <Link href={`/tenant/${tenantSlug}/rbac/permissions`}>
-            <Button variant="secondary">
-              <Key className="h-4 w-4" />
-              View All Permissions
+          <div className="flex items-center gap-2">
+            <Link href={`/tenant/${tenantSlug}/rbac/permissions`}>
+              <Button variant="secondary">
+                <Key className="h-4 w-4" />
+                View Permissions
+              </Button>
+            </Link>
+            <Button onClick={() => setIsCreateOpen(true)}>
+              <Plus className="h-4 w-4" />
+              New Role
             </Button>
-          </Link>
+          </div>
         )}
       </div>
       
@@ -230,6 +239,16 @@ export default function TenantRolesPage() {
           ))}
         </div>
       )}
+      
+      {/* Create Role Dialog */}
+      <RoleGroupFormDialog
+        open={isCreateOpen}
+        onOpenChange={setIsCreateOpen}
+        onSuccess={() => {
+          setIsCreateOpen(false);
+          fetchRoleGroups(true);
+        }}
+      />
     </div>
   );
 }

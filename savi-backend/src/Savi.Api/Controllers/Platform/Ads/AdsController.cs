@@ -7,12 +7,14 @@ using Savi.Application.Platform.Ads.Serving.Dtos;
 using Savi.Application.Platform.Ads.Serving.Queries.GetBanners;
 using Savi.Application.Platform.Ads.Serving.Queries.GetStories;
 using Savi.Domain.Platform.Enums;
+using Savi.MultiTenancy;
 
 namespace Savi.Api.Controllers.Platform.Ads;
 
 /// <summary>
 /// Controller for ad serving - fetching banners/stories and recording events.
 /// Used by mobile apps to display ads and track analytics.
+/// Tenant context is resolved from X-Tenant-Id header.
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
@@ -22,17 +24,19 @@ public class AdsController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ILogger<AdsController> _logger;
+    private readonly ITenantContext _tenantContext;
 
-    public AdsController(IMediator mediator, ILogger<AdsController> logger)
+    public AdsController(IMediator mediator, ILogger<AdsController> logger, ITenantContext tenantContext)
     {
         _mediator = mediator;
         _logger = logger;
+        _tenantContext = tenantContext;
     }
 
     /// <summary>
-    /// Gets banner ads for a tenant and screen placements.
+    /// Gets banner ads for the current tenant and screen placements.
+    /// Tenant is resolved from X-Tenant-Id header.
     /// </summary>
-    /// <param name="tenantId">The tenant ID.</param>
     /// <param name="screen">The screen name (e.g., "HOME").</param>
     /// <param name="placements">Comma-separated list of placements (e.g., "HomeTop,HomeMiddle").</param>
     /// <param name="cancellationToken">Cancellation token.</param>
@@ -42,21 +46,22 @@ public class AdsController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> GetBanners(
-        [FromQuery] Guid tenantId,
         [FromQuery] string screen,
         [FromQuery] string placements,
         CancellationToken cancellationToken)
     {
+        if (!_tenantContext.HasTenant)
+        {
+            return BadRequest(new { error = "X-Tenant-Id header is required." });
+        }
+
+        var tenantId = _tenantContext.TenantId!.Value;
+
         _logger.LogInformation(
             "GET /ads/banners - TenantId: {TenantId}, Screen: {Screen}, Placements: {Placements}",
             tenantId,
             screen,
             placements);
-
-        if (tenantId == Guid.Empty)
-        {
-            return BadRequest(new { error = "Tenant ID is required." });
-        }
 
         if (string.IsNullOrWhiteSpace(screen))
         {
@@ -89,25 +94,25 @@ public class AdsController : ControllerBase
     }
 
     /// <summary>
-    /// Gets story campaigns for a tenant.
+    /// Gets story campaigns for the current tenant.
+    /// Tenant is resolved from X-Tenant-Id header.
     /// </summary>
-    /// <param name="tenantId">The tenant ID.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Story campaigns with slides.</returns>
     [HttpGet("stories")]
     [ProducesResponseType(typeof(GetStoriesResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> GetStories(
-        [FromQuery] Guid tenantId,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> GetStories(CancellationToken cancellationToken)
     {
-        _logger.LogInformation("GET /ads/stories - TenantId: {TenantId}", tenantId);
-
-        if (tenantId == Guid.Empty)
+        if (!_tenantContext.HasTenant)
         {
-            return BadRequest(new { error = "Tenant ID is required." });
+            return BadRequest(new { error = "X-Tenant-Id header is required." });
         }
+
+        var tenantId = _tenantContext.TenantId!.Value;
+
+        _logger.LogInformation("GET /ads/stories - TenantId: {TenantId}", tenantId);
 
         var query = new GetStoriesQuery(tenantId);
         var result = await _mediator.Send(query, cancellationToken);
