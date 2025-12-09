@@ -148,7 +148,10 @@ public class VisitorPassesController : ControllerBase
     /// Returns the pass ID and shareable access code.
     /// </summary>
     [HttpPost]
-    [HasPermission(Permissions.Tenant.Visitors.Create)]
+    [HasAnyPermission(
+        Permissions.Tenant.Visitors.Create,
+        Permissions.Tenant.Visitors.CreateUnit,
+        Permissions.Tenant.Visitors.CreateOwn)]
     [ProducesResponseType(typeof(CreateVisitorPassResult), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -205,7 +208,10 @@ public class VisitorPassesController : ControllerBase
     /// Approves a visitor pass (resident approval for walk-in visitors).
     /// </summary>
     [HttpPost("{id:guid}/approve")]
-    [HasPermission(Permissions.Tenant.Visitors.Create)]
+    [HasAnyPermission(
+        Permissions.Tenant.Visitors.Create,
+        Permissions.Tenant.Visitors.CreateUnit,
+        Permissions.Tenant.Visitors.CreateOwn)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -234,7 +240,10 @@ public class VisitorPassesController : ControllerBase
     /// Rejects a visitor pass (resident rejection for walk-in visitors).
     /// </summary>
     [HttpPost("{id:guid}/reject")]
-    [HasPermission(Permissions.Tenant.Visitors.Create)]
+    [HasAnyPermission(
+        Permissions.Tenant.Visitors.Create,
+        Permissions.Tenant.Visitors.CreateUnit,
+        Permissions.Tenant.Visitors.CreateOwn)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

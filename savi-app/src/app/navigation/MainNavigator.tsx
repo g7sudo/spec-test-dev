@@ -350,11 +350,20 @@ export const MainNavigator: React.FC = () => {
       <Tab.Screen
         name="ProfileTab"
         component={ProfileStackNavigator}
-        options={{
-          tabBarLabel: t('tabs.profile'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
-          ),
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? 'ProfileMain';
+          // Hide tab bar on nested screens (all screens except ProfileMain)
+          // This includes: EditProfile, ChangePassword, Settings, HouseholdMembers,
+          // LinkedUnits, SwitchCommunity, Notifications, Privacy
+          const hideTabBar = routeName !== 'ProfileMain';
+          
+          return {
+            tabBarLabel: t('tabs.profile'),
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="person-outline" size={size} color={color} />
+            ),
+            tabBarStyle: hideTabBar ? { display: 'none' } : undefined,
+          };
         }}
       />
     </Tab.Navigator>

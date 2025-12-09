@@ -242,9 +242,10 @@ export const HomeScreen: React.FC = () => {
     const clampedOffset = Math.max(0, offset); // Clamp to prevent negative values from bounce
     
     // Detect scroll direction for bottom nav visibility
+    // More sensitive threshold for scroll down detection (shows navbar sooner)
     const scrollDelta = clampedOffset - lastScrollOffset.current;
-    const isScrollingUpward = scrollDelta > 2; // Threshold to prevent jitter
-    const isScrollingDownward = scrollDelta < -2;
+    const isScrollingUpward = scrollDelta > 1.5; // Threshold to prevent jitter (slightly lower for responsiveness)
+    const isScrollingDownward = scrollDelta < -1; // More sensitive - even small scroll down shows navbar
     
     // Log bottom nav scroll detection (throttled)
     const now = Date.now();
@@ -261,8 +262,12 @@ export const HomeScreen: React.FC = () => {
     }
     
     // Update bottom nav visibility based on scroll direction
+    // Behavior:
+    // - Scrolling UP → Hide navbar for full-screen experience
+    // - Scrolling DOWN (even slightly) → Show navbar so users can navigate
     // Only hide when scrolling up past a small threshold (to avoid hiding at top)
     const shouldHide = isScrollingUpward && clampedOffset > 10;
+    // Show navbar when scrolling down OR when near top (for easy navigation)
     const shouldShow = isScrollingDownward || clampedOffset <= 10;
     
     // Determine current direction
@@ -272,7 +277,7 @@ export const HomeScreen: React.FC = () => {
     const directionChanged = currentDirection !== null && currentDirection !== lastBottomNavDirectionRef.current;
     
     if (shouldHide && (directionChanged || !scrollDirectionTimeoutRef.current)) {
-      // Scrolling up - hide bottom nav
+      // Scrolling up - hide bottom nav for full-screen view
       if (scrollDirectionTimeoutRef.current) {
         clearTimeout(scrollDirectionTimeoutRef.current);
         scrollDirectionTimeoutRef.current = null;
@@ -283,9 +288,9 @@ export const HomeScreen: React.FC = () => {
         setIsScrollingUp(true);
         scrollDirectionTimeoutRef.current = null;
         lastBottomNavDirectionRef.current = null;
-      }, 50); // Reduced delay for faster response
+      }, 30); // Reduced delay for faster response
     } else if (shouldShow && (directionChanged || !scrollDirectionTimeoutRef.current)) {
-      // Scrolling down or near top - show bottom nav
+      // Scrolling down (even slightly) or near top - show bottom nav for navigation
       if (scrollDirectionTimeoutRef.current) {
         clearTimeout(scrollDirectionTimeoutRef.current);
         scrollDirectionTimeoutRef.current = null;
@@ -296,7 +301,7 @@ export const HomeScreen: React.FC = () => {
         setIsScrollingUp(false);
         scrollDirectionTimeoutRef.current = null;
         lastBottomNavDirectionRef.current = null;
-      }, 50); // Reduced delay for faster response
+      }, 30); // Reduced delay for faster response - shows navbar quickly
     }
     
     // Update shared value for seamless billboard collapse (this drives the smooth animation)

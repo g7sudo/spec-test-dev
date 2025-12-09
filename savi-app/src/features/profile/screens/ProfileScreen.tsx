@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -16,6 +16,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { getUserProfile, type UserProfileResponse } from '@/services/api/profile';
 import { uploadProfilePhoto } from '@/services/api/profilePhoto';
 import { useIsApiLoading } from '@/state/apiLoadingStore';
+import { useScrollDirection } from '@/core/contexts/ScrollDirectionContext';
 
 type ProfileStackParamList = {
   ProfileMain: undefined;
@@ -44,6 +45,12 @@ export const ProfileScreen: React.FC = () => {
   const { user } = useAuthStore();
   const { selectedTenant, currentTenant } = useTenantStore();
   const { clearPendingInvite } = usePendingInvite();
+  const { setIsScrollingUp } = useScrollDirection();
+  
+  // Refs for scroll tracking
+  const lastScrollOffset = useRef(0);
+  const scrollDirectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastBottomNavDirectionRef = useRef<'up' | 'down' | null>(null);
   
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
@@ -291,6 +298,87 @@ export const ProfileScreen: React.FC = () => {
     navigation.navigate('SwitchCommunity');
   };
 
+  /**
+   * Handle scroll begin drag - reset scroll tracking
+   */
+  const handleScrollBeginDrag = useCallback((event: any) => {
+    const offset = event.nativeEvent.contentOffset.y;
+    lastScrollOffset.current = offset;
+  }, []);
+
+  /**
+   * Handle scroll - detect scroll direction and update nav bar visibility
+   * 
+   * Behavior:
+   * - Scrolling UP → Hide navbar for full-screen experience
+   * - Scrolling DOWN (even slightly) → Show navbar so users can navigate
+   */
+  const handleScroll = useCallback((event: any) => {
+    const offset = event.nativeEvent.contentOffset.y;
+    const clampedOffset = Math.max(0, offset); // Clamp to prevent negative values from bounce
+    
+    // Detect scroll direction for bottom nav visibility
+    // More sensitive threshold for scroll down detection (shows navbar sooner)
+    const scrollDelta = clampedOffset - lastScrollOffset.current;
+    const isScrollingUpward = scrollDelta > 1.5; // Threshold to prevent jitter (slightly lower for responsiveness)
+    const isScrollingDownward = scrollDelta < -1; // More sensitive - even small scroll down shows navbar
+    
+    // Update bottom nav visibility based on scroll direction
+    // Behavior:
+    // - Scrolling UP → Hide navbar for full-screen experience
+    // - Scrolling DOWN (even slightly) → Show navbar so users can navigate
+    // Only hide when scrolling up past a small threshold (to avoid hiding at top)
+    const shouldHide = isScrollingUpward && clampedOffset > 10;
+    // Show navbar when scrolling down OR when near top (for easy navigation)
+    const shouldShow = isScrollingDownward || clampedOffset <= 10;
+    
+    // Determine current direction
+    const currentDirection: 'up' | 'down' | null = shouldHide ? 'up' : (shouldShow ? 'down' : null);
+    
+    // Only set timeout if direction changed or no timeout exists
+    const directionChanged = currentDirection !== null && currentDirection !== lastBottomNavDirectionRef.current;
+    
+    if (shouldHide && (directionChanged || !scrollDirectionTimeoutRef.current)) {
+      // Scrolling up - hide bottom nav for full-screen view
+      if (scrollDirectionTimeoutRef.current) {
+        clearTimeout(scrollDirectionTimeoutRef.current);
+        scrollDirectionTimeoutRef.current = null;
+      }
+
+      lastBottomNavDirectionRef.current = 'up';
+      scrollDirectionTimeoutRef.current = setTimeout(() => {
+        setIsScrollingUp(true);
+        scrollDirectionTimeoutRef.current = null;
+        lastBottomNavDirectionRef.current = null;
+      }, 30); // Reduced delay for faster response
+    } else if (shouldShow && (directionChanged || !scrollDirectionTimeoutRef.current)) {
+      // Scrolling down (even slightly) or near top - show bottom nav for navigation
+      if (scrollDirectionTimeoutRef.current) {
+        clearTimeout(scrollDirectionTimeoutRef.current);
+        scrollDirectionTimeoutRef.current = null;
+      }
+
+      lastBottomNavDirectionRef.current = 'down';
+      scrollDirectionTimeoutRef.current = setTimeout(() => {
+        setIsScrollingUp(false);
+        scrollDirectionTimeoutRef.current = null;
+        lastBottomNavDirectionRef.current = null;
+      }, 30); // Reduced delay for faster response - shows navbar quickly
+    }
+    
+    // Update last scroll offset
+    lastScrollOffset.current = clampedOffset;
+  }, [setIsScrollingUp]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollDirectionTimeoutRef.current) {
+        clearTimeout(scrollDirectionTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const accountMenuItems: MenuItem[] = [
     {
       id: 'edit-profile',
@@ -432,6 +520,9 @@ export const ProfileScreen: React.FC = () => {
         style={styles.content}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
+        onScroll={handleScroll}
+        onScrollBeginDrag={handleScrollBeginDrag}
+        scrollEventThrottle={16}
       >
         {/* User Profile Card */}
         <Card style={styles.profileCard}>
