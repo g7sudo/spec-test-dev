@@ -16,6 +16,7 @@ using Savi.Application.Tenant.Me.Commands.UpdateMyPartyInfo;
 using Savi.Application.Tenant.Me.Commands.UpdateMyPrivacySettings;
 using Savi.Application.Tenant.Me.Commands.UpdateMyProfile;
 using Savi.Application.Tenant.Me.Commands.UpdateMyProfilePhoto;
+using Savi.Application.Tenant.Me.Commands.CreateMaintenanceRequest;
 using Savi.Application.Tenant.Me.Dtos;
 using Savi.Application.Tenant.Me.Queries.GetMyAppSettings;
 using Savi.Application.Tenant.Me.Queries.GetMyHome;
@@ -574,6 +575,87 @@ public class MeController : ControllerBase
         }
 
         return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Creates a new maintenance request with optional image attachments.
+    /// Auto-populates UnitId and PartyId from the user's active lease.
+    /// This endpoint is designed for mobile app usage with multipart/form-data.
+    /// </summary>
+    /// <remarks>
+    /// Accepts file upload via multipart/form-data.
+    /// Supported image formats: JPEG, PNG, GIF, WebP, HEIC.
+    /// Maximum 5 attachments, 10MB each.
+    ///
+    /// The UnitId and RequestedForParty are automatically determined from the user's active lease.
+    /// Source is automatically set to MobileApp.
+    /// </remarks>
+    [HttpPost("requests")]
+    [Consumes("multipart/form-data")]
+    [HasAnyPermission(
+        Permissions.Tenant.Maintenance.RequestCreate,
+        Permissions.Tenant.Maintenance.RequestCreateOwn,
+        Permissions.Tenant.Maintenance.RequestCreateUnit)]
+    [ProducesResponseType(typeof(CreateMyMaintenanceRequestResultDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [RequestSizeLimit(52428800)] // 50MB total (5 files * 10MB)
+    public async Task<IActionResult> CreateMaintenanceRequest(
+        [FromForm] string categoryCode,
+        [FromForm] string title,
+        [FromForm] string? description = null,
+        [FromForm] MaintenancePriority priority = MaintenancePriority.Normal,
+        [FromForm] List<IFormFile>? attachments = null,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("POST /tenant/me/requests - Creating maintenance request: {Title}, Category: {CategoryCode}", title, categoryCode);
+
+        // Build attachments list from form files
+        var attachmentList = new List<MaintenanceAttachment>();
+        if (attachments != null)
+        {
+            foreach (var file in attachments)
+            {
+                if (file.Length > 0)
+                {
+                    attachmentList.Add(new MaintenanceAttachment
+                    {
+                        FileStream = file.OpenReadStream(),
+                        FileName = file.FileName ?? $"attachment-{DateTime.UtcNow:yyyyMMddHHmmss}.jpg",
+                        ContentType = file.ContentType ?? "image/jpeg",
+                        FileSize = file.Length
+                    });
+                }
+            }
+        }
+
+        var command = new CreateMyMaintenanceRequestCommand
+        {
+            CategoryCode = categoryCode,
+            Title = title,
+            Description = description,
+            Priority = priority,
+            Attachments = attachmentList
+        };
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            _logger.LogWarning("Failed to create maintenance request: {Error}", result.Error);
+            return BadRequest(new { error = result.Error });
+        }
+
+        _logger.LogInformation(
+            "Created maintenance request {TicketNumber} with {AttachmentCount} attachments",
+            result.Value.TicketNumber,
+            result.Value.Attachments.Count);
+
+        return CreatedAtAction(
+            nameof(GetMyRequests),
+            new { id = result.Value.RequestId },
+            result.Value);
     }
 }
 

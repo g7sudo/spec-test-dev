@@ -6,9 +6,11 @@ using Savi.Api.Configuration;
 using Savi.Application.Tenant.Visitors.Commands.ApproveVisitorPass;
 using Savi.Application.Tenant.Visitors.Commands.CheckInVisitorPass;
 using Savi.Application.Tenant.Visitors.Commands.CheckOutVisitorPass;
+using Savi.Application.Tenant.Visitors.Commands.CancelVisitorPass;
 using Savi.Application.Tenant.Visitors.Commands.CreateVisitorPass;
 using Savi.Application.Tenant.Visitors.Commands.CreateWalkInVisitorPass;
 using Savi.Application.Tenant.Visitors.Commands.RejectVisitorPass;
+using Savi.Application.Tenant.Visitors.Commands.UpdateVisitorPass;
 using Savi.Application.Tenant.Visitors.Dtos;
 using Savi.Application.Tenant.Visitors.Queries.GetVisitorOverview;
 using Savi.Application.Tenant.Visitors.Queries.GetVisitorPassByAccessCode;
@@ -326,9 +328,90 @@ public class VisitorPassesController : ControllerBase
 
         return NoContent();
     }
+
+    /// <summary>
+    /// Cancels a visitor pass (resident cancellation before visitor arrival).
+    /// </summary>
+    [HttpPost("{id:guid}/cancel")]
+    [HasAnyPermission(
+        Permissions.Tenant.Visitors.Create,
+        Permissions.Tenant.Visitors.CreateUnit,
+        Permissions.Tenant.Visitors.CreateOwn)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CancelPass(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new CancelVisitorPassCommand(id);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            if (result.Error?.Contains("not found") == true)
+            {
+                return NotFound(new { error = result.Error });
+            }
+            return BadRequest(new { error = result.Error });
+        }
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Updates a visitor pass (resident can update before visitor check-in).
+    /// </summary>
+    [HttpPut("{id:guid}")]
+    [HasAnyPermission(
+        Permissions.Tenant.Visitors.Create,
+        Permissions.Tenant.Visitors.CreateUnit,
+        Permissions.Tenant.Visitors.CreateOwn)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> UpdatePass(
+        Guid id,
+        [FromBody] UpdateVisitorPassRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new UpdateVisitorPassCommand(
+            id,
+            request.VisitorName,
+            request.VisitorPhone,
+            request.VehicleNumber,
+            request.VehicleType,
+            request.Notes);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            if (result.Error?.Contains("not found") == true)
+            {
+                return NotFound(new { error = result.Error });
+            }
+            return BadRequest(new { error = result.Error });
+        }
+
+        return NoContent();
+    }
 }
 
 /// <summary>
 /// Request model for rejecting a visitor pass.
 /// </summary>
 public record RejectVisitorPassRequest(string? Reason = null);
+
+/// <summary>
+/// Request model for updating a visitor pass.
+/// </summary>
+public record UpdateVisitorPassRequest(
+    string VisitorName,
+    string? VisitorPhone = null,
+    string? VehicleNumber = null,
+    string? VehicleType = null,
+    string? Notes = null);

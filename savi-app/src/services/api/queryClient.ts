@@ -63,6 +63,8 @@ export const queryKeys = {
     lists: () => [...queryKeys.visitors.all, 'list'] as const,
     list: (filters: Record<string, unknown>) =>
       [...queryKeys.visitors.lists(), filters] as const,
+    myVisitors: (filters?: Record<string, unknown>) =>
+      [...queryKeys.visitors.all, 'myVisitors', filters] as const,
     details: () => [...queryKeys.visitors.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.visitors.details(), id] as const,
   },

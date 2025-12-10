@@ -8,6 +8,8 @@ import { useTenantStore, useTenantHasHydrated } from '@/state/tenantStore';
 import { checkForUpdate, UpdateResult } from '@/core/update/updateChecker';
 import { changeLanguage } from '@/core/i18n';
 import { appLogger } from '@/core/logger';
+import { isTokenExpired } from '@/shared/utils/tokenUtils';
+import { refreshIdToken } from '@/services/firebase';
 
 export type StartupResult =
   | 'force_update'
@@ -144,13 +146,42 @@ export const useStartup = (): UseStartupReturn => {
           return;
         }
 
-        // 4. Check authentication
+        // 4. Check authentication and token validity
         if (!isAuthenticated) {
           appLogger.info('Navigating to sign in');
           setResult('auth');
           startupCompleted = true;
           resetToAuth('SignIn');
           return;
+        }
+
+        // 4.1 Validate token expiration and attempt refresh if needed
+        const { idToken } = useAuthStore.getState();
+        if (isTokenExpired(idToken)) {
+          appLogger.info('Token is expired - attempting refresh via Firebase');
+          
+          try {
+            // Attempt to refresh token using Firebase
+            const newToken = await refreshIdToken();
+            
+            // Update the stored token with the fresh one
+            useAuthStore.getState().updateToken(newToken);
+            appLogger.info('Token refreshed successfully during startup');
+          } catch (refreshError) {
+            // Token refresh failed - Firebase session is no longer valid
+            appLogger.warn('Token refresh failed - logging out user:', refreshError);
+            
+            // Clear auth state and redirect to sign in
+            useAuthStore.getState().logout();
+            useTenantStore.getState().clearTenant();
+            
+            setResult('auth');
+            startupCompleted = true;
+            resetToAuth('SignIn');
+            return;
+          }
+        } else {
+          appLogger.debug('Token is still valid');
         }
 
         // 5. Check tenant selection

@@ -58,7 +58,6 @@ export type ServicesStackParamList = {
   MaintenanceDetail: { requestId: string };
   CreateMaintenance: undefined;
   VisitorList: undefined;
-  VisitorDetail: { visitorId: string };
   CreateVisitor: undefined;
 };
 

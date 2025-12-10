@@ -331,6 +331,21 @@ public class VisitorPass : BaseEntity
     }
 
     /// <summary>
+    /// Cancels the visitor pass (by resident before visitor arrival).
+    /// </summary>
+    public void Cancel(Guid cancelledByUserId)
+    {
+        if (Status == VisitorPassStatus.CheckedIn || Status == VisitorPassStatus.CheckedOut)
+            throw new InvalidOperationException($"Cannot cancel a pass with status '{Status}'.");
+
+        if (Status == VisitorPassStatus.Cancelled)
+            throw new InvalidOperationException("Pass is already cancelled.");
+
+        Status = VisitorPassStatus.Cancelled;
+        MarkAsUpdated(cancelledByUserId);
+    }
+
+    /// <summary>
     /// Updates visitor details (only allowed before check-in).
     /// </summary>
     public void UpdateVisitorDetails(

@@ -10,5 +10,7 @@ export {
   resetPassword,
   changePassword,
   getIdToken,
+  refreshIdToken,
+  setupAuthStateListener,
 } from './auth';
 

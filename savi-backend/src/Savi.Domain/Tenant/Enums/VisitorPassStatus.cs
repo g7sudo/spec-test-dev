@@ -39,5 +39,10 @@ public enum VisitorPassStatus
     /// <summary>
     /// Auto-expired (no show / out of time window).
     /// </summary>
-    Expired
+    Expired,
+
+    /// <summary>
+    /// Cancelled by resident before visitor arrival.
+    /// </summary>
+    Cancelled
 }

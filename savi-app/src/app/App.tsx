@@ -1,4 +1,4 @@
-import React, { useEffect, ErrorInfo } from 'react';
+import React, { useEffect, ErrorInfo, useRef } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -12,9 +12,15 @@ import { RootNavigator } from './navigation';
 import { appLogger, logError } from '@/core/logger';
 import { ScrollDirectionProvider } from '@/core/contexts/ScrollDirectionContext';
 import { PendingInviteProvider } from '@/core/contexts/PendingInviteContext';
-import { initializeFirebase } from '@/services/firebase';
+import { initializeFirebase, setupAuthStateListener } from '@/services/firebase';
 import { LoadingOverlay } from '@/shared/components/feedback/LoadingOverlay';
 import { useIsApiLoading } from '@/state/apiLoadingStore';
+import { useAuthStore, useAuthHasHydrated } from '@/state/authStore';
+import { useTenantStore } from '@/state/tenantStore';
+import { useAppStore } from '@/state/appStore';
+import { navigationRef } from '@/core/navigation/navigationRef';
+import { CommonActions } from '@react-navigation/native';
+import { resetStartupState } from '@/features/startup/hooks/useStartup';
 
 // Error Boundary Component
 interface ErrorBoundaryState {
@@ -96,6 +102,10 @@ const AppContent: React.FC = () => {
 };
 
 export const App: React.FC = () => {
+  // Track if auth listener is set up to prevent duplicates
+  const authListenerSetupRef = useRef(false);
+  const authHydrated = useAuthHasHydrated();
+  
   useEffect(() => {
     appLogger.info('App starting...');
 
@@ -119,6 +129,82 @@ export const App: React.FC = () => {
       ErrorUtils.setGlobalHandler(originalHandler);
     };
   }, []);
+
+  /**
+   * Setup Firebase onAuthStateChanged listener
+   * 
+   * This listener handles cases where:
+   * - User signs out from another device
+   * - Firebase session expires while app is running
+   * - User account is disabled/deleted
+   */
+  useEffect(() => {
+    // Wait for auth store to hydrate before setting up listener
+    if (!authHydrated) {
+      return;
+    }
+
+    // Prevent duplicate listener setup (React Strict Mode / hot reload)
+    if (authListenerSetupRef.current) {
+      return;
+    }
+    authListenerSetupRef.current = true;
+
+    appLogger.info('Setting up Firebase auth state listener');
+
+    // Handler for when Firebase detects user should be logged out
+    const handleAuthLogout = () => {
+      const { isAuthenticated } = useAuthStore.getState();
+      
+      // Only trigger logout if app thinks user is authenticated
+      // This prevents logout during initial app load
+      if (!isAuthenticated) {
+        appLogger.debug('Auth listener: User not authenticated in store, skipping logout');
+        return;
+      }
+
+      appLogger.warn('Firebase auth state changed: User signed out - triggering app logout');
+      
+      // Clear all stores
+      useAuthStore.getState().logout();
+      useTenantStore.getState().clearTenant();
+      useAppStore.getState().setIsAppReady(false);
+      
+      // Reset startup state so it runs again
+      resetStartupState();
+      
+      // Navigate to splash screen
+      if (navigationRef.isReady()) {
+        navigationRef.dispatch(
+          CommonActions.reset({
+            index: 0,
+            routes: [{ name: 'Splash' }],
+          })
+        );
+      }
+    };
+
+    // Handler for token refresh (optional - keeps token in sync)
+    const handleTokenRefresh = (newToken: string) => {
+      const { isAuthenticated, idToken } = useAuthStore.getState();
+      
+      // Only update if authenticated and token is different
+      if (isAuthenticated && newToken && newToken !== idToken) {
+        appLogger.debug('Auth listener: Updating stored token');
+        useAuthStore.getState().updateToken(newToken);
+      }
+    };
+
+    // Setup the listener
+    const unsubscribe = setupAuthStateListener(handleAuthLogout, handleTokenRefresh);
+
+    // Cleanup on unmount
+    return () => {
+      appLogger.info('Cleaning up Firebase auth state listener');
+      authListenerSetupRef.current = false;
+      unsubscribe();
+    };
+  }, [authHydrated]);
 
   appLogger.debug('Rendering App component');
 

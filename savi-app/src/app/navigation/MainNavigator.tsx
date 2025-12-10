@@ -31,7 +31,7 @@ import { MyBookingsScreen } from '@/features/facility/screens/MyBookingsScreen';
 // Services Stack Screens
 import { ServicesScreen } from '@/features/services/screens/ServicesScreen';
 import { MaintenanceListScreen } from '@/features/maintenance/screens/MaintenanceListScreen';
-import { VisitorListScreen, VisitorDetailScreen, CreateVisitorScreen } from '@/features/visitors/screens';
+import { VisitorListScreen, CreateVisitorScreen } from '@/features/visitors/screens';
 
 // Community Stack Screens
 import { CommunityScreen } from '@/features/community/screens/CommunityScreen';
@@ -143,11 +143,6 @@ const ServicesStackNavigator: React.FC = () => {
       <ServicesStack.Screen
         name="VisitorList"
         component={VisitorListScreen}
-        options={{ headerShown: false }}
-      />
-      <ServicesStack.Screen
-        name="VisitorDetail"
-        component={VisitorDetailScreen}
         options={{ headerShown: false }}
       />
       <ServicesStack.Screen
@@ -330,11 +325,18 @@ export const MainNavigator: React.FC = () => {
       <Tab.Screen
         name="ServicesTab"
         component={ServicesStackNavigator}
-        options={{
-          tabBarLabel: t('tabs.services'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="construct-outline" size={size} color={color} />
-          ),
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? 'ServicesMain';
+          // Hide tab bar on nested screens (VisitorList, CreateVisitor)
+          const hideTabBar = routeName === 'VisitorList' || routeName === 'CreateVisitor';
+          
+          return {
+            tabBarLabel: t('tabs.services'),
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="construct-outline" size={size} color={color} />
+            ),
+            tabBarStyle: hideTabBar ? { display: 'none' } : undefined,
+          };
         }}
       />
       <Tab.Screen

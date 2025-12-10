@@ -354,6 +354,111 @@ export async function getIdToken(forceRefresh: boolean = false): Promise<string>
 }
 
 /**
+ * Attempts to refresh the Firebase ID token
+ * 
+ * This is useful during app startup to:
+ * 1. Verify the Firebase session is still valid
+ * 2. Get a fresh token if the stored one is expired
+ * 
+ * @returns Fresh ID token if successful
+ * @throws Error if no user or refresh fails (session expired)
+ */
+export async function refreshIdToken(): Promise<string> {
+  const auth = getFirebaseAuth();
+  
+  console.log('[Firebase Auth] 🔄 Attempting token refresh...', {
+    hasCurrentUser: !!auth.currentUser,
+    timestamp: new Date().toISOString(),
+  });
+  
+  // Wait for auth state to be restored if needed
+  let user = auth.currentUser;
+  
+  if (!user) {
+    // Wait a bit for Firebase to restore auth state from persistence
+    console.log('[Firebase Auth] ⏳ No current user, waiting for auth restoration...');
+    try {
+      user = await new Promise<User>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          unsubscribe();
+          reject(new Error('Auth state restoration timeout'));
+        }, 3000);
+        
+        const unsubscribe = onAuthStateChanged(auth, (restoredUser) => {
+          clearTimeout(timeout);
+          unsubscribe();
+          if (restoredUser) {
+            resolve(restoredUser);
+          } else {
+            reject(new Error('No authenticated user after restoration'));
+          }
+        });
+      });
+    } catch (error) {
+      console.log('[Firebase Auth] ❌ Auth restoration failed:', error);
+      throw new Error('No authenticated user - session expired');
+    }
+  }
+  
+  try {
+    // Force refresh to get a new token from Firebase
+    const newToken = await user.getIdToken(true);
+    console.log('[Firebase Auth] ✅ Token refreshed successfully');
+    return newToken;
+  } catch (error: any) {
+    console.error('[Firebase Auth] ❌ Token refresh failed:', {
+      error: error.message,
+      code: error.code,
+    });
+    throw new Error('Failed to refresh token - session may have expired');
+  }
+}
+
+/**
+ * Sets up a listener for Firebase auth state changes
+ * 
+ * This listener will trigger logout when:
+ * - User signs out from another device
+ * - Firebase session expires
+ * - User account is disabled/deleted
+ * 
+ * @param onLogout - Callback function to execute when user should be logged out
+ * @returns Unsubscribe function to stop listening
+ */
+export function setupAuthStateListener(
+  onLogout: () => void,
+  onTokenRefresh?: (token: string) => void
+): () => void {
+  const auth = getFirebaseAuth();
+  
+  console.log('[Firebase Auth] 👀 Setting up auth state listener');
+  
+  const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    console.log('[Firebase Auth] 📡 Auth state changed:', {
+      hasUser: !!user,
+      userId: user?.uid,
+      timestamp: new Date().toISOString(),
+    });
+    
+    if (!user) {
+      // User signed out or session expired
+      console.log('[Firebase Auth] 🚪 No user - triggering logout');
+      onLogout();
+    } else if (onTokenRefresh) {
+      // User is signed in - optionally refresh token
+      try {
+        const token = await user.getIdToken();
+        onTokenRefresh(token);
+      } catch (error) {
+        console.warn('[Firebase Auth] ⚠️ Failed to get token on auth state change:', error);
+      }
+    }
+  });
+  
+  return unsubscribe;
+}
+
+/**
  * Converts Firebase error codes to user-friendly messages
  */
 function getFirebaseErrorMessage(error: { code: string; message?: string }): string {

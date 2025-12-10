@@ -94,14 +94,16 @@ public class GetMyVisitorsQueryHandler
             query = query.Where(v => v.VisitType == request.VisitType.Value);
         }
 
+        // Filter by expected visit date (ExpectedFrom), not creation date
+        // This allows filtering for "today's visitors", "past visitors", etc.
         if (request.FromDate.HasValue)
         {
-            query = query.Where(v => v.CreatedAt >= request.FromDate.Value);
+            query = query.Where(v => v.ExpectedFrom >= request.FromDate.Value);
         }
 
         if (request.ToDate.HasValue)
         {
-            query = query.Where(v => v.CreatedAt <= request.ToDate.Value);
+            query = query.Where(v => v.ExpectedFrom < request.ToDate.Value);
         }
 
         // Get total count

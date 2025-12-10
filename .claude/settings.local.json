@@ -1,5 +1,4 @@
 {
-  "model": "claude-opus-4-5-20251101",
   "permissions": {
     "allow": [
       "Bash(dotnet build:*)",
@@ -12,9 +11,11 @@
       "Bash(npx create-expo-app@latest . --template blank-typescript --yes)",
       "Bash(npx create-expo-app@latest:*)",
       "Bash(npm install:*)",
-      "Bash(npm run typecheck:*)"
+      "Bash(npm run typecheck:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "model": "claude-opus-4-5-20251101"
 }
