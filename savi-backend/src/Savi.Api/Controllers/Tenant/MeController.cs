@@ -17,6 +17,8 @@ using Savi.Application.Tenant.Me.Commands.UpdateMyPartyInfo;
 using Savi.Application.Tenant.Me.Commands.UpdateMyPrivacySettings;
 using Savi.Application.Tenant.Me.Commands.UpdateMyProfile;
 using Savi.Application.Tenant.Me.Commands.UpdateMyProfilePhoto;
+using Savi.Application.Tenant.Me.Commands.AddMaintenanceComment;
+using Savi.Application.Tenant.Me.Commands.CancelMaintenanceRequest;
 using Savi.Application.Tenant.Me.Commands.CreateMaintenanceRequest;
 using Savi.Application.Tenant.Me.Dtos;
 using Savi.Application.Tenant.Me.Queries.GetMyAppSettings;
@@ -696,6 +698,75 @@ public class MeController : ControllerBase
             new { id = result.Value.RequestId },
             result.Value);
     }
+
+    /// <summary>
+    /// Cancels a maintenance request that was created by the current user.
+    /// Only allows cancellation of Open or Assigned requests.
+    /// </summary>
+    /// <remarks>
+    /// Ownership validation ensures users can only cancel their own requests.
+    /// A cancellation reason is required.
+    /// </remarks>
+    [HttpPost("requests/{id:guid}/cancel")]
+    [HasAnyPermission(
+        Permissions.Tenant.Maintenance.RequestCreate,
+        Permissions.Tenant.Maintenance.RequestCreateOwn,
+        Permissions.Tenant.Maintenance.RequestCreateUnit)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CancelMyRequest(
+        Guid id,
+        [FromBody] CancelMyMaintenanceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("POST /tenant/me/requests/{RequestId}/cancel", id);
+
+        var command = new CancelMyMaintenanceRequestCommand(id, request.Reason);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Adds a comment to a maintenance request that was created by the current user.
+    /// Comment type is automatically set to ResidentUpdate with visibility to resident and owner.
+    /// </summary>
+    /// <remarks>
+    /// Ownership validation ensures users can only add comments to their own requests.
+    /// </remarks>
+    [HttpPost("requests/{id:guid}/comments")]
+    [HasAnyPermission(
+        Permissions.Tenant.Maintenance.RequestCreate,
+        Permissions.Tenant.Maintenance.RequestCreateOwn,
+        Permissions.Tenant.Maintenance.RequestCreateUnit)]
+    [ProducesResponseType(typeof(AddMyMaintenanceCommentResultDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> AddMyRequestComment(
+        Guid id,
+        [FromBody] AddMyMaintenanceCommentRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("POST /tenant/me/requests/{RequestId}/comments", id);
+
+        var command = new AddMyMaintenanceCommentCommand(id, request.Message);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return Created($"/tenant/me/requests/{id}/comments/{result.Value}", new AddMyMaintenanceCommentResultDto(result.Value));
+    }
 }
 
 #region Request Models
@@ -755,6 +826,21 @@ public record UpdateMyPartyInfoRequest(
 /// Request model for cancelling an amenity booking.
 /// </summary>
 public record CancelMyBookingRequest(string? Reason);
+
+/// <summary>
+/// Request model for cancelling a maintenance request.
+/// </summary>
+public record CancelMyMaintenanceRequest(string Reason);
+
+/// <summary>
+/// Request model for adding a comment to a maintenance request.
+/// </summary>
+public record AddMyMaintenanceCommentRequest(string Message);
+
+/// <summary>
+/// Result DTO for adding a comment to a maintenance request.
+/// </summary>
+public record AddMyMaintenanceCommentResultDto(Guid CommentId);
 
 #endregion
 

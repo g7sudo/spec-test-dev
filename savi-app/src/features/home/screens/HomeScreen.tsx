@@ -126,27 +126,25 @@ export const HomeScreen: React.FC = () => {
     (actionId: string) => {
       switch (actionId) {
         case QUICK_ACTIONS.PRE_REGISTER_VISITOR:
-          // Navigate to pre-register visitor
-          console.log('Pre-register visitor');
+          // Navigate to ServicesTab -> CreateVisitor
+          (navigation as any).navigate('ServicesTab', { screen: 'CreateVisitor' });
           break;
         case QUICK_ACTIONS.MAINTENANCE_REQUEST:
           navigation.navigate('CreateMaintenance');
           break;
         case QUICK_ACTIONS.GIVE_FEEDBACK:
-          // Navigate to feedback
-          console.log('Give feedback');
+          // TODO: Navigate to feedback
           break;
         case QUICK_ACTIONS.BOOK_FACILITY:
-          // Navigate to facility booking
-          console.log('Book facility');
+          // Navigate to FacilityTab -> FacilityMain (facility list for booking)
+          (navigation as any).navigate('FacilityTab', { screen: 'FacilityMain' });
           break;
         case QUICK_ACTIONS.EMERGENCY:
-          // Navigate to emergency screen
-          console.log('Emergency');
+          // TODO: Navigate to emergency screen
           break;
         case QUICK_ACTIONS.ANNOUNCEMENTS:
-          // Navigate to announcements
-          console.log('Announcements');
+          // Navigate to CommunityTab
+          (navigation as any).navigate('CommunityTab', { screen: 'CommunityMain' });
           break;
       }
     },
@@ -164,9 +162,9 @@ export const HomeScreen: React.FC = () => {
   }, []);
 
   const handlePreRegisterVisitor = useCallback(() => {
-    // Navigate to pre-register visitor
-    console.log('Pre-register visitor');
-  }, []);
+    // Navigate to ServicesTab -> CreateVisitor
+    (navigation as any).navigate('ServicesTab', { screen: 'CreateVisitor' });
+  }, [navigation]);
 
   const handleViewRequestDetails = useCallback(
     (requestId: string) => {

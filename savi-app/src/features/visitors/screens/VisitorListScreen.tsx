@@ -456,13 +456,25 @@ export const VisitorListScreen: React.FC = () => {
   /**
    * Check if CTAs should be shown
    * Only show for active passes (PreRegistered, Approved, AtGatePendingApproval, CheckedIn)
-   * Don't show for Cancelled/Rejected/Expired/CheckedOut
+   * AND only for today or future dates
+   * Don't show for Cancelled/Rejected/Expired/CheckedOut or past dates
    */
-  const shouldShowCTAs = (status: VisitorPassStatus): boolean => {
-    return status === VisitorPassStatus.PreRegistered ||
-           status === VisitorPassStatus.Approved ||
-           status === VisitorPassStatus.AtGatePendingApproval ||
-           status === VisitorPassStatus.CheckedIn;
+  const shouldShowCTAs = (status: VisitorPassStatus, expectedFrom: string): boolean => {
+    // Check status first
+    const isActiveStatus = status === VisitorPassStatus.PreRegistered ||
+                          status === VisitorPassStatus.Approved ||
+                          status === VisitorPassStatus.AtGatePendingApproval ||
+                          status === VisitorPassStatus.CheckedIn;
+    
+    if (!isActiveStatus) return false;
+    
+    // Check if date is today or future
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const expectedDate = new Date(expectedFrom);
+    expectedDate.setHours(0, 0, 0, 0);
+    
+    return expectedDate >= today;
   };
 
   /**
@@ -525,8 +537,8 @@ export const VisitorListScreen: React.FC = () => {
               </Text>
             </Row>
 
-            {/* CTA Buttons - only show for active passes */}
-            {shouldShowCTAs(item.status) && (
+            {/* CTA Buttons - only show for active passes on today or future dates */}
+            {shouldShowCTAs(item.status, item.expectedFrom) && (
               <View style={styles.ctaContainer}>
                 {/* Share Access Code Button */}
                 <TouchableOpacity
