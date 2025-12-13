@@ -36,6 +36,7 @@ interface VisitorForm {
   vehicleNumber: string;
   vehicleType: string;
   deliveryProvider: string;
+  showPhoneNumber: boolean;
   showVehicleInfo: boolean;
   showOptionalFields: boolean;
   notifyVisitorAtGate: boolean;
@@ -77,6 +78,7 @@ export const CreateVisitorScreen: React.FC = () => {
     vehicleNumber: '',
     vehicleType: '',
     deliveryProvider: '',
+    showPhoneNumber: false,
     showVehicleInfo: false,
     showOptionalFields: false,
     notifyVisitorAtGate: true,
@@ -584,26 +586,47 @@ export const CreateVisitorScreen: React.FC = () => {
         {/* Optional Fields */}
         {form.showOptionalFields && (
           <View style={styles.optionalSection}>
-            {/* Phone Number */}
+            {/* Phone Number Toggle */}
             <View style={styles.section}>
-              <Text variant="body" weight="medium" style={styles.optionalLabel}>
-                Phone Number (Optional)
-              </Text>
-              <TextInput
-                value={form.visitorPhone}
-                onChangeText={(v) => updateForm('visitorPhone', v)}
-                placeholder="+1 234 567 8900"
-                placeholderTextColor={theme.colors.textTertiary}
-                keyboardType="phone-pad"
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.colors.surfaceVariant,
-                    color: theme.colors.text,
-                    borderColor: theme.colors.border,
-                  },
-                ]}
-              />
+              <TouchableOpacity
+                onPress={() => updateForm('showPhoneNumber', !form.showPhoneNumber)}
+                style={styles.vehicleToggle}
+              >
+                <Row gap={8} align="center">
+                  <Ionicons
+                    name={form.showPhoneNumber ? 'call' : 'call-outline'}
+                    size={20}
+                    color={form.showPhoneNumber ? theme.colors.primary : theme.colors.textSecondary}
+                  />
+                  <Text
+                    variant="body"
+                    weight={form.showPhoneNumber ? 'semiBold' : 'regular'}
+                    color={form.showPhoneNumber ? theme.colors.primary : theme.colors.textSecondary}
+                  >
+                    {form.showPhoneNumber ? 'Phone Number Added' : 'Add Phone Number (Optional)'}
+                  </Text>
+                </Row>
+              </TouchableOpacity>
+
+              {form.showPhoneNumber && (
+                <View style={styles.vehicleFields}>
+                  <TextInput
+                    value={form.visitorPhone}
+                    onChangeText={(v) => updateForm('visitorPhone', v)}
+                    placeholder="+1 234 567 8900"
+                    placeholderTextColor={theme.colors.textTertiary}
+                    keyboardType="phone-pad"
+                    style={[
+                      styles.input,
+                      {
+                        backgroundColor: theme.colors.surfaceVariant,
+                        color: theme.colors.text,
+                        borderColor: theme.colors.border,
+                      },
+                    ]}
+                  />
+                </View>
+              )}
             </View>
 
             {/* Delivery Provider (if Delivery type) */}
@@ -691,7 +714,7 @@ export const CreateVisitorScreen: React.FC = () => {
               onPress={() => updateForm('showOptionalFields', false)}
               style={styles.hideOptional}
             >
-              <Text variant="body" color={theme.colors.textSecondary}>
+              <Text variant="body" weight="semiBold" color={theme.colors.primary}>
                 Hide Optional Information
               </Text>
             </TouchableOpacity>

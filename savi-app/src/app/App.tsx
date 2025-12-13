@@ -13,6 +13,7 @@ import { appLogger, logError } from '@/core/logger';
 import { ScrollDirectionProvider } from '@/core/contexts/ScrollDirectionContext';
 import { PendingInviteProvider } from '@/core/contexts/PendingInviteContext';
 import { initializeFirebase, setupAuthStateListener } from '@/services/firebase';
+import { usePushNotifications } from '@/core/notifications';
 import { LoadingOverlay } from '@/shared/components/feedback/LoadingOverlay';
 import { useIsApiLoading } from '@/state/apiLoadingStore';
 import { useAuthStore, useAuthHasHydrated } from '@/state/authStore';
@@ -91,6 +92,34 @@ const errorStyles = StyleSheet.create({
 const AppContent: React.FC = () => {
   // Track global API loading state
   const isApiLoading = useIsApiLoading();
+
+  /**
+   * Initialize push notifications
+   * 
+   * This hook handles:
+   * - Requesting notification permissions
+   * - Getting FCM token
+   * - Registering device with backend
+   * - Handling token refresh
+   * - Notification tap handling
+   */
+  usePushNotifications({
+    // Handle notification tap - can be used for navigation
+    onNotificationTap: (data) => {
+      appLogger.info('[App] Notification tapped with data:', data);
+      // TODO: Handle deep linking based on notification data
+      // Example: Navigate to specific screen based on notification type
+      // if (data.type === 'maintenance') {
+      //   navigationRef.navigate('MaintenanceDetails', { id: data.id });
+      // }
+    },
+    // Handle foreground notification received
+    onNotificationReceived: (data) => {
+      appLogger.info('[App] Notification received in foreground:', data);
+      // Notification banner is shown automatically
+      // Add custom handling here if needed (e.g., refresh data)
+    },
+  });
 
   return (
     <>

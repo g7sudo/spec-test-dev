@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "708641852118",
+    "project_id": "dk-dev-app",
+    "storage_bucket": "dk-dev-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:708641852118:android:f031006751a22082739777",
+        "android_client_info": {
+          "package_name": "com.savi.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDNUwLxmzm_ZnaHxLgS_ldjHBc1VpTxayM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

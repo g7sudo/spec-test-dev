@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.savi.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
@@ -27,7 +28,8 @@
               "NSExceptionAllowsInsecureHTTPLoads": true
             }
           }
-        }
+        },
+        "UIBackgroundModes": ["remote-notification"]
       }
     },
     "android": {
@@ -37,7 +39,8 @@
       },
       "edgeToEdgeEnabled": true,
       "package": "com.savi.app",
-      "usesCleartextTraffic": true
+      "usesCleartextTraffic": true,
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -45,7 +48,28 @@
     "plugins": [
       "expo-localization",
       "expo-secure-store",
-      "expo-font"
-    ]
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#4A90D9",
+          "defaultChannel": "default",
+          "sounds": []
+        }
+      ]
+    ],
+    "notification": {
+      "icon": "./assets/notification-icon.png",
+      "color": "#4A90D9",
+      "androidMode": "default",
+      "androidCollapsedTitle": "SAVI"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2927cdc5-4840-4acb-a54e-219d38da816a"
+      }
+    },
+    "owner": "dev-tes"
   }
 }
