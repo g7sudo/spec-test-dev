@@ -77,22 +77,9 @@ export const AnimatedTabBar: React.FC<BottomTabBarProps> = (props) => {
     prevShouldHideViaDisplayRef.current = shouldHideViaDisplay;
     prevRouteNameRef.current = currentRoute.name;
 
-    console.log('[AnimatedTabBar] 🎬 Animation state changed:', {
-      isScrollingUp,
-      shouldHideViaDisplay,
-      prevShouldHideViaDisplay,
-      isTransitioningToNested,
-      isTransitioningFromNested,
-      routeName: currentRoute.name,
-      tabBarHeight,
-      currentTranslateY: translateY.value,
-      currentOpacity: opacity.value,
-    });
-
     // Priority 1: Handle navigation transitions (nested pages)
     // When navigating TO a nested page, smoothly hide the tab bar
     if (isTransitioningToNested) {
-      console.log('[AnimatedTabBar] 📄 Navigating to nested page - smoothly hiding tab bar');
       // Start animation immediately - use current values as starting point
       translateY.value = withTiming(tabBarHeight, {
         duration: 300,
@@ -109,7 +96,6 @@ export const AnimatedTabBar: React.FC<BottomTabBarProps> = (props) => {
     
     // When navigating BACK from a nested page, smoothly show the tab bar
     if (isTransitioningFromNested) {
-      console.log('[AnimatedTabBar] 🔙 Navigating back from nested page - smoothly showing tab bar');
       // Show BottomTabBar immediately so it can animate in
       setShouldRenderTabBar(true);
       // Ensure we start from hidden state (in case we're already hidden)
@@ -155,7 +141,6 @@ export const AnimatedTabBar: React.FC<BottomTabBarProps> = (props) => {
     // If we just switched to a different main screen (tab switch), show navbar immediately
     // This handles the case when switching tabs while navbar was hidden from previous screen
     if (switchedToMainScreen) {
-      console.log('[AnimatedTabBar] 🔄 Switched to main screen - showing navbar');
       translateY.value = withTiming(0, {
         duration: 300,
         easing: Easing.out(Easing.ease),
@@ -168,9 +153,7 @@ export const AnimatedTabBar: React.FC<BottomTabBarProps> = (props) => {
     }
     
     if (isScrollingUp) {
-      // Hide tab bar - slide down smoothly
-      // This gives users a full-screen view when scrolling up
-      console.log('[AnimatedTabBar] 👆 Scrolling UP - hiding navbar for full-screen view');
+      // Hide tab bar - slide down smoothly for full-screen view
       translateY.value = withTiming(tabBarHeight, {
         duration: 300,
         easing: Easing.out(Easing.ease),
@@ -180,9 +163,7 @@ export const AnimatedTabBar: React.FC<BottomTabBarProps> = (props) => {
         easing: Easing.out(Easing.ease),
       });
     } else {
-      // Show tab bar - slide up smoothly
-      // Even a small scroll down will show the navbar, making it easy to navigate
-      console.log('[AnimatedTabBar] 👇 Scrolling DOWN - showing navbar for navigation');
+      // Show tab bar - slide up smoothly for navigation
       translateY.value = withTiming(0, {
         duration: 300,
         easing: Easing.out(Easing.ease),

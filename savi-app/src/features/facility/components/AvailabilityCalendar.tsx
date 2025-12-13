@@ -110,20 +110,8 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
   };
 
   const handleSlotPress = (date: string, slot: AvailableSlotDto) => {
-    console.log('[AvailabilityCalendar] 🎯 SLOT PRESSED:', {
-      date,
-      slot: {
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        isAvailable: slot.isAvailable,
-        unavailableReason: slot.unavailableReason,
-      },
-    });
     if (slot.isAvailable) {
-      console.log('[AvailabilityCalendar] ✅ Calling onSlotSelect callback');
       onSlotSelect?.(date, slot);
-    } else {
-      console.log('[AvailabilityCalendar] ⚠️ Slot not available, not calling callback');
     }
   };
 
@@ -239,18 +227,6 @@ export const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({
                 const isSelected = selectedSlot && 
                   selectedSlot.startTime === slot.startTime && 
                   selectedSlot.endTime === slot.endTime;
-                
-                console.log('[AvailabilityCalendar] ⏰ SLOT RENDER:', {
-                  index,
-                  startTime: slot.startTime,
-                  endTime: slot.endTime,
-                  startTimeFormatted,
-                  endTimeFormatted,
-                  isAvailable: slot.isAvailable,
-                  isSelected,
-                  unavailableReason: slot.unavailableReason,
-                  slotType: typeof slot.startTime,
-                });
 
                 return (
                   <TouchableOpacity

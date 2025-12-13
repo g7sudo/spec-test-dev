@@ -258,7 +258,17 @@ export const FacilityScreen: React.FC = () => {
     return (
       <Screen safeArea style={styles.screen}>
         <View style={styles.header}>
-          <Text variant="h2">Facilities</Text>
+          <Text variant="h2" style={styles.headerTitle}>Facilities</Text>
+          <TouchableOpacity
+            onPress={handleMyBookingsPress}
+            style={[styles.myBookingsButton, { backgroundColor: theme.colors.primaryLight, borderColor: theme.colors.primary }]}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="calendar" size={16} color={theme.colors.primary} />
+            <Text variant="bodySmall" weight="semiBold" color={theme.colors.primary}>
+              My Bookings
+            </Text>
+          </TouchableOpacity>
         </View>
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -279,7 +289,17 @@ export const FacilityScreen: React.FC = () => {
     return (
       <Screen safeArea style={styles.screen}>
         <View style={styles.header}>
-          <Text variant="h2">Facilities</Text>
+          <Text variant="h2" style={styles.headerTitle}>Facilities</Text>
+          <TouchableOpacity
+            onPress={handleMyBookingsPress}
+            style={[styles.myBookingsButton, { backgroundColor: theme.colors.primaryLight, borderColor: theme.colors.primary }]}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="calendar" size={16} color={theme.colors.primary} />
+            <Text variant="bodySmall" weight="semiBold" color={theme.colors.primary}>
+              My Bookings
+            </Text>
+          </TouchableOpacity>
         </View>
         <ErrorState
           title="Unable to Load Facilities"
@@ -298,9 +318,13 @@ export const FacilityScreen: React.FC = () => {
         <Text variant="h2" style={styles.headerTitle}>Facilities</Text>
         <TouchableOpacity
           onPress={handleMyBookingsPress}
-          style={styles.bookingsButton}
+          style={[styles.myBookingsButton, { backgroundColor: theme.colors.primaryLight, borderColor: theme.colors.primary }]}
+          activeOpacity={0.7}
         >
-          <Ionicons name="calendar-outline" size={24} color={theme.colors.primary} />
+          <Ionicons name="calendar" size={16} color={theme.colors.primary} />
+          <Text variant="bodySmall" weight="semiBold" color={theme.colors.primary}>
+            My Bookings
+          </Text>
         </TouchableOpacity>
       </View>
       <FlatList
@@ -350,11 +374,14 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 1,
   },
-  bookingsButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
+  myBookingsButton: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
   },
   centerContainer: {
     flex: 1,

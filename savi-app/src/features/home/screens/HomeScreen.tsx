@@ -39,8 +39,6 @@ export const HomeScreen: React.FC = () => {
   const scrollStartOffset = useRef(0);
   const stateChangeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastStateChangeTime = useRef(0);
-  const logThrottleRef = useRef(0); // Throttle logging to prevent spam
-  const bottomNavLogThrottleRef = useRef(0); // Throttle bottom nav logging
   const scrollDirectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastBottomNavDirectionRef = useRef<'up' | 'down' | null>(null); // Track last direction to avoid resetting timeout
   
@@ -76,10 +74,8 @@ export const HomeScreen: React.FC = () => {
     return 0;
   };
 
-  // Debug: Log state changes
-  React.useEffect(() => {
-    console.log('[HomeScreen] 🎯 State changed: isBillboardExpanded =', isBillboardExpanded);
-  }, [isBillboardExpanded]);
+  // Note: Debug logging removed to prevent console spam
+  // Billboard expanded state is managed internally
 
   // Cleanup timeouts on unmount
   React.useEffect(() => {
@@ -215,12 +211,10 @@ export const HomeScreen: React.FC = () => {
 
   // Handlers for billboard drawer expand/collapse
   const handleCollapseDrawer = useCallback(() => {
-    console.log('[HomeScreen] 🔽 handleCollapseDrawer called - setting isBillboardExpanded to false');
     setIsBillboardExpanded(false);
   }, []);
 
   const handleExpandDrawer = useCallback(() => {
-    console.log('[HomeScreen] 🔼 handleExpandDrawer called - setting isBillboardExpanded to true');
     setIsBillboardExpanded(true);
     // Reset scroll offset when expanding to ensure smooth transition
     scrollOffsetShared.value = 0;
@@ -231,9 +225,7 @@ export const HomeScreen: React.FC = () => {
     const offset = event.nativeEvent.contentOffset.y;
     scrollStartOffset.current = offset;
     lastScrollOffset.current = offset;
-    
-    console.log('[HomeScreen] 📜 Scroll drag started at offset:', offset, 'isBillboardExpanded:', isBillboardExpanded);
-  }, [isBillboardExpanded]);
+  }, []);
 
   // Track scroll position - update shared value for seamless billboard collapse
   // The scroll-driven animation handles the visual collapse, state only tracks for programmatic control
@@ -247,19 +239,8 @@ export const HomeScreen: React.FC = () => {
     const isScrollingUpward = scrollDelta > 1.5; // Threshold to prevent jitter (slightly lower for responsiveness)
     const isScrollingDownward = scrollDelta < -1; // More sensitive - even small scroll down shows navbar
     
-    // Log bottom nav scroll detection (throttled)
+    // Track time for debouncing state changes
     const now = Date.now();
-    if (now - bottomNavLogThrottleRef.current > 100) { // Log max once per 100ms
-      bottomNavLogThrottleRef.current = now;
-      console.log('[HomeScreen] 🧭 BOTTOM NAV SCROLL:', {
-        offset: clampedOffset.toFixed(2),
-        scrollDelta: scrollDelta.toFixed(2),
-        isScrollingUpward,
-        isScrollingDownward,
-        isAboveThreshold: clampedOffset > 10,
-        hasPendingTimeout: !!scrollDirectionTimeoutRef.current,
-      });
-    }
     
     // Update bottom nav visibility based on scroll direction
     // Behavior:
@@ -284,7 +265,6 @@ export const HomeScreen: React.FC = () => {
       }
       lastBottomNavDirectionRef.current = 'up';
       scrollDirectionTimeoutRef.current = setTimeout(() => {
-        console.log('[HomeScreen] 👆 Setting bottom nav to HIDE (scrolling up)');
         setIsScrollingUp(true);
         scrollDirectionTimeoutRef.current = null;
         lastBottomNavDirectionRef.current = null;
@@ -297,7 +277,6 @@ export const HomeScreen: React.FC = () => {
       }
       lastBottomNavDirectionRef.current = 'down';
       scrollDirectionTimeoutRef.current = setTimeout(() => {
-        console.log('[HomeScreen] 👇 Setting bottom nav to SHOW (scrolling down or at top)');
         setIsScrollingUp(false);
         scrollDirectionTimeoutRef.current = null;
         lastBottomNavDirectionRef.current = null;
