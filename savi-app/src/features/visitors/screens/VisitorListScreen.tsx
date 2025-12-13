@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useMemo, useCallback } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, Linking } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, Share } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -347,80 +347,42 @@ export const VisitorListScreen: React.FC = () => {
   }, []);
 
   /**
-   * Handle three dots menu press - show options
+   * Handle share access code via native Share API
+   * Opens system share sheet allowing user to share via WhatsApp, SMS, etc.
    */
-  const handleMenuPress = useCallback((visitor: VisitorPassSummaryDto, event: any) => {
-    event.stopPropagation(); // Prevent card press
+  const handleShareAccessCode = useCallback(async (visitor: VisitorPassSummaryDto, event?: any) => {
+    if (event) event.stopPropagation(); // Prevent card press
     
-    const canCancel = visitor.status === VisitorPassStatus.PreRegistered || 
-                      visitor.status === VisitorPassStatus.Approved ||
-                      visitor.status === VisitorPassStatus.AtGatePendingApproval;
-
-    Alert.alert(
-      'Visitor Options',
-      `What would you like to do with ${visitor.visitorName}'s pass?`,
-      [
-        {
-          text: 'Share Access Code',
-          onPress: () => handleShareAccessCode(visitor),
-        },
-        ...(canCancel ? [{
-          text: 'Cancel Visitor Pass',
-          style: 'destructive' as const,
-          onPress: () => handleCancelVisitor(visitor),
-        }] : []),
-        {
-          text: 'Close',
-          style: 'default' as const,
-        },
-      ]
-    );
-  }, []);
-
-  /**
-   * Handle share access code via WhatsApp
-   */
-  const handleShareAccessCode = useCallback((visitor: VisitorPassSummaryDto) => {
     const message = `Hi ${visitor.visitorName},\n\nYour visitor access code is: ${visitor.accessCode}\n\nUnit: ${visitor.unitNumber}${visitor.blockName ? `, ${visitor.blockName}` : ''}\nExpected: ${formatDate(visitor.expectedFrom)} at ${formatTime(visitor.expectedFrom)}\n\nPlease use this code at the gate.`;
-    const whatsappUrl = `whatsapp://send?text=${encodeURIComponent(message)}`;
     
-    Linking.canOpenURL(whatsappUrl)
-      .then((supported) => {
-        if (supported) {
-          return Linking.openURL(whatsappUrl);
-        } else {
-          // Fallback: copy to clipboard or show share options
-          Alert.alert(
-            'WhatsApp Not Available',
-            `Access Code: ${visitor.accessCode}\n\nPlease share this code manually.`,
-            [{ text: 'OK' }]
-          );
-        }
-      })
-      .catch((err) => {
-        console.error('[VisitorListScreen] ❌ Error opening WhatsApp:', err);
-        Alert.alert(
-          'Error',
-          'Could not open WhatsApp. Please share the access code manually.',
-          [{ text: 'OK' }]
-        );
+    try {
+      await Share.share({
+        message,
+        title: 'Visitor Access Code',
       });
+    } catch (error: any) {
+      if (error.message !== 'User did not share') {
+        console.error('[VisitorListScreen] ❌ Error sharing:', error);
+        Alert.alert('Error', 'Could not share access code. Please try again.');
+      }
+    }
   }, []);
 
   /**
-   * Handle cancel visitor pass
+   * Handle cancel visitor pass - shows confirmation prompt
    */
-  const handleCancelVisitor = useCallback((visitor: VisitorPassSummaryDto) => {
+  const handleCancelVisitor = useCallback((visitor: VisitorPassSummaryDto, event?: any) => {
+    if (event) event.stopPropagation(); // Prevent card press
+    
     Alert.alert(
       'Cancel Visitor Pass',
-      `Are you sure you want to cancel ${visitor.visitorName}'s visitor pass?`,
+      `Are you sure you want to cancel ${visitor.visitorName}'s visitor pass?\n\nThis action cannot be undone.`,
       [
-        { text: 'No', style: 'cancel' },
+        { text: 'No, Keep It', style: 'cancel' },
         {
-          text: 'Yes, Cancel',
+          text: 'Yes, Cancel Pass',
           style: 'destructive',
           onPress: () => {
-            // Call the cancel API
             cancelMutation.mutate(visitor.id);
           },
         },
@@ -483,6 +445,27 @@ export const VisitorListScreen: React.FC = () => {
   };
 
   /**
+   * Check if visitor pass can be cancelled
+   */
+  const canCancelPass = (status: VisitorPassStatus): boolean => {
+    return status === VisitorPassStatus.PreRegistered || 
+           status === VisitorPassStatus.Approved ||
+           status === VisitorPassStatus.AtGatePendingApproval;
+  };
+
+  /**
+   * Check if CTAs should be shown
+   * Only show for active passes (PreRegistered, Approved, AtGatePendingApproval, CheckedIn)
+   * Don't show for Cancelled/Rejected/Expired/CheckedOut
+   */
+  const shouldShowCTAs = (status: VisitorPassStatus): boolean => {
+    return status === VisitorPassStatus.PreRegistered ||
+           status === VisitorPassStatus.Approved ||
+           status === VisitorPassStatus.AtGatePendingApproval ||
+           status === VisitorPassStatus.CheckedIn;
+  };
+
+  /**
    * Render visitor pass card item (same card style, organized in timeline)
    */
   const renderVisitor = ({ item }: { item: VisitorPassSummaryDto }) => (
@@ -500,20 +483,18 @@ export const VisitorListScreen: React.FC = () => {
           />
           
           <View style={styles.visitorInfo}>
-            {/* Top row: Name and Menu */}
+            {/* Top row: Name and Status */}
             <Row justify="space-between" align="center" style={styles.topRow}>
               <View style={styles.nameContainer}>
                 <Text variant="bodyLarge" weight="semiBold" numberOfLines={1}>
                   {item.visitorName}
                 </Text>
               </View>
-              <TouchableOpacity
-                onPress={(e) => handleMenuPress(item, e)}
-                style={styles.menuButton}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <Ionicons name="ellipsis-vertical" size={18} color={theme.colors.textSecondary} />
-              </TouchableOpacity>
+              <Badge
+                label={getStatusLabel(item.status)}
+                color={getStatusColor(item.status)}
+                size="small"
+              />
             </Row>
 
             {/* Middle row: Access Code */}
@@ -536,20 +517,44 @@ export const VisitorListScreen: React.FC = () => {
               </TouchableOpacity>
             )}
 
-            {/* Bottom row: Time and Status */}
-            <Row gap={12} align="center" style={styles.bottomRow}>
-              <Row gap={4} align="center">
-                <Ionicons name="time-outline" size={14} color={theme.colors.textTertiary} />
-                <Text variant="caption" color={theme.colors.textSecondary} weight="medium">
-                  {formatTime(item.expectedFrom)}
-                </Text>
-              </Row>
-              <Badge
-                label={getStatusLabel(item.status)}
-                color={getStatusColor(item.status)}
-                size="small"
-              />
+            {/* Time row */}
+            <Row gap={4} align="center" style={styles.timeRow}>
+              <Ionicons name="time-outline" size={14} color={theme.colors.textTertiary} />
+              <Text variant="caption" color={theme.colors.textSecondary} weight="medium">
+                {formatTime(item.expectedFrom)}
+              </Text>
             </Row>
+
+            {/* CTA Buttons - only show for active passes */}
+            {shouldShowCTAs(item.status) && (
+              <View style={styles.ctaContainer}>
+                {/* Share Access Code Button */}
+                <TouchableOpacity
+                  onPress={(e) => handleShareAccessCode(item, e)}
+                  style={[styles.ctaButton, { backgroundColor: theme.colors.primaryLight, borderColor: theme.colors.primary }]}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="share-outline" size={16} color={theme.colors.primary} />
+                  <Text variant="bodySmall" weight="semiBold" color={theme.colors.primary}>
+                    Share Access Code
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Cancel Pass Button - only show for cancellable passes */}
+                {canCancelPass(item.status) && (
+                  <TouchableOpacity
+                    onPress={(e) => handleCancelVisitor(item, e)}
+                    style={[styles.ctaButton, { borderColor: theme.colors.error }]}
+                    activeOpacity={0.7}
+                  >
+                    <Ionicons name="close-circle-outline" size={16} color={theme.colors.error} />
+                    <Text variant="bodySmall" weight="semiBold" color={theme.colors.error}>
+                      Cancel Pass
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
           </View>
         </Row>
       </Card>
@@ -802,9 +807,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  menuButton: {
-    padding: 4,
-  },
   accessCodeRow: {
     marginTop: 2,
     paddingVertical: 4,
@@ -815,8 +817,23 @@ const styles = StyleSheet.create({
   accessCode: {
     letterSpacing: 1.5,
   },
-  bottomRow: {
+  timeRow: {
     marginTop: 4,
+  },
+  ctaContainer: {
+    flexDirection: 'row',
+    marginTop: 12,
+    gap: 8,
+  },
+  ctaButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   toast: {
     position: 'absolute',
