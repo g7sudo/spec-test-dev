@@ -12,12 +12,14 @@ import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '@/core/theme';
 import { Screen, Text, Card, Row, Button, Badge, Avatar } from '@/shared/components';
 import { ErrorState, EmptyState } from '@/shared/components/feedback';
 import { ServicesStackParamList } from '@/app/navigation/types';
 import { useMyVisitors } from '../hooks';
-import { VisitorPassSummaryDto, VisitorPassStatus, VisitorType } from '@/services/api/visitors';
+import { VisitorPassSummaryDto, VisitorPassStatus, VisitorType, cancelVisitorPass } from '@/services/api/visitors';
+import { queryKeys } from '@/services/api/queryClient';
 
 type NavigationProp = NativeStackNavigationProp<ServicesStackParamList>;
 
@@ -93,6 +95,26 @@ export const VisitorListScreen: React.FC = () => {
     refetch,
     isRefetching,
   } = useMyVisitors(filters);
+
+  // Query client for cache invalidation
+  const queryClient = useQueryClient();
+
+  // Cancel visitor pass mutation
+  const cancelMutation = useMutation({
+    mutationFn: (passId: string) => cancelVisitorPass(passId),
+    onSuccess: () => {
+      // Invalidate visitor passes queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: queryKeys.visitors.all });
+      Alert.alert('Success', 'Visitor pass has been cancelled.');
+    },
+    onError: (error: any) => {
+      console.error('[VisitorListScreen] ❌ Cancel visitor pass error:', error);
+      Alert.alert(
+        'Error',
+        error?.message || 'Failed to cancel visitor pass. Please try again.'
+      );
+    },
+  });
 
   /**
    * Get status badge color based on visitor pass status
@@ -398,13 +420,13 @@ export const VisitorListScreen: React.FC = () => {
           text: 'Yes, Cancel',
           style: 'destructive',
           onPress: () => {
-            // TODO: Implement cancel API call when endpoint is available
-            Alert.alert('Coming Soon', 'Cancel visitor pass feature will be available soon.');
+            // Call the cancel API
+            cancelMutation.mutate(visitor.id);
           },
         },
       ]
     );
-  }, []);
+  }, [cancelMutation]);
 
   /**
    * Handle create visitor press - navigate to create screen

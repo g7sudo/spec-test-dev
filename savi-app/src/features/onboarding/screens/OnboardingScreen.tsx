@@ -169,7 +169,7 @@ export const OnboardingScreen: React.FC = () => {
               fullWidth
               onPress={handleGetStarted}
             />
-            <Spacer size="sm" />
+            <Spacer size={12} />
             <Button
               title={t('joinCommunity', { ns: 'invite' })}
               variant="outline"

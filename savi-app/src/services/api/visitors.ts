@@ -223,3 +223,42 @@ export async function createVisitorPass(
     throw error;
   }
 }
+
+/**
+ * Cancels a visitor pass.
+ * Only passes that are PreRegistered, Approved, or AtGatePendingApproval can be cancelled.
+ * 
+ * Backend Endpoint: POST /api/v1/tenant/visitors/passes/{passId}/cancel
+ * 
+ * Headers (added automatically by apiClient):
+ * - Authorization: Bearer <firebase-id-token>
+ * - X-Tenant-Id: <tenant-id>
+ * 
+ * @param passId - The ID of the visitor pass to cancel
+ * @throws ApiError if request fails
+ */
+export async function cancelVisitorPass(passId: string): Promise<void> {
+  console.log('[Visitors API] 🚫 CANCEL VISITOR PASS REQUEST:', {
+    passId,
+    timestamp: new Date().toISOString(),
+  });
+
+  try {
+    await apiClient.post(`/v1/tenant/visitors/passes/${passId}/cancel`);
+
+    console.log('[Visitors API] ✅ CANCEL VISITOR PASS SUCCESS:', {
+      passId,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    console.error('[Visitors API] ❌ CANCEL VISITOR PASS ERROR:', {
+      passId,
+      errorType: typeof error,
+      errorMessage: error.message,
+      status: error.status || error.response?.status,
+      responseData: error.response?.data,
+      timestamp: new Date().toISOString(),
+    });
+    throw error;
+  }
+}
