@@ -15,6 +15,10 @@ import { AmenityBookingSummaryDto, AmenityBookingStatus } from '@/services/api/a
 interface BookingCardProps extends Omit<TouchableOpacityProps, 'onPress'> {
   booking: AmenityBookingSummaryDto;
   onPress: (bookingId: string) => void;
+  /** Optional callback for cancel action - only shown for cancellable bookings */
+  onCancel?: (booking: AmenityBookingSummaryDto) => void;
+  /** Whether the booking can be cancelled (e.g., upcoming, not already cancelled) */
+  showCancelButton?: boolean;
 }
 
 /**
@@ -84,6 +88,8 @@ const getStatusLabel = (status: AmenityBookingStatus): string => {
 export const BookingCard: React.FC<BookingCardProps> = ({
   booking,
   onPress,
+  onCancel,
+  showCancelButton = false,
   style,
   ...props
 }) => {
@@ -95,6 +101,15 @@ export const BookingCard: React.FC<BookingCardProps> = ({
     minute: '2-digit',
     hour12: true,
   });
+
+  /**
+   * Handle cancel button press - prevents event propagation to card
+   */
+  const handleCancelPress = () => {
+    if (onCancel) {
+      onCancel(booking);
+    }
+  };
 
   return (
     <TouchableOpacity
@@ -151,6 +166,20 @@ export const BookingCard: React.FC<BookingCardProps> = ({
             </Row>
           )}
         </View>
+
+        {/* Cancel Button - only shown for cancellable bookings */}
+        {showCancelButton && onCancel && (
+          <TouchableOpacity
+            onPress={handleCancelPress}
+            style={[styles.cancelButton, { borderColor: theme.colors.error }]}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="close-circle-outline" size={16} color={theme.colors.error} />
+            <Text variant="bodySmall" weight="semiBold" color={theme.colors.error}>
+              Cancel Booking
+            </Text>
+          </TouchableOpacity>
+        )}
       </Card>
     </TouchableOpacity>
   );
@@ -179,6 +208,17 @@ const styles = StyleSheet.create({
   },
   detailText: {
     flex: 1,
+  },
+  cancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
   },
 });
 

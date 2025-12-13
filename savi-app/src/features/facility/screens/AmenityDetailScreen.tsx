@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useQueries } from '@tanstack/react-query';
@@ -185,7 +185,6 @@ export const AmenityDetailScreen: React.FC = () => {
     error: errorAmenity,
   } = useAmenity(amenityId);
 
-
   // Fetch availability for all dates using useQueries
   const availabilityQueries = useQueries({
     queries: dates.map((date) => ({
@@ -218,7 +217,6 @@ export const AmenityDetailScreen: React.FC = () => {
     }
   }, [dates, selectedDate]);
 
-
   // Handle date selection
   const handleDateSelect = (date: string) => {
     setSelectedDate(date);
@@ -249,28 +247,34 @@ export const AmenityDetailScreen: React.FC = () => {
     },
   });
 
-  // Handle booking button press
-  const handleBookPress = () => {
-    // Simple validation - check all required fields at once
-    // user.userId should contain communityUserId (refreshed on screen load if needed)
+  /**
+   * Formats time string (HH:mm:ss) to readable format (h:mm AM/PM)
+   */
+  const formatTime = (time: string): string => {
+    const [hours, minutes] = time.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const hour12 = hours % 12 || 12;
+    return `${hour12}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
+  /**
+   * Formats date string (YYYY-MM-DD) to readable format (Mon, Dec 13)
+   */
+  const formatDate = (dateStr: string): string => {
+    const date = new Date(dateStr + 'T00:00:00');
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  /**
+   * Executes the actual booking API call after confirmation
+   */
+  const confirmBooking = () => {
     const userId = user?.userId;
     const unitId = currentUnit?.id;
-    
-    if (!selectedDate || !selectedSlot || !userId || !unitId) {
-      if (!selectedDate || !selectedSlot) {
-        setBookingError('Please select both a date and a time slot.');
-      } else if (!userId) {
-        setBookingError('User not authenticated. Please sign in again.');
-      } else if (!unitId) {
-        setBookingError('No unit selected. Please select a unit first.');
-      }
-      return;
-    }
+
+    if (!selectedDate || !selectedSlot || !userId || !unitId) return;
 
     setBookingError(null);
-
-    // Log the userId being used for booking (should be communityUserId)
-    console.log('[AmenityDetailScreen] 📝 Creating booking with userId (should be communityUserId):', userId);
 
     // Build datetime strings and create booking
     const startDateTime = `${selectedDate}T${selectedSlot.startTime}`;
@@ -287,17 +291,56 @@ export const AmenityDetailScreen: React.FC = () => {
       title: amenity?.name || 'Amenity Booking',
       notes: '',
       numberOfGuests: 0,
-      bookedForUserId: userId, // This should now be communityUserId
+      bookedForUserId: userId,
     };
 
     createBookingMutation.mutate(bookingData);
+  };
+
+  /**
+   * Handle booking button press - validates and shows confirmation dialog
+   */
+  const handleBookPress = () => {
+    // Validate all required fields first
+    const userId = user?.userId;
+    const unitId = currentUnit?.id;
+    
+    if (!selectedDate || !selectedSlot || !userId || !unitId) {
+      if (!selectedDate || !selectedSlot) {
+        setBookingError('Please select both a date and a time slot.');
+      } else if (!userId) {
+        setBookingError('User not authenticated. Please sign in again.');
+      } else if (!unitId) {
+        setBookingError('No unit selected. Please select a unit first.');
+      }
+
+      return;
+    }
+
+    // Show confirmation dialog with booking details
+    const bookingDetails = `${amenity?.name || 'Facility'}\n${formatDate(selectedDate)}\n${formatTime(selectedSlot.startTime)} - ${formatTime(selectedSlot.endTime)}`;
+    
+    Alert.alert(
+      'Confirm Booking',
+      `Do you want to book?\n\n${bookingDetails}`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Yes, Book Now',
+          onPress: confirmBooking,
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   // Handle back navigation
   const handleBack = () => {
     navigation.goBack();
   };
-
 
   // Loading state
   if (isLoadingAmenity) {
@@ -347,15 +390,15 @@ export const AmenityDetailScreen: React.FC = () => {
   return (
     <View style={styles.screen} pointerEvents="box-none">
       <SafeAreaView edges={['top']} style={{ backgroundColor: theme.colors.background }} pointerEvents="box-none">
-        {/* Header */}
         <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text variant="h2" style={styles.headerTitle}>
-          {String(amenity?.name || '')}
-        </Text>
-        <View style={styles.backButton} /> {/* Spacer for centering */}
+          <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+          <Text variant="h2" style={styles.headerTitle}>
+            {String(amenity?.name || '')}
+          </Text>
+          {/* Spacer for centering */}
+          <View style={styles.backButton} />
         </View>
       </SafeAreaView>
 
@@ -466,32 +509,6 @@ export const AmenityDetailScreen: React.FC = () => {
           </View>
         )}
 
-        {/* TEST BUTTON - Above sticky button for debugging */}
-        {shouldShowBookButton && (
-          <View style={styles.testButtonContainer}>
-            <Button
-              title="TEST BOOK NOW (Debug)"
-              onPress={() => {
-                console.log('[AmenityDetailScreen] 🧪 TEST BUTTON CLICKED');
-                console.log('[AmenityDetailScreen] 🧪 TEST BUTTON STATE:', {
-                  isPending: createBookingMutation.isPending,
-                  isDisabled: isButtonDisabled || createBookingMutation.isPending,
-                  isButtonDisabled,
-                  selectedDate,
-                  selectedSlot: !!selectedSlot,
-                  selectedSlotDetails: selectedSlot,
-                });
-                handleBookPress();
-              }}
-              variant="primary"
-              size="large"
-              style={styles.testButton}
-              disabled={isButtonDisabled || createBookingMutation.isPending}
-              loading={createBookingMutation.isPending}
-            />
-          </View>
-        )}
-
       </ScrollView>
 
       {shouldShowBookButton && (
@@ -513,18 +530,7 @@ export const AmenityDetailScreen: React.FC = () => {
             )}
             <Button
               title={createBookingMutation.isPending ? 'Booking...' : 'Book Now'}
-              onPress={() => {
-                console.log('[AmenityDetailScreen] 🎯 BUTTON ONPRESS CALLED (from wrapper)');
-                console.log('[AmenityDetailScreen] 🎯 BUTTON STATE:', {
-                  isPending: createBookingMutation.isPending,
-                  isDisabled: isButtonDisabled || createBookingMutation.isPending,
-                  isButtonDisabled,
-                  selectedDate,
-                  selectedSlot: !!selectedSlot,
-                  selectedSlotDetails: selectedSlot,
-                });
-                handleBookPress();
-              }}
+              onPress={handleBookPress}
               variant="primary"
               size="large"
               style={styles.stickyButton}
@@ -651,18 +657,6 @@ const styles = StyleSheet.create({
   stickyButton: {
     width: '100%',
   },
-  testButtonContainer: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 24,
-    backgroundColor: '#FFE5E5', // Light red background to make it visible
-    padding: 8,
-    borderRadius: 8,
-  },
-  testButton: {
-    width: '100%',
-  },
 });
 
 export default AmenityDetailScreen;
-

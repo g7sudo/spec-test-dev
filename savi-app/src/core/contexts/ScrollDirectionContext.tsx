@@ -16,17 +16,17 @@ const ScrollDirectionContext = createContext<ScrollDirectionContextType | undefi
 export const ScrollDirectionProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [isScrollingUp, setIsScrollingUp] = useState(false);
 
-  // Wrapper to log state changes
-  const setIsScrollingUpWithLog = React.useCallback((value: boolean) => {
-    console.log('[ScrollDirectionContext] 🔄 State change:', {
-      from: isScrollingUp,
-      to: value,
+  // Wrapper that only updates state when value actually changes (prevents unnecessary re-renders)
+  const setIsScrollingUpWithCheck = React.useCallback((value: boolean) => {
+    setIsScrollingUp((prev) => {
+      // Skip update if value hasn't changed
+      if (prev === value) return prev;
+      return value;
     });
-    setIsScrollingUp(value);
-  }, [isScrollingUp]);
+  }, []);
 
   return (
-    <ScrollDirectionContext.Provider value={{ isScrollingUp, setIsScrollingUp: setIsScrollingUpWithLog }}>
+    <ScrollDirectionContext.Provider value={{ isScrollingUp, setIsScrollingUp: setIsScrollingUpWithCheck }}>
       {children}
     </ScrollDirectionContext.Provider>
   );

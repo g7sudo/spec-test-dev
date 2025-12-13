@@ -7,9 +7,10 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { View, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Modal, Pressable } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/core/theme';
 import { Screen, Text, Button } from '@/shared/components';
@@ -17,11 +18,24 @@ import { ErrorState, EmptyState } from '@/shared/components/feedback';
 import { useMyBookings } from '../hooks';
 import { BookingCard } from '../components';
 import { FacilityStackParamList } from '@/app/navigation/types';
-import { AmenityBookingSummaryDto, AmenityBookingStatus } from '@/services/api/amenities';
+import { AmenityBookingSummaryDto, AmenityBookingStatus, cancelBooking } from '@/services/api/amenities';
+import { queryKeys } from '@/services/api/queryClient';
 
 type NavigationProp = NativeStackNavigationProp<FacilityStackParamList>;
 
 type TabType = 'upcoming' | 'current' | 'past';
+
+/**
+ * Predefined cancellation reasons for user selection
+ */
+const CANCEL_REASONS = [
+  'Need to reschedule',
+  'Change of plans',
+  'Emergency',
+  'Weather concerns',
+  'Found alternative',
+  'Other',
+] as const;
 
 /**
  * Check if booking is upcoming (start date is in the future)
@@ -54,8 +68,15 @@ const isPast = (booking: AmenityBookingSummaryDto): boolean => {
 export const MyBookingsScreen: React.FC = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const queryClient = useQueryClient();
   
   const [activeTab, setActiveTab] = useState<TabType>('upcoming');
+  
+  // Cancel modal state
+  const [cancelModalVisible, setCancelModalVisible] = useState(false);
+  const [selectedBooking, setSelectedBooking] = useState<AmenityBookingSummaryDto | null>(null);
+  const [selectedReason, setSelectedReason] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   // Fetch all bookings
   const {
@@ -68,6 +89,25 @@ export const MyBookingsScreen: React.FC = () => {
   } = useMyBookings({
     page: 1,
     pageSize: 100, // Load enough bookings for all tabs
+  });
+
+  // Cancel booking mutation
+  const cancelMutation = useMutation({
+    mutationFn: ({ bookingId, reason }: { bookingId: string; reason: string }) =>
+      cancelBooking(bookingId, reason),
+    onSuccess: () => {
+      // Invalidate bookings query to refresh the list
+      queryClient.invalidateQueries({ queryKey: queryKeys.amenities.bookings.all });
+      // Close modal and reset state
+      closeCancelModal();
+    },
+    onError: (err: any) => {
+      setCancelError(
+        err?.response?.data?.message ||
+        err?.message ||
+        'Failed to cancel booking. Please try again.'
+      );
+    },
   });
 
   // Filter bookings by tab
@@ -108,6 +148,48 @@ export const MyBookingsScreen: React.FC = () => {
   // Handle back navigation
   const handleBack = () => {
     navigation.goBack();
+  };
+
+  /**
+   * Opens the cancel modal for a specific booking
+   */
+  const openCancelModal = (booking: AmenityBookingSummaryDto) => {
+    setSelectedBooking(booking);
+    setSelectedReason(null);
+    setCancelError(null);
+    setCancelModalVisible(true);
+  };
+
+  /**
+   * Closes the cancel modal and resets state
+   */
+  const closeCancelModal = () => {
+    setCancelModalVisible(false);
+    setSelectedBooking(null);
+    setSelectedReason(null);
+    setCancelError(null);
+  };
+
+  /**
+   * Handles the cancel confirmation action
+   */
+  const handleConfirmCancel = () => {
+    if (!selectedBooking || !selectedReason) return;
+    
+    cancelMutation.mutate({
+      bookingId: selectedBooking.id,
+      reason: selectedReason,
+    });
+  };
+
+  /**
+   * Check if a booking can be cancelled (upcoming and not already cancelled/rejected)
+   */
+  const canCancelBooking = (booking: AmenityBookingSummaryDto): boolean => {
+    const isCancellableStatus =
+      booking.status === AmenityBookingStatus.Approved ||
+      booking.status === AmenityBookingStatus.PendingApproval;
+    return isUpcoming(booking) && isCancellableStatus;
   };
 
   // Handle pull to refresh - ensure refetch completes properly
@@ -238,7 +320,12 @@ export const MyBookingsScreen: React.FC = () => {
       <FlatList
         data={bookings}
         renderItem={({ item }) => (
-          <BookingCard booking={item} onPress={handleBookingPress} />
+          <BookingCard
+            booking={item}
+            onPress={handleBookingPress}
+            onCancel={openCancelModal}
+            showCancelButton={canCancelBooking(item)}
+          />
         )}
         keyExtractor={(item) => item.id}
         contentContainerStyle={
@@ -278,6 +365,122 @@ export const MyBookingsScreen: React.FC = () => {
           </View>
         }
       />
+
+      {/* Cancel Booking Modal */}
+      <Modal
+        visible={cancelModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={closeCancelModal}
+      >
+        <Pressable style={styles.modalOverlay} onPress={closeCancelModal}>
+          <Pressable style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <Text variant="h3" weight="bold">
+                Cancel Booking
+              </Text>
+              <TouchableOpacity onPress={closeCancelModal} style={styles.modalCloseButton}>
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Booking Info */}
+            {selectedBooking && (
+              <View style={[styles.bookingInfo, { backgroundColor: theme.colors.surface }]}>
+                <Text variant="bodyMedium" weight="semiBold">
+                  {String(selectedBooking.amenityName || '')}
+                </Text>
+                <Text variant="bodySmall" color={theme.colors.textSecondary}>
+                  {new Date(selectedBooking.startAt).toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                  })}{' '}
+                  •{' '}
+                  {new Date(selectedBooking.startAt).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true,
+                  })}
+                </Text>
+              </View>
+            )}
+
+            {/* Reason Selection */}
+            <Text variant="bodyMedium" weight="semiBold" style={styles.reasonLabel}>
+              Select a reason:
+            </Text>
+            <View style={styles.reasonContainer}>
+              {CANCEL_REASONS.map((reason) => (
+                <TouchableOpacity
+                  key={reason}
+                  style={[
+                    styles.reasonTag,
+                    {
+                      backgroundColor:
+                        selectedReason === reason
+                          ? theme.colors.primary
+                          : theme.colors.surface,
+                      borderColor:
+                        selectedReason === reason
+                          ? theme.colors.primary
+                          : theme.colors.border,
+                    },
+                  ]}
+                  onPress={() => setSelectedReason(reason)}
+                >
+                  <Text
+                    variant="bodySmall"
+                    color={selectedReason === reason ? '#FFFFFF' : theme.colors.text}
+                  >
+                    {reason}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Error Message */}
+            {cancelError && (
+              <Text variant="bodySmall" color={theme.colors.error} style={styles.errorText}>
+                {cancelError}
+              </Text>
+            )}
+
+            {/* Action Buttons */}
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelModalButton, { borderColor: theme.colors.border }]}
+                onPress={closeCancelModal}
+                disabled={cancelMutation.isPending}
+              >
+                <Text variant="bodyMedium" weight="semiBold">
+                  No, Keep It
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalButton,
+                  styles.confirmModalButton,
+                  {
+                    backgroundColor: selectedReason ? theme.colors.error : theme.colors.disabled,
+                  },
+                ]}
+                onPress={handleConfirmCancel}
+                disabled={!selectedReason || cancelMutation.isPending}
+              >
+                {cancelMutation.isPending ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text variant="bodyMedium" weight="semiBold" color="#FFFFFF">
+                    Yes, Cancel
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Screen>
   );
 };
@@ -341,6 +544,76 @@ const styles = StyleSheet.create({
   createButtonContainer: {
     marginTop: 24,
     paddingHorizontal: 16,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  bookingInfo: {
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  reasonLabel: {
+    marginBottom: 12,
+  },
+  reasonContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 16,
+  },
+  reasonTag: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  errorText: {
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelModalButton: {
+    borderWidth: 1,
+  },
+  confirmModalButton: {
+    minHeight: 44,
   },
 });
 

@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Savi.Api.Configuration;
+using Savi.Application.Tenant.Amenities.Commands.CancelMyBooking;
 using Savi.Application.Tenant.Amenities.Dtos;
 using Savi.Application.Tenant.Amenities.Queries.GetMyBookings;
 using Savi.Application.Tenant.Maintenance.Requests.Dtos;
@@ -480,6 +481,44 @@ public class MeController : ControllerBase
     }
 
     /// <summary>
+    /// Cancels an amenity booking with ownership verification.
+    /// - CanManageAll: Can cancel any booking
+    /// - CanManageUnit: Can cancel bookings for user's units
+    /// - CanManageOwn: Can cancel only user's own bookings
+    /// </summary>
+    /// <remarks>
+    /// Requires one of: TENANT_AMENITY_MANAGE, TENANT_AMENITY_BOOKING_MANAGE_UNIT, or TENANT_AMENITY_BOOKING_MANAGE_OWN permission.
+    /// Ownership is verified based on the user's highest permission level.
+    /// </remarks>
+    [HttpPost("bookings/{id:guid}/cancel")]
+    [HasAnyPermission(
+        Permissions.Tenant.Amenities.Manage,
+        Permissions.Tenant.Amenities.Book,
+        Permissions.Tenant.Amenities.BookingManageUnit,
+        Permissions.Tenant.Amenities.BookingManageOwn)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<IActionResult> CancelMyBooking(
+        Guid id,
+        [FromBody] CancelMyBookingRequest? request = null,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("POST /tenant/me/bookings/{BookingId}/cancel", id);
+
+        var command = new CancelMyBookingCommand(id, request?.Reason);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            return BadRequest(new { error = result.Error });
+        }
+
+        return NoContent();
+    }
+
+    /// <summary>
     /// Gets visitor passes based on user's permission level.
     /// - CanViewAll: Returns all visitor passes
     /// - CanViewUnit: Returns visitor passes for user's units
@@ -711,6 +750,11 @@ public record UpdateMyPartyInfoRequest(
     DateOnly? DateOfBirth,
     string? PhoneNumber,
     string? Email);
+
+/// <summary>
+/// Request model for cancelling an amenity booking.
+/// </summary>
+public record CancelMyBookingRequest(string? Reason);
 
 #endregion
 

@@ -512,3 +512,58 @@ export async function createAmenityBooking(
     throw error;
   }
 }
+
+/**
+ * Cancel booking request DTO
+ */
+export interface CancelBookingRequest {
+  reason: string;
+}
+
+/**
+ * Cancel an existing amenity booking
+ * 
+ * POST /api/v1/tenant/me/bookings/{bookingId}/cancel
+ * 
+ * Required headers:
+ * - Authorization: Bearer <token>
+ * - X-Tenant-Code: <tenant-code>
+ * 
+ * @param bookingId - The booking ID to cancel
+ * @param reason - Cancellation reason
+ * @returns void on success
+ * @throws ApiError if request fails
+ */
+export async function cancelBooking(
+  bookingId: string,
+  reason: string
+): Promise<void> {
+  console.log('[Amenities API] 🚫 CANCEL BOOKING REQUEST:', {
+    bookingId,
+    reason,
+    timestamp: new Date().toISOString(),
+  });
+
+  try {
+    const response = await apiClient.post(
+      `/v1/tenant/me/bookings/${bookingId}/cancel`,
+      { reason }
+    );
+
+    console.log('[Amenities API] ✅ CANCEL BOOKING SUCCESS:', {
+      status: response.status,
+      bookingId,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    console.error('[Amenities API] ❌ CANCEL BOOKING ERROR:', {
+      errorType: typeof error,
+      errorMessage: error?.message,
+      status: error?.status || error?.response?.status,
+      responseData: error?.response?.data,
+      bookingId,
+      timestamp: new Date().toISOString(),
+    });
+    throw error;
+  }
+}
