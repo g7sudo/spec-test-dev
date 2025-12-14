@@ -7,7 +7,8 @@
   "noRequests": "No maintenance requests",
   "noRequestsDescription": "You haven't submitted any maintenance requests yet.",
   "create": {
-    "title": "New Maintenance Request",
+    "title": "Title",
+    "screenTitle": "New Maintenance Request",
     "category": "Category",
     "categoryPlaceholder": "Select a category",
     "description": "Description",
@@ -16,13 +17,18 @@
     "locationPlaceholder": "Where is the issue?",
     "priority": "Priority",
     "priorityLow": "Low",
-    "priorityMedium": "Medium",
+    "priorityNormal": "Normal",
     "priorityHigh": "High",
-    "priorityUrgent": "Urgent",
-    "attachPhotos": "Attach Photos",
+    "priorityCritical": "Critical",
+    "attachPhotos": "Photos",
     "addPhoto": "Add Photo",
     "submitRequest": "Submit Request",
-    "success": "Request submitted successfully"
+    "success": "Request submitted successfully",
+    "validation": {
+      "categoryRequired": "Please select a category",
+      "titleRequired": "Please enter a title",
+      "titleTooLong": "Title must be 200 characters or less"
+    }
   },
   "detail": {
     "requestId": "Request ID",
@@ -37,22 +43,59 @@
     "timeline": "Timeline",
     "comments": "Comments",
     "addComment": "Add a comment...",
+    "noComments": "No comments yet",
     "assessment": "Assessment",
     "approval": "Approval",
     "rating": "Rating",
     "rateService": "Rate this service",
-    "submitRating": "Submit Rating"
+    "submitRating": "Submit Rating",
+    "yourRating": "Your Rating",
+    "feedbackPlaceholder": "Share your feedback (optional)"
   },
   "status": {
     "new": "New",
     "assigned": "Assigned",
     "inProgress": "In Progress",
+    "waitingForResident": "Waiting for You",
     "completed": "Completed",
     "cancelled": "Cancelled",
     "rejected": "Rejected"
   },
+  "priority": {
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High",
+    "critical": "Critical"
+  },
+  "category": {
+    "electrical": "Electrical",
+    "plumbing": "Plumbing",
+    "hvac": "HVAC",
+    "appliances": "Appliances",
+    "general": "General",
+    "other": "Other"
+  },
   "actions": {
     "cancel": "Cancel Request",
-    "cancelConfirm": "Are you sure you want to cancel this request?"
+    "cancelConfirm": "Are you sure you want to cancel this request?",
+    "cancelReasonRequired": "Cancellation reason is required",
+    "cancelSuccess": "Request cancelled successfully"
+  },
+  "timeline": {
+    "created": "Request Submitted",
+    "assigned": "Technician Assigned",
+    "started": "Work Started",
+    "completed": "Work Completed",
+    "cancelled": "Request Cancelled",
+    "rejected": "Request Rejected",
+    "rated": "Service Rated"
+  },
+  "errors": {
+    "loadFailed": "Failed to load maintenance requests",
+    "detailLoadFailed": "Failed to load request details",
+    "createFailed": "Failed to submit request. Please try again.",
+    "cancelFailed": "Failed to cancel request",
+    "commentFailed": "Failed to add comment",
+    "rateFailed": "Failed to submit rating"
   }
 }

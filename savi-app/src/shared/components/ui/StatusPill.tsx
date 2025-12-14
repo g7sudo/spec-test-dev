@@ -15,7 +15,8 @@ type StatusType =
   | 'approved'
   | 'checkedIn'
   | 'checkedOut'
-  | 'expired';
+  | 'expired'
+  | 'waitingForResident';
 
 type VariantType = 'default' | 'success' | 'warning' | 'error' | 'info';
 
@@ -52,6 +53,7 @@ export const StatusPill: React.FC<StatusPillProps> = ({
       checkedin: { bg: '#CCE5FF', text: '#004085', label: 'Checked In' },
       checkedout: { bg: '#E2E3E5', text: '#383D41', label: 'Checked Out' },
       expired: { bg: '#E2E3E5', text: '#383D41', label: 'Expired' },
+      waitingforresident: { bg: '#FFF3CD', text: '#856404', label: 'Waiting for You' },
     };
 
     return (

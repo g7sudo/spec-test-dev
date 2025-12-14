@@ -81,7 +81,7 @@ const HomeStackNavigator: React.FC = () => {
       <HomeStack.Screen
         name="CreateMaintenance"
         component={CreateMaintenanceScreen}
-        options={{ headerShown: true, title: 'New Request' }}
+        options={{ headerShown: false }}
       />
     </HomeStack.Navigator>
   );
@@ -138,7 +138,7 @@ const ServicesStackNavigator: React.FC = () => {
       <ServicesStack.Screen
         name="CreateMaintenance"
         component={CreateMaintenanceScreen}
-        options={{ headerShown: true, title: 'New Request' }}
+        options={{ headerShown: false }}
       />
       <ServicesStack.Screen
         name="VisitorList"
@@ -298,11 +298,18 @@ export const MainNavigator: React.FC = () => {
       <Tab.Screen
         name="HomeTab"
         component={HomeStackNavigator}
-        options={{
-          tabBarLabel: t('tabs.home'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
-          ),
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? 'HomeMain';
+          // Hide tab bar on CreateMaintenance screen
+          const hideTabBar = routeName === 'CreateMaintenance';
+          
+          return {
+            tabBarLabel: t('tabs.home'),
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="home-outline" size={size} color={color} />
+            ),
+            tabBarStyle: hideTabBar ? { display: 'none' } : undefined,
+          };
         }}
       />
       <Tab.Screen
@@ -327,8 +334,8 @@ export const MainNavigator: React.FC = () => {
         component={ServicesStackNavigator}
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route) ?? 'ServicesMain';
-          // Hide tab bar on nested screens (VisitorList, CreateVisitor)
-          const hideTabBar = routeName === 'VisitorList' || routeName === 'CreateVisitor';
+          // Hide tab bar on nested screens (CreateMaintenance, VisitorList, CreateVisitor)
+          const hideTabBar = routeName === 'CreateMaintenance' || routeName === 'VisitorList' || routeName === 'CreateVisitor';
           
           return {
             tabBarLabel: t('tabs.services'),
