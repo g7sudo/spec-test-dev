@@ -363,7 +363,8 @@ export const HomeScreen: React.FC = () => {
   return (
     <Screen style={styles.screen} safeArea={false}>
       {/* Fixed Header Area - Always visible */}
-      <View style={[styles.headerArea, { backgroundColor: '#FFE69C' }]}>
+      {/* Header bg: YELLOW when expanded, WHITE when collapsed */}
+      <View style={[styles.headerArea, { backgroundColor: isBillboardExpanded ? '#FFE69C' : '#FFFFFF' }]}>
         <HomeHeader
           onAvatarPress={handleAvatarPress}
           onNotificationsPress={handleNotificationsPress}
@@ -383,6 +384,8 @@ export const HomeScreen: React.FC = () => {
         )}
       </View>
 
+      {/* Wrapper View for rounded corners - ScrollView doesn't support borderRadius well */}
+      <View style={styles.scrollWrapper}>
       {/* Scrollable Page Content - Only this area scrolls */}
       <ScrollView
         ref={scrollViewRef}
@@ -458,6 +461,7 @@ export const HomeScreen: React.FC = () => {
           onOfferPress={handleOfferPress}
         />
       </ScrollView>
+      </View>
     </Screen>
   );
 };
@@ -469,7 +473,15 @@ const styles = StyleSheet.create({
   },
   // Fixed header area - contains header and billboard drawer
   headerArea: {
-    paddingBottom: 0, // No padding - grey strip follows immediately
+    paddingBottom: 16, // Add padding to show yellow gap below drawer
+  },
+  // Wrapper for rounded corners - ScrollView doesn't support borderRadius well
+  scrollWrapper: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    overflow: 'hidden', // Clip content to rounded corners
   },
   // Scrollable content area - only this scrolls
   scrollView: {

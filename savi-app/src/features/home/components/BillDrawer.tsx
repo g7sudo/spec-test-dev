@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   container: {
     marginHorizontal: 16,
     marginTop: 12,
-    marginBottom: 0, // No bottom margin - grey strip follows immediately
+    marginBottom: 16, // Gap to show yellow background between drawer and white content
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     // Shadow
