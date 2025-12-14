@@ -400,7 +400,7 @@ export const HomeScreen: React.FC = () => {
         onScrollBeginDrag={handleScrollBeginDrag}
         scrollEventThrottle={16}
         scrollEnabled={true} // Always allow scroll - collapse happens organically
-        stickyHeaderIndices={[0]} // Make GreyStrip sticky at top
+        stickyHeaderIndices={[0, 1]} // Make GreyStrip and HouseholdAvatars (story row) sticky at top
         // When at top, allow our gesture to take priority
         bounces={true}
         refreshControl={
