@@ -1,157 +1,141 @@
+/**
+ * CommunityFeedsSection Component
+ * 
+ * Displays a preview of recent announcements on the home screen.
+ * Shows 2 announcements with a "View All" link to the full feed.
+ */
+
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/core/theme';
-import { Text, Card, Row, Avatar } from '@/shared/components';
+import { Text, Row } from '@/shared/components';
 import { useTranslation } from 'react-i18next';
-
-interface FeedPost {
-  id: string;
-  authorName: string;
-  authorRole: string;
-  authorPhotoUrl?: string;
-  content: string;
-  timestamp: string;
-  likeCount: number;
-  commentCount: number;
-  isLiked: boolean;
-}
+import { AnnouncementSummaryDto } from '@/services/api/announcements';
+import { AnnouncementCard } from '@/features/announcements/components';
 
 interface CommunityFeedsSectionProps {
-  posts: FeedPost[];
+  /** Announcements to display (will show first 2) */
+  announcements: AnnouncementSummaryDto[];
+  /** Called when "View All" is pressed */
   onViewAll: () => void;
-  onPostPress: (postId: string) => void;
-  onLikePress: (postId: string) => void;
-  onCommentPress: (postId: string) => void;
+  /** Called when an announcement card is pressed */
+  onAnnouncementPress: (announcementId: string) => void;
+  /** Called when like button is pressed */
+  onLikePress?: (announcementId: string) => void;
+  /** Called when comment button is pressed */
+  onCommentPress?: (announcementId: string) => void;
+  /** Loading state */
   isLoading?: boolean;
+  /** Error state */
+  error?: Error | null;
 }
 
+/**
+ * CommunityFeedsSection - Home screen announcements preview
+ * 
+ * Features:
+ * - Shows first 2 announcements from the feed
+ * - "View All" link to navigate to full feed
+ * - Uses AnnouncementCard component for consistent UI
+ * - Empty and loading states
+ */
 export const CommunityFeedsSection: React.FC<CommunityFeedsSectionProps> = ({
-  posts,
+  announcements,
   onViewAll,
-  onPostPress,
+  onAnnouncementPress,
   onLikePress,
   onCommentPress,
-  isLoading,
+  isLoading = false,
+  error = null,
 }) => {
   const { theme } = useTheme();
-  const { t } = useTranslation();
+  const { t } = useTranslation('home');
 
-  const renderPostCard = (post: FeedPost) => (
-    <TouchableOpacity
-      key={post.id}
-      onPress={() => onPostPress(post.id)}
-      activeOpacity={0.7}
-    >
-      <Card style={styles.postCard}>
-        <Row style={styles.authorRow}>
-          <Row style={styles.authorInfo}>
-            <Avatar
-              size="small"
-              name={post.authorName}
-              imageUrl={post.authorPhotoUrl}
-            />
-            <View style={styles.authorDetails}>
-              <Text variant="bodySmall" weight="semiBold">
-                {post.authorName}
-              </Text>
-              <Text variant="caption" color={theme.colors.textSecondary}>
-                {post.timestamp}
-              </Text>
-            </View>
-          </Row>
-          <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons
-              name="ellipsis-horizontal"
-              size={20}
-              color={theme.colors.textSecondary}
-            />
+  // Show only first 2 announcements
+  const displayAnnouncements = announcements.slice(0, 2);
+
+  // Loading state
+  if (isLoading && announcements.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Row style={styles.header}>
+          <Text variant="bodyLarge" weight="semiBold">
+            {t('communityFeeds', { defaultValue: 'Community Feeds' })}
+          </Text>
+          <TouchableOpacity onPress={onViewAll}>
+            <Text variant="bodySmall" color={theme.colors.primary}>
+              {t('viewAll', { defaultValue: 'View All', ns: 'common' })}
+            </Text>
           </TouchableOpacity>
         </Row>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" color={theme.colors.primary} />
+        </View>
+      </View>
+    );
+  }
 
-        <Text
-          variant="body"
-          style={styles.content}
-          numberOfLines={3}
-        >
-          {post.content}
-        </Text>
-
-        <Row style={styles.interactionRow}>
-          <Row style={styles.interactions}>
-            <TouchableOpacity
-              style={styles.interactionButton}
-              onPress={() => onLikePress(post.id)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons
-                name={post.isLiked ? 'heart' : 'heart-outline'}
-                size={20}
-                color={post.isLiked ? theme.colors.error : theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.interactionButton}
-              onPress={() => onCommentPress(post.id)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons
-                name="chatbubble-outline"
-                size={18}
-                color={theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.interactionButton}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Ionicons
-                name="share-outline"
-                size={20}
-                color={theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-          </Row>
-          {post.likeCount > 0 && (
-            <Text variant="caption" color={theme.colors.textSecondary}>
-              {post.likeCount} liked this
-            </Text>
-          )}
-        </Row>
-      </Card>
-    </TouchableOpacity>
-  );
-
+  // Empty state
   const renderEmptyState = () => (
     <View style={styles.emptyContainer}>
+      <Ionicons name="megaphone-outline" size={32} color={theme.colors.textDisabled} />
       <Text
         variant="body"
         color={theme.colors.textSecondary}
         align="center"
+        style={styles.emptyText}
       >
-        {t('noRecentUpdates', { ns: 'home' })}
+        {t('noRecentUpdates', { defaultValue: 'No recent updates' })}
       </Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
+      {/* Header Row */}
       <Row style={styles.header}>
         <Text variant="bodyLarge" weight="semiBold">
-          {t('communityFeeds', { ns: 'home' })}
+          {t('communityFeeds', { defaultValue: 'Community Feeds' })}
         </Text>
         <TouchableOpacity onPress={onViewAll}>
           <Text variant="bodySmall" color={theme.colors.primary}>
-            {t('viewAll')}
+            {t('viewAll', { defaultValue: 'View All', ns: 'common' })}
           </Text>
         </TouchableOpacity>
       </Row>
 
-      {posts.length === 0 ? (
+      {/* Announcements List or Empty State */}
+      {displayAnnouncements.length === 0 ? (
         renderEmptyState()
       ) : (
-        <View style={styles.postsList}>
-          {posts.slice(0, 2).map(renderPostCard)}
+        <View style={styles.announcementsList}>
+          {displayAnnouncements.map((announcement) => (
+            <AnnouncementCard
+              key={announcement.id}
+              announcement={announcement}
+              onPress={onAnnouncementPress}
+              onLikePress={onLikePress}
+              onCommentPress={onCommentPress}
+              compact
+            />
+          ))}
+          
+          {/* Show "View All" button if there are more announcements */}
+          {announcements.length > 2 && (
+            <TouchableOpacity
+              style={[styles.viewAllButton, { borderColor: theme.colors.border }]}
+              onPress={onViewAll}
+            >
+              <Text variant="bodySmall" color={theme.colors.primary}>
+                {t('viewAllAnnouncements', { 
+                  count: announcements.length - 2, 
+                  defaultValue: `View ${announcements.length - 2} more announcements` 
+                })}
+              </Text>
+              <Ionicons name="chevron-forward" size={16} color={theme.colors.primary} />
+            </TouchableOpacity>
+          )}
         </View>
       )}
     </View>
@@ -167,42 +151,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 12,
   },
-  postsList: {
+  announcementsList: {
     paddingHorizontal: 16,
-    gap: 12,
+    gap: 8,
   },
-  postCard: {
-    padding: 16,
-  },
-  authorRow: {
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  authorInfo: {
-    gap: 12,
-  },
-  authorDetails: {
-    gap: 2,
-  },
-  content: {
-    marginBottom: 12,
-  },
-  interactionRow: {
-    justifyContent: 'space-between',
+  loadingContainer: {
+    paddingVertical: 32,
     alignItems: 'center',
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#F0F0F0',
-  },
-  interactions: {
-    gap: 16,
-  },
-  interactionButton: {
-    padding: 4,
   },
   emptyContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 24,
+    paddingVertical: 32,
+    alignItems: 'center',
+    gap: 8,
+  },
+  emptyText: {
+    marginTop: 4,
+  },
+  viewAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderRadius: 8,
+    gap: 4,
+    marginTop: 4,
   },
 });
 

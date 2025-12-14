@@ -14,6 +14,9 @@ import {
   Calendar,
   Settings,
   AlertTriangle,
+  ImagePlus,
+  X,
+  Upload,
 } from 'lucide-react';
 import {
   Dialog,
@@ -33,17 +36,38 @@ import {
 } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { listBlocks, listUnits } from '@/lib/api/community';
-import { createAnnouncement, updateAnnouncement, getAnnouncementById } from '@/lib/api/announcements';
+import {
+  createAnnouncement,
+  updateAnnouncement,
+  getAnnouncementById,
+  uploadAnnouncementImage,
+  generateTempKey,
+} from '@/lib/api/announcements';
 import { Block, Unit } from '@/types/community';
+import { getIdToken } from '@/lib/auth/firebase';
 import {
   Announcement,
   AnnouncementCategory,
   AnnouncementPriority,
   AudienceTargetType,
+  AnnouncementImage,
   CreateAnnouncementAudienceInput,
   ANNOUNCEMENT_CATEGORY_OPTIONS,
   ANNOUNCEMENT_PRIORITY_OPTIONS,
 } from '@/types/announcement';
+
+// ============================================
+// Types for Image Upload
+// ============================================
+
+interface PendingImage {
+  tempKey: string;
+  file: File;
+  previewUrl: string;
+  uploading: boolean;
+  uploaded: boolean;
+  error?: string;
+}
 
 // ============================================
 // Props
@@ -73,12 +97,18 @@ export function AnnouncementFormDialog({
   const blocksFetchedRef = useRef(false);
   const unitsFetchedRef = useRef(false);
   const announcementFetchedRef = useRef(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Data state
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [units, setUnits] = useState<Unit[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [existingAnnouncement, setExistingAnnouncement] = useState<Announcement | null>(null);
+
+  // Image upload state
+  const [existingImages, setExistingImages] = useState<AnnouncementImage[]>([]);
+  const [imagesToRemove, setImagesToRemove] = useState<string[]>([]);
+  const [pendingImages, setPendingImages] = useState<PendingImage[]>([]);
 
   // Form state - Basic
   const [title, setTitle] = useState('');
@@ -188,6 +218,11 @@ export function AnnouncementFormDialog({
           );
         }
       }
+
+      // Load existing images
+      if (announcement.images && announcement.images.length > 0) {
+        setExistingImages(announcement.images);
+      }
     } catch (err) {
       console.error('Failed to load announcement:', err);
       setError('Failed to load announcement details');
@@ -241,6 +276,103 @@ export function AnnouncementFormDialog({
     setError(null);
     setActiveTab('basic');
     setExistingAnnouncement(null);
+    // Reset image state
+    setExistingImages([]);
+    setImagesToRemove([]);
+    // Revoke object URLs for pending images
+    pendingImages.forEach(img => URL.revokeObjectURL(img.previewUrl));
+    setPendingImages([]);
+  };
+
+  // ============================================
+  // Image Handlers
+  // ============================================
+
+  /**
+   * Handle file selection and upload to temp storage
+   */
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    // Process each file
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Only image files are allowed');
+        continue;
+      }
+
+      // Validate file size (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        setError('Image size must be less than 10MB');
+        continue;
+      }
+
+      const tempKey = generateTempKey();
+      const previewUrl = URL.createObjectURL(file);
+
+      // Add to pending images with uploading state
+      const newPendingImage: PendingImage = {
+        tempKey,
+        file,
+        previewUrl,
+        uploading: true,
+        uploaded: false,
+      };
+
+      setPendingImages(prev => [...prev, newPendingImage]);
+
+      // Upload to temp storage
+      try {
+        await uploadAnnouncementImage(file, tempKey, getIdToken);
+        
+        // Mark as uploaded
+        setPendingImages(prev =>
+          prev.map(img =>
+            img.tempKey === tempKey
+              ? { ...img, uploading: false, uploaded: true }
+              : img
+          )
+        );
+      } catch (err) {
+        console.error('Failed to upload image:', err);
+        // Mark as failed
+        setPendingImages(prev =>
+          prev.map(img =>
+            img.tempKey === tempKey
+              ? { ...img, uploading: false, error: 'Upload failed' }
+              : img
+          )
+        );
+      }
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  /**
+   * Remove an existing image (mark for deletion)
+   */
+  const handleRemoveExistingImage = (imageId: string) => {
+    setImagesToRemove(prev => [...prev, imageId]);
+    setExistingImages(prev => prev.filter(img => img.id !== imageId));
+  };
+
+  /**
+   * Remove a pending image (not yet saved)
+   */
+  const handleRemovePendingImage = (tempKey: string) => {
+    const image = pendingImages.find(img => img.tempKey === tempKey);
+    if (image) {
+      URL.revokeObjectURL(image.previewUrl);
+    }
+    setPendingImages(prev => prev.filter(img => img.tempKey !== tempKey));
   };
 
   // ============================================
@@ -294,11 +426,30 @@ export function AnnouncementFormDialog({
       return;
     }
 
+    // Check if all images are uploaded
+    const uploadingImages = pendingImages.filter(img => img.uploading);
+    if (uploadingImages.length > 0) {
+      setError('Please wait for all images to finish uploading');
+      return;
+    }
+
+    // Check for failed uploads
+    const failedImages = pendingImages.filter(img => img.error);
+    if (failedImages.length > 0) {
+      setError('Some images failed to upload. Please remove them and try again.');
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
     try {
       const audiences = buildAudiences();
+
+      // Get temp keys from successfully uploaded pending images
+      const tempDocuments = pendingImages
+        .filter(img => img.uploaded)
+        .map(img => img.tempKey);
 
       if (isEditMode && announcementId) {
         // Update existing announcement
@@ -319,6 +470,8 @@ export function AnnouncementFormDialog({
           eventLocationText: eventLocationText.trim() || null,
           eventJoinUrl: eventJoinUrl.trim() || null,
           audiences,
+          tempDocuments: tempDocuments.length > 0 ? tempDocuments : undefined,
+          documentsToRemove: imagesToRemove.length > 0 ? imagesToRemove : undefined,
         });
       } else {
         // Create new announcement (as draft)
@@ -340,6 +493,7 @@ export function AnnouncementFormDialog({
           eventJoinUrl: eventJoinUrl.trim() || null,
           audiences,
           publishImmediately: false, // Always create as draft
+          tempDocuments: tempDocuments.length > 0 ? tempDocuments : undefined,
         });
       }
 
@@ -390,10 +544,14 @@ export function AnnouncementFormDialog({
           </div>
         ) : (
           <Tabs defaultValue="basic" value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-4">
+            <TabsList className="grid w-full grid-cols-5 mb-4">
               <TabsTrigger value="basic">
                 <Megaphone className="h-4 w-4 mr-1" />
                 Basic
+              </TabsTrigger>
+              <TabsTrigger value="images">
+                <ImagePlus className="h-4 w-4 mr-1" />
+                Images
               </TabsTrigger>
               <TabsTrigger value="audience">
                 <Users className="h-4 w-4 mr-1" />
@@ -478,6 +636,122 @@ export function AnnouncementFormDialog({
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+            </TabsContent>
+
+            {/* Images Tab */}
+            <TabsContent value="images" className="space-y-4">
+              <p className="text-sm text-gray-500">
+                Upload images for your announcement. First image will be used as thumbnail.
+              </p>
+
+              {/* Upload Button */}
+              <div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  Upload Images
+                </Button>
+                <p className="text-xs text-gray-400 mt-1">
+                  Max 10MB per image. Supports JPG, PNG, GIF.
+                </p>
+              </div>
+
+              {/* Image Gallery */}
+              <div className="grid grid-cols-3 gap-3">
+                {/* Existing Images */}
+                {existingImages.map((image) => (
+                  <div
+                    key={image.id}
+                    className="relative group rounded-lg overflow-hidden border"
+                  >
+                    <img
+                      src={image.url}
+                      alt={image.fileName || 'Image'}
+                      className="w-full h-24 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExistingImage(image.id)}
+                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                    {image.sortOrder === 0 && (
+                      <span className="absolute bottom-1 left-1 text-xs bg-black/50 text-white px-1.5 py-0.5 rounded">
+                        Thumbnail
+                      </span>
+                    )}
+                  </div>
+                ))}
+
+                {/* Pending Images */}
+                {pendingImages.map((image) => (
+                  <div
+                    key={image.tempKey}
+                    className={`relative group rounded-lg overflow-hidden border ${
+                      image.error ? 'border-red-300' : ''
+                    }`}
+                  >
+                    <img
+                      src={image.previewUrl}
+                      alt={image.file.name}
+                      className={`w-full h-24 object-cover ${
+                        image.uploading ? 'opacity-50' : ''
+                      }`}
+                    />
+                    {image.uploading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <Loader2 className="h-6 w-6 animate-spin text-white" />
+                      </div>
+                    )}
+                    {image.error && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-red-500/30">
+                        <span className="text-xs text-white bg-red-500 px-2 py-1 rounded">
+                          Failed
+                        </span>
+                      </div>
+                    )}
+                    {!image.uploading && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePendingImage(image.tempKey)}
+                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                    {image.uploaded && existingImages.length === 0 && pendingImages.indexOf(image) === 0 && (
+                      <span className="absolute bottom-1 left-1 text-xs bg-black/50 text-white px-1.5 py-0.5 rounded">
+                        Thumbnail
+                      </span>
+                    )}
+                  </div>
+                ))}
+
+                {/* Empty State */}
+                {existingImages.length === 0 && pendingImages.length === 0 && (
+                  <div
+                    className="col-span-3 border-2 border-dashed border-gray-200 rounded-lg p-8 text-center cursor-pointer hover:border-gray-300 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <ImagePlus className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                    <p className="text-sm text-gray-500">
+                      Click to upload images
+                    </p>
+                  </div>
+                )}
               </div>
             </TabsContent>
 

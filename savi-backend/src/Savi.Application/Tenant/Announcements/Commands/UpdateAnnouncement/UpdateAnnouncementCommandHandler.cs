@@ -4,6 +4,7 @@ using Savi.Application.Common.Interfaces;
 using Savi.Application.Tenant.Announcements.Commands.CreateAnnouncement;
 using Savi.Domain.Tenant;
 using Savi.Domain.Tenant.Enums;
+using Savi.MultiTenancy;
 using Savi.SharedKernel.Common;
 using Savi.SharedKernel.Interfaces;
 
@@ -16,13 +17,19 @@ public class UpdateAnnouncementCommandHandler : IRequestHandler<UpdateAnnounceme
 {
     private readonly ITenantDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
+    private readonly IFileStorageService _fileStorageService;
+    private readonly ITenantContext _tenantContext;
 
     public UpdateAnnouncementCommandHandler(
         ITenantDbContext dbContext,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        IFileStorageService fileStorageService,
+        ITenantContext tenantContext)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
+        _fileStorageService = fileStorageService;
+        _tenantContext = tenantContext;
     }
 
     public async Task<Result> Handle(
@@ -58,6 +65,41 @@ public class UpdateAnnouncementCommandHandler : IRequestHandler<UpdateAnnounceme
             if (validationResult.IsFailure)
             {
                 return Result.Failure(validationResult.Error ?? "Audience validation failed.");
+            }
+        }
+
+        // Validate temp documents if provided
+        List<TempFileUpload>? tempFiles = null;
+        if (request.TempDocuments != null && request.TempDocuments.Count > 0)
+        {
+            var tenantId = _tenantContext.TenantId;
+            if (!tenantId.HasValue)
+            {
+                return Result.Failure("Tenant context not available.");
+            }
+
+            tempFiles = await _dbContext.TempFileUploads
+                .Where(x => request.TempDocuments.Contains(x.TempKey) && x.IsActive)
+                .ToListAsync(cancellationToken);
+
+            if (tempFiles.Count == 0)
+            {
+                return Result.Failure(
+                    $"No temporary files found for the provided keys: {string.Join(", ", request.TempDocuments)}");
+            }
+
+            // Validate all files belong to current user
+            var filesNotOwnedByUser = tempFiles.Where(x => x.UploadedByUserId != userId).ToList();
+            if (filesNotOwnedByUser.Any())
+            {
+                return Result.Failure("You can only attach files uploaded by yourself.");
+            }
+
+            // Validate all files belong to current tenant
+            var filesNotInTenant = tempFiles.Where(x => x.TenantId != tenantId.Value).ToList();
+            if (filesNotInTenant.Any())
+            {
+                return Result.Failure("Some files do not belong to the current tenant.");
             }
         }
 
@@ -97,6 +139,68 @@ public class UpdateAnnouncementCommandHandler : IRequestHandler<UpdateAnnounceme
             {
                 var audience = CreateAudienceEntity(announcement.Id, audienceInput, userId);
                 _dbContext.Add(audience);
+            }
+
+            // Remove specified documents
+            if (request.DocumentsToRemove != null && request.DocumentsToRemove.Count > 0)
+            {
+                var documentsToRemove = await _dbContext.Documents
+                    .Where(d => request.DocumentsToRemove.Contains(d.Id) &&
+                               d.OwnerType == DocumentOwnerType.Announcement &&
+                               d.OwnerId == request.Id &&
+                               d.IsActive)
+                    .ToListAsync(cancellationToken);
+
+                foreach (var doc in documentsToRemove)
+                {
+                    doc.Deactivate(userId);
+                }
+            }
+
+            // Add new documents from temp files
+            if (tempFiles != null && tempFiles.Count > 0)
+            {
+                var tenantId = _tenantContext.TenantId!.Value;
+
+                // Get current max display order
+                var maxDisplayOrder = await _dbContext.Documents
+                    .Where(d => d.OwnerType == DocumentOwnerType.Announcement &&
+                               d.OwnerId == request.Id &&
+                               d.IsActive)
+                    .MaxAsync(d => (int?)d.DisplayOrder, cancellationToken) ?? -1;
+
+                var displayOrder = maxDisplayOrder + 1;
+
+                foreach (var tempFile in tempFiles)
+                {
+                    // Build destination path: tenant-{TenantId}/announcements/{AnnouncementId}/{FileName}
+                    var destinationPath = $"tenant-{tenantId}/announcements/{announcement.Id}/{tempFile.FileName}";
+
+                    // Move file from temp to permanent storage
+                    await _fileStorageService.MoveToPermanentAsync(
+                        tempFile.BlobPath,
+                        destinationPath,
+                        cancellationToken);
+
+                    // Create document entity
+                    var document = Document.Create(
+                        ownerType: DocumentOwnerType.Announcement,
+                        ownerId: announcement.Id,
+                        category: DocumentCategory.Image,
+                        fileName: tempFile.FileName,
+                        blobPath: destinationPath,
+                        contentType: tempFile.ContentType,
+                        sizeBytes: tempFile.SizeBytes,
+                        createdBy: userId,
+                        title: null,
+                        description: null,
+                        displayOrder: displayOrder++
+                    );
+                    _dbContext.Add(document);
+
+                    // Soft-delete temp file record
+                    tempFile.Deactivate(userId);
+                }
             }
 
             await _dbContext.SaveChangesAsync(cancellationToken);

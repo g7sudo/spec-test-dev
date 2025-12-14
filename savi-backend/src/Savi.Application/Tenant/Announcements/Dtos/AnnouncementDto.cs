@@ -74,15 +74,20 @@ public record AnnouncementSummaryDto
     public bool IsEvent { get; init; }
     public DateTime? EventStartAt { get; init; }
 
+    // Behaviour flags (whether likes/comments are allowed)
+    public bool AllowLikes { get; init; }
+    public bool AllowComments { get; init; }
+
     // Engagement counts
     public int LikeCount { get; init; }
     public int CommentCount { get; init; }
 
     // Current user status (for resident view)
     public bool HasRead { get; init; }
+    public bool HasLiked { get; init; }
 
-    // Primary image (first image as thumbnail)
-    public string? PrimaryImageUrl { get; init; }
+    // Images (all images with SAS URLs)
+    public List<AnnouncementImageDto> Images { get; init; } = new();
 
     // Time display
     public string TimeAgo { get; init; } = string.Empty;

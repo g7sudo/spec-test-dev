@@ -22,5 +22,8 @@ public record ListAnnouncementsQuery(
     bool ResidentView = false,
     // Pagination
     int Page = 1,
-    int PageSize = 20
+    int PageSize = 20,
+    // Sorting (title, publishedAt, category, priority, createdAt)
+    string? SortBy = null,
+    bool SortDescending = true
 ) : IRequest<Result<PagedResult<AnnouncementSummaryDto>>>;

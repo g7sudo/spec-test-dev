@@ -1,6 +1,11 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import { AnnouncementSummaryDto } from '@/services/api/announcements';
+import { useAnnouncementsFeed } from '@/features/announcements/hooks';
 
-// Mock data types - these will be replaced with real API types
+// ============================================================================
+// Types - Mock data types that will be replaced with real API types later
+// ============================================================================
+
 interface Bill {
   id: string;
   title: string;
@@ -34,18 +39,6 @@ interface MaintenanceRequest {
   status: 'New' | 'Assigned' | 'InProgress' | 'Completed' | 'Cancelled' | 'Rejected';
 }
 
-interface FeedPost {
-  id: string;
-  authorName: string;
-  authorRole: string;
-  authorPhotoUrl?: string;
-  content: string;
-  timestamp: string;
-  likeCount: number;
-  commentCount: number;
-  isLiked: boolean;
-}
-
 interface PromoBanner {
   id: string;
   title: string;
@@ -69,7 +62,14 @@ interface HomeData {
   householdMembers: HouseholdMember[];
   visitors: Visitor[];
   maintenanceRequests: MaintenanceRequest[];
-  feedPosts: FeedPost[];
+  /** Announcements from API (real data) */
+  announcements: AnnouncementSummaryDto[];
+  /** Total count of announcements for "View more" indicator */
+  announcementsTotalCount: number;
+  /** Loading state for announcements */
+  isLoadingAnnouncements: boolean;
+  /** Error state for announcements */
+  announcementsError: Error | null;
   promoBanner: PromoBanner | null;
   featuredOffers: FeaturedOffer[];
   unreadNotifications: number;
@@ -79,7 +79,10 @@ interface HomeData {
   refetch: () => void;
 }
 
-// Mock data for demonstration
+// ============================================================================
+// Mock Data - For demonstration, will be replaced with real API calls
+// ============================================================================
+
 const mockBill: Bill = {
   id: 'bill-1',
   title: 'Electricity Bill',
@@ -133,21 +136,6 @@ const mockMaintenanceRequests: MaintenanceRequest[] = [
   },
 ];
 
-const mockFeedPosts: FeedPost[] = [
-  {
-    id: 'f1',
-    authorName: 'Security',
-    authorRole: 'Admin',
-    authorPhotoUrl: 'https://picsum.photos/200/200?random=7',
-    content:
-      'Water supply will be interrupted on Sunday from 8 AM to 12 PM for maintenance work. Please store water in advance.',
-    timestamp: '10 minutes ago',
-    likeCount: 10,
-    commentCount: 3,
-    isLiked: true,
-  },
-];
-
 const mockPromoBanner: PromoBanner = {
   id: 'promo-1',
   title: 'Tandoori Nights @ Spinache!',
@@ -174,40 +162,79 @@ const mockFeaturedOffers: FeaturedOffer[] = [
   },
 ];
 
+// ============================================================================
+// Hook Implementation
+// ============================================================================
+
+/**
+ * useHomeData - Hook for fetching all home screen data
+ * 
+ * Fetches:
+ * - Announcements (real API via React Query)
+ * - Other data (mock data for now, to be replaced with real APIs)
+ */
 export const useHomeData = (): HomeData => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // In production, these would come from API calls using React Query
+  // Fetch announcements from API (limit to 10 for home screen preview)
+  const {
+    data: announcementsData,
+    isLoading: isLoadingAnnouncements,
+    error: announcementsError,
+    refetch: refetchAnnouncements,
+  } = useAnnouncementsFeed({ pageSize: 10 });
+
+  // Extract announcements from paginated response
+  const announcements = useMemo(() => {
+    return announcementsData?.items || [];
+  }, [announcementsData?.items]);
+
+  const announcementsTotalCount = announcementsData?.totalCount || 0;
+
+  // Calculate unread announcements count
+  const unreadAnnouncements = useMemo(() => {
+    return announcements.filter(a => !a.hasRead).length;
+  }, [announcements]);
+
+  // Mock data - In production, these would come from API calls using React Query
   const [bill] = useState<Bill | null>(mockBill);
   const [householdMembers] = useState<HouseholdMember[]>(mockHouseholdMembers);
   const [visitors] = useState<Visitor[]>(mockVisitors);
   const [maintenanceRequests] = useState<MaintenanceRequest[]>(mockMaintenanceRequests);
-  const [feedPosts] = useState<FeedPost[]>(mockFeedPosts);
   const [promoBanner] = useState<PromoBanner | null>(mockPromoBanner);
   const [featuredOffers] = useState<FeaturedOffer[]>(mockFeaturedOffers);
   const [unreadNotifications] = useState(3);
-  const [unreadAnnouncements] = useState(2);
 
+  // Refetch all data
   const refetch = useCallback(() => {
     setIsLoading(true);
-    // Simulate API call
+    
+    // Refetch announcements
+    refetchAnnouncements();
+    
+    // Simulate API call for mock data
     setTimeout(() => {
       setIsLoading(false);
-    }, 1000);
-  }, []);
+    }, 500);
+  }, [refetchAnnouncements]);
 
   return {
     bill,
     householdMembers,
     visitors,
     maintenanceRequests,
-    feedPosts,
+    // Announcements (real data from API)
+    announcements,
+    announcementsTotalCount,
+    isLoadingAnnouncements,
+    announcementsError: announcementsError || null,
+    // Other mock data
     promoBanner,
     featuredOffers,
     unreadNotifications,
     unreadAnnouncements,
-    isLoading,
+    isLoading: isLoading || isLoadingAnnouncements,
     error,
     refetch,
   };

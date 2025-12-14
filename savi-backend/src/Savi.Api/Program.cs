@@ -38,9 +38,13 @@ try
     // ------------------------------------------------
 
     // Controllers with API versioning
+    // Configure JSON serialization with camelCase naming (standard for REST APIs)
     builder.Services.AddControllers()
         .AddJsonOptions(options =>
         {
+            // Use camelCase for property names (e.g., "images" not "Images")
+            options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+            // Serialize enums as strings instead of integers
             options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
         });
 

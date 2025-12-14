@@ -55,12 +55,14 @@ public class AnnouncementsController : ControllerBase
         [FromQuery] DateTime? toDate = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
+        [FromQuery] string? sortBy = null,
+        [FromQuery] bool sortDescending = true,
         CancellationToken cancellationToken = default)
     {
         var query = new ListAnnouncementsQuery(
             status, category, priority, isPinned, isEvent,
             searchTerm, fromDate, toDate,
-            ResidentView: false, page, pageSize);
+            ResidentView: false, page, pageSize, sortBy, sortDescending);
 
         var result = await _mediator.Send(query, cancellationToken);
 

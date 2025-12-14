@@ -17,13 +17,18 @@ public class GetAnnouncementByIdQueryHandler
 {
     private readonly ITenantDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
+    private readonly IFileStorageService _fileStorageService;
+
+    private const int SasTokenExpiryMinutes = 60;
 
     public GetAnnouncementByIdQueryHandler(
         ITenantDbContext dbContext,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        IFileStorageService fileStorageService)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Result<AnnouncementDto>> Handle(
@@ -105,21 +110,31 @@ public class GetAnnouncementByIdQueryHandler
             }
         }
 
-        // Get images
-        var images = await _dbContext.Documents
+        // Get images and generate SAS URLs
+        var documents = await _dbContext.Documents
             .AsNoTracking()
             .Where(d => d.OwnerType == DocumentOwnerType.Announcement &&
                        d.OwnerId == request.Id &&
                        d.IsActive)
             .OrderBy(d => d.DisplayOrder)
-            .Select(d => new AnnouncementImageDto
-            {
-                Id = d.Id,
-                Url = d.BlobPath,
-                FileName = d.FileName,
-                SortOrder = d.DisplayOrder
-            })
             .ToListAsync(cancellationToken);
+
+        var images = new List<AnnouncementImageDto>();
+        foreach (var doc in documents)
+        {
+            var downloadUrl = await _fileStorageService.GetDownloadUrlAsync(
+                doc.BlobPath,
+                SasTokenExpiryMinutes,
+                cancellationToken);
+
+            images.Add(new AnnouncementImageDto
+            {
+                Id = doc.Id,
+                Url = downloadUrl,
+                FileName = doc.FileName,
+                SortOrder = doc.DisplayOrder
+            });
+        }
 
         // Get author info
         var author = await GetAuthorAsync(announcement.CreatedBy, cancellationToken);
@@ -166,46 +181,42 @@ public class GetAnnouncementByIdQueryHandler
         List<AnnouncementAudience> audiences,
         CancellationToken cancellationToken)
     {
-        var dtos = new List<AnnouncementAudienceDto>();
+        // Collect IDs by type to batch load (avoid N+1 queries)
+        var blockIds = audiences.Where(a => a.BlockId.HasValue).Select(a => a.BlockId!.Value).ToList();
+        var unitIds = audiences.Where(a => a.UnitId.HasValue).Select(a => a.UnitId!.Value).ToList();
+        var roleGroupIds = audiences.Where(a => a.RoleGroupId.HasValue).Select(a => a.RoleGroupId!.Value).ToList();
 
-        foreach (var audience in audiences)
+        // Batch load all related entities at once
+        var blocks = blockIds.Count > 0
+            ? await _dbContext.Blocks.AsNoTracking()
+                .Where(b => blockIds.Contains(b.Id))
+                .ToDictionaryAsync(b => b.Id, b => b.Name, cancellationToken)
+            : new Dictionary<Guid, string>();
+
+        var units = unitIds.Count > 0
+            ? await _dbContext.Units.AsNoTracking()
+                .Where(u => unitIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.UnitNumber, cancellationToken)
+            : new Dictionary<Guid, string>();
+
+        var roleGroups = roleGroupIds.Count > 0
+            ? await _dbContext.RoleGroups.AsNoTracking()
+                .Where(r => roleGroupIds.Contains(r.Id))
+                .ToDictionaryAsync(r => r.Id, r => r.Name, cancellationToken)
+            : new Dictionary<Guid, string>();
+
+        // Map using dictionaries (no DB calls in loop)
+        return audiences.Select(audience => new AnnouncementAudienceDto
         {
-            var dto = new AnnouncementAudienceDto
-            {
-                Id = audience.Id,
-                TargetType = audience.TargetType,
-                BlockId = audience.BlockId,
-                UnitId = audience.UnitId,
-                RoleGroupId = audience.RoleGroupId
-            };
-
-            // Get names based on target type
-            if (audience.TargetType == AudienceTargetType.Block && audience.BlockId.HasValue)
-            {
-                var block = await _dbContext.Blocks
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(b => b.Id == audience.BlockId.Value, cancellationToken);
-                dto = dto with { BlockName = block?.Name };
-            }
-            else if (audience.TargetType == AudienceTargetType.Unit && audience.UnitId.HasValue)
-            {
-                var unit = await _dbContext.Units
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(u => u.Id == audience.UnitId.Value, cancellationToken);
-                dto = dto with { UnitNumber = unit?.UnitNumber };
-            }
-            else if (audience.TargetType == AudienceTargetType.RoleGroup && audience.RoleGroupId.HasValue)
-            {
-                var roleGroup = await _dbContext.RoleGroups
-                    .AsNoTracking()
-                    .FirstOrDefaultAsync(r => r.Id == audience.RoleGroupId.Value, cancellationToken);
-                dto = dto with { RoleGroupName = roleGroup?.Name };
-            }
-
-            dtos.Add(dto);
-        }
-
-        return dtos;
+            Id = audience.Id,
+            TargetType = audience.TargetType,
+            BlockId = audience.BlockId,
+            BlockName = audience.BlockId.HasValue ? blocks.GetValueOrDefault(audience.BlockId.Value) : null,
+            UnitId = audience.UnitId,
+            UnitNumber = audience.UnitId.HasValue ? units.GetValueOrDefault(audience.UnitId.Value) : null,
+            RoleGroupId = audience.RoleGroupId,
+            RoleGroupName = audience.RoleGroupId.HasValue ? roleGroups.GetValueOrDefault(audience.RoleGroupId.Value) : null
+        }).ToList();
     }
 
     private async Task<AnnouncementAuthorDto?> GetAuthorAsync(Guid? createdBy, CancellationToken cancellationToken)
@@ -231,7 +242,14 @@ public class GetAnnouncementByIdQueryHandler
             var doc = await _dbContext.Documents
                 .AsNoTracking()
                 .FirstOrDefaultAsync(d => d.Id == profile.ProfilePhotoDocumentId.Value && d.IsActive, cancellationToken);
-            profileImageUrl = doc?.BlobPath;
+
+            if (doc != null)
+            {
+                profileImageUrl = await _fileStorageService.GetDownloadUrlAsync(
+                    doc.BlobPath,
+                    SasTokenExpiryMinutes,
+                    cancellationToken);
+            }
         }
 
         return new AnnouncementAuthorDto

@@ -35,6 +35,7 @@ import { VisitorListScreen, CreateVisitorScreen } from '@/features/visitors/scre
 
 // Community Stack Screens
 import { CommunityScreen } from '@/features/community/screens/CommunityScreen';
+import { AnnouncementDetailScreen } from '@/features/announcements/screens/AnnouncementDetailScreen';
 
 // Profile Stack Screens
 import {
@@ -166,6 +167,11 @@ const CommunityStackNavigator: React.FC = () => {
       }}
     >
       <CommunityStack.Screen name="CommunityMain" component={CommunityScreen} />
+      <CommunityStack.Screen
+        name="AnnouncementDetail"
+        component={AnnouncementDetailScreen}
+        options={{ headerShown: false }}
+      />
     </CommunityStack.Navigator>
   );
 };
@@ -349,11 +355,18 @@ export const MainNavigator: React.FC = () => {
       <Tab.Screen
         name="CommunityTab"
         component={CommunityStackNavigator}
-        options={{
-          tabBarLabel: t('tabs.community'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="megaphone-outline" size={size} color={color} />
-          ),
+        options={({ route }) => {
+          const routeName = getFocusedRouteNameFromRoute(route) ?? 'CommunityMain';
+          // Hide tab bar on announcement detail screen
+          const hideTabBar = routeName === 'AnnouncementDetail';
+          
+          return {
+            tabBarLabel: t('tabs.community'),
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="megaphone-outline" size={size} color={color} />
+            ),
+            tabBarStyle: hideTabBar ? { display: 'none' } : undefined,
+          };
         }}
       />
       <Tab.Screen

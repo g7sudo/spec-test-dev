@@ -1,11 +1,13 @@
 /**
  * Announcements API functions
  * Handles tenant-level announcement CRUD and engagement operations
- * Includes: Announcements, Comments, Likes, and Read tracking
+ * Includes: Announcements, Comments, Likes, Read tracking, and Image uploads
  */
 
 import { httpClient } from '@/lib/http';
 import { PagedResult } from '@/types/http';
+import { API_BASE_URL } from '@/config/env';
+import { useScopeStore } from '@/lib/store/scope-store';
 import {
   Announcement,
   AnnouncementSummary,
@@ -28,6 +30,75 @@ import {
 // ============================================
 
 const BASE_URL = '/api/v1/tenant/announcements';
+const TEMP_UPLOADS_BASE = '/api/v1/tenant/files/temp';
+
+// ============================================
+// File Upload Helpers
+// ============================================
+
+/**
+ * Response from temp file upload
+ */
+export interface TempUploadResponse {
+  tempKey: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  previewUrl?: string;
+}
+
+/**
+ * Generates a client-side UUID v4 to be used as a temp file key.
+ */
+export function generateTempKey(): string {
+  return crypto.randomUUID();
+}
+
+/**
+ * Uploads an image to temporary storage for attachment to an announcement.
+ * 
+ * @param file - The file to upload
+ * @param tempKey - The GUID key for this upload (generated via generateTempKey)
+ * @param getToken - Function to get the auth token
+ * @returns TempUploadResponse with the temp key and file metadata
+ */
+export async function uploadAnnouncementImage(
+  file: File,
+  tempKey: string,
+  getToken: () => Promise<string | null>
+): Promise<TempUploadResponse> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  // Get auth token and tenant ID
+  const token = await getToken();
+  const tenantId = useScopeStore.getState().tenantId;
+
+  const headers: HeadersInit = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  if (tenantId) {
+    headers['X-Tenant-Id'] = tenantId;
+  }
+
+  // Pass tempKey as query parameter
+  const url = `${API_BASE_URL}${TEMP_UPLOADS_BASE}?tempKey=${encodeURIComponent(tempKey)}`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Upload failed with status ${response.status}`);
+  }
+
+  return response.json();
+}
 
 // ============================================
 // Announcements CRUD (Admin)
@@ -275,4 +346,3 @@ export async function unhideComment(
     {}
   );
 }
-

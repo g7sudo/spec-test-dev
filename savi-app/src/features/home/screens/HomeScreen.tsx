@@ -94,7 +94,10 @@ export const HomeScreen: React.FC = () => {
     householdMembers,
     visitors,
     maintenanceRequests,
-    feedPosts,
+    announcements,
+    announcementsTotalCount,
+    isLoadingAnnouncements,
+    announcementsError,
     promoBanner,
     featuredOffers,
     unreadNotifications,
@@ -178,24 +181,33 @@ export const HomeScreen: React.FC = () => {
   }, [navigation]);
 
   const handleViewAllFeeds = useCallback(() => {
-    // Navigate to community feed
-    console.log('View all feeds');
-  }, []);
+    // Navigate to community feed (announcements)
+    (navigation as any).navigate('CommunityTab', { screen: 'CommunityMain' });
+  }, [navigation]);
 
-  const handlePostPress = useCallback((postId: string) => {
-    // Navigate to post detail
-    console.log('View post:', postId);
-  }, []);
+  const handleAnnouncementPress = useCallback((announcementId: string) => {
+    // Navigate to announcement detail
+    (navigation as any).navigate('CommunityTab', { 
+      screen: 'AnnouncementDetail', 
+      params: { announcementId } 
+    });
+  }, [navigation]);
 
-  const handleLikePost = useCallback((postId: string) => {
-    // Toggle like
-    console.log('Like post:', postId);
-  }, []);
+  const handleLikeAnnouncement = useCallback((announcementId: string) => {
+    // Navigate to announcement detail where like can be toggled
+    (navigation as any).navigate('CommunityTab', { 
+      screen: 'AnnouncementDetail', 
+      params: { announcementId } 
+    });
+  }, [navigation]);
 
-  const handleCommentPost = useCallback((postId: string) => {
-    // Navigate to comments
-    console.log('Comment on post:', postId);
-  }, []);
+  const handleCommentAnnouncement = useCallback((announcementId: string) => {
+    // Navigate to announcement detail with focus on comments
+    (navigation as any).navigate('CommunityTab', { 
+      screen: 'AnnouncementDetail', 
+      params: { announcementId } 
+    });
+  }, [navigation]);
 
   const handleBannerPress = useCallback((bannerId: string) => {
     // Navigate to campaign
@@ -426,11 +438,13 @@ export const HomeScreen: React.FC = () => {
         />
 
         <CommunityFeedsSection
-          posts={feedPosts}
+          announcements={announcements}
           onViewAll={handleViewAllFeeds}
-          onPostPress={handlePostPress}
-          onLikePress={handleLikePost}
-          onCommentPress={handleCommentPost}
+          onAnnouncementPress={handleAnnouncementPress}
+          onLikePress={handleLikeAnnouncement}
+          onCommentPress={handleCommentAnnouncement}
+          isLoading={isLoadingAnnouncements}
+          error={announcementsError}
         />
 
         <PromoBanner banner={promoBanner} onPress={handleBannerPress} />

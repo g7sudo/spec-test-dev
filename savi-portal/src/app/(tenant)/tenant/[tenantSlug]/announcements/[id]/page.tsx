@@ -450,19 +450,22 @@ export default function AnnouncementDetailPage() {
 
         {canManage && (
           <div className="flex items-center gap-2">
-            {/* Draft/Scheduled: Show Publish */}
+            {/* Edit button - available for Draft, Scheduled, and Published (not Archived) */}
+            {announcement.status !== AnnouncementStatus.Archived &&
+              announcement.status !== 'Archived' && (
+              <Button variant="secondary" onClick={() => setShowEditDialog(true)}>
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            )}
+
+            {/* Draft: Show Publish */}
             {(announcement.status === AnnouncementStatus.Draft ||
               announcement.status === 'Draft') && (
-              <>
-                <Button variant="secondary" onClick={() => setShowEditDialog(true)}>
-                  <Pencil className="h-4 w-4 mr-2" />
-                  Edit
-                </Button>
-                <Button onClick={() => setShowPublishDialog(true)}>
-                  <Send className="h-4 w-4 mr-2" />
-                  Publish
-                </Button>
-              </>
+              <Button onClick={() => setShowPublishDialog(true)}>
+                <Send className="h-4 w-4 mr-2" />
+                Publish
+              </Button>
             )}
 
             {/* Published: Pin/Unpin, Archive */}
@@ -488,30 +491,23 @@ export default function AnnouncementDetailPage() {
               </>
             )}
 
-            {/* Actions Menu */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary" size="sm">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {(announcement.status === AnnouncementStatus.Scheduled ||
-                  announcement.status === 'Scheduled') && (
-                  <DropdownMenuItem onClick={() => setShowEditDialog(true)}>
-                    <Pencil className="h-4 w-4 mr-2" />
-                    Edit
-                  </DropdownMenuItem>
-                )}
-                {(announcement.status === AnnouncementStatus.Draft ||
-                  announcement.status === 'Draft') && (
+            {/* Actions Menu - only for Draft (delete option) */}
+            {(announcement.status === AnnouncementStatus.Draft ||
+              announcement.status === 'Draft') && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="sm">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={handleDelete} className="text-red-600">
                     <Trash2 className="h-4 w-4 mr-2" />
                     Delete
                   </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
         )}
       </div>

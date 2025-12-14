@@ -16,13 +16,18 @@ public class ListAnnouncementsQueryHandler
 {
     private readonly ITenantDbContext _dbContext;
     private readonly ICurrentUser _currentUser;
+    private readonly IFileStorageService _fileStorageService;
+
+    private const int SasTokenExpiryMinutes = 60;
 
     public ListAnnouncementsQueryHandler(
         ITenantDbContext dbContext,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        IFileStorageService fileStorageService)
     {
         _dbContext = dbContext;
         _currentUser = currentUser;
+        _fileStorageService = fileStorageService;
     }
 
     public async Task<Result<PagedResult<AnnouncementSummaryDto>>> Handle(
@@ -117,10 +122,30 @@ public class ListAnnouncementsQueryHandler
         // Get total count
         var totalCount = await query.CountAsync(cancellationToken);
 
+        // Apply sorting
+        var orderedQuery = (request.SortBy?.ToLower()) switch
+        {
+            "title" => request.SortDescending
+                ? query.OrderByDescending(a => a.Title)
+                : query.OrderBy(a => a.Title),
+            "category" => request.SortDescending
+                ? query.OrderByDescending(a => a.Category)
+                : query.OrderBy(a => a.Category),
+            "priority" => request.SortDescending
+                ? query.OrderByDescending(a => a.Priority)
+                : query.OrderBy(a => a.Priority),
+            "publishedat" => request.SortDescending
+                ? query.OrderByDescending(a => a.PublishedAt)
+                : query.OrderBy(a => a.PublishedAt),
+            "createdat" => request.SortDescending
+                ? query.OrderByDescending(a => a.CreatedAt)
+                : query.OrderBy(a => a.CreatedAt),
+            _ => query.OrderByDescending(a => a.IsPinned)
+                      .ThenByDescending(a => a.PublishedAt ?? a.ScheduledAt ?? a.CreatedAt)
+        };
+
         // Get paginated results
-        var announcements = await query
-            .OrderByDescending(a => a.IsPinned)
-            .ThenByDescending(a => a.PublishedAt ?? a.ScheduledAt ?? a.CreatedAt)
+        var announcements = await orderedQuery
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
@@ -145,6 +170,7 @@ public class ListAnnouncementsQueryHandler
 
         // Get read status for current user (resident view)
         var readAnnouncementIds = new HashSet<Guid>();
+        var likedAnnouncementIds = new HashSet<Guid>();
         if (request.ResidentView && _currentUser.TenantUserId.HasValue)
         {
             readAnnouncementIds = (await _dbContext.AnnouncementReads
@@ -155,16 +181,49 @@ public class ListAnnouncementsQueryHandler
                 .Select(r => r.AnnouncementId)
                 .ToListAsync(cancellationToken))
                 .ToHashSet();
+
+            // Get liked status for current user
+            likedAnnouncementIds = (await _dbContext.AnnouncementLikes
+                .AsNoTracking()
+                .Where(l => announcementIds.Contains(l.AnnouncementId) &&
+                           l.CommunityUserId == _currentUser.TenantUserId.Value &&
+                           l.IsActive)
+                .Select(l => l.AnnouncementId)
+                .ToListAsync(cancellationToken))
+                .ToHashSet();
         }
 
-        // Get primary images
-        var primaryImages = await _dbContext.Documents
+        // Get all images for announcements and generate SAS URLs
+        var allImageDocs = await _dbContext.Documents
             .AsNoTracking()
             .Where(d => d.OwnerType == DocumentOwnerType.Announcement &&
                        announcementIds.Contains(d.OwnerId) &&
-                       d.IsActive &&
-                       d.DisplayOrder == 0)
-            .ToDictionaryAsync(d => d.OwnerId, d => d.BlobPath, cancellationToken);
+                       d.IsActive)
+            .OrderBy(d => d.DisplayOrder)
+            .ToListAsync(cancellationToken);
+
+        // Group by announcement and generate SAS URLs
+        var imagesByAnnouncement = new Dictionary<Guid, List<AnnouncementImageDto>>();
+        foreach (var doc in allImageDocs)
+        {
+            var downloadUrl = await _fileStorageService.GetDownloadUrlAsync(
+                doc.BlobPath,
+                SasTokenExpiryMinutes,
+                cancellationToken);
+
+            if (!imagesByAnnouncement.ContainsKey(doc.OwnerId))
+            {
+                imagesByAnnouncement[doc.OwnerId] = new List<AnnouncementImageDto>();
+            }
+
+            imagesByAnnouncement[doc.OwnerId].Add(new AnnouncementImageDto
+            {
+                Id = doc.Id,
+                Url = downloadUrl,
+                FileName = doc.FileName,
+                SortOrder = doc.DisplayOrder
+            });
+        }
 
         // Map to DTOs
         var dtos = announcements.Select(a => new AnnouncementSummaryDto
@@ -179,10 +238,13 @@ public class ListAnnouncementsQueryHandler
             IsBanner = a.IsBanner,
             IsEvent = a.IsEvent,
             EventStartAt = a.EventStartAt,
+            AllowLikes = a.AllowLikes,
+            AllowComments = a.AllowComments,
             LikeCount = likeCounts.GetValueOrDefault(a.Id, 0),
             CommentCount = commentCounts.GetValueOrDefault(a.Id, 0),
             HasRead = readAnnouncementIds.Contains(a.Id),
-            PrimaryImageUrl = primaryImages.GetValueOrDefault(a.Id),
+            HasLiked = likedAnnouncementIds.Contains(a.Id),
+            Images = imagesByAnnouncement.GetValueOrDefault(a.Id, new List<AnnouncementImageDto>()),
             TimeAgo = GetTimeAgo(a.PublishedAt ?? a.CreatedAt)
         }).ToList();
 

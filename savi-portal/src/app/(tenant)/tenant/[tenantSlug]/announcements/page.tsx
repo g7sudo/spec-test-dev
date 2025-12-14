@@ -644,10 +644,9 @@ export default function AnnouncementsPage() {
                               <Eye className="h-4 w-4 mr-2" />
                               View
                             </DropdownMenuItem>
-                            {(announcement.status === AnnouncementStatus.Draft || 
-                              announcement.status === 'Draft' ||
-                              announcement.status === AnnouncementStatus.Scheduled ||
-                              announcement.status === 'Scheduled') && (
+                            {/* Can edit Draft, Scheduled, or Published (not Archived) */}
+                            {announcement.status !== AnnouncementStatus.Archived &&
+                              announcement.status !== 'Archived' && (
                               <DropdownMenuItem onClick={() => handleEdit(announcement)}>
                                 <Pencil className="h-4 w-4 mr-2" />
                                 Edit
