@@ -267,6 +267,16 @@ export const CommunityFeedsSection: React.FC<CommunityFeedsSectionProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingVertical: 16,
+    backgroundColor: '#FFFFFF', // White card section
+    marginHorizontal: 12,
+    marginTop: 12,
+    borderRadius: 16,
+    // Soft shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   header: {
     justifyContent: 'space-between',

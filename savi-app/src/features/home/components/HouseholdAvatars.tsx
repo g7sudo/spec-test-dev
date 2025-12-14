@@ -70,8 +70,8 @@ export const HouseholdAvatars: React.FC<HouseholdAvatarsProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: 12,
-    backgroundColor: '#FFFFFF', // White background for sticky header
+    paddingVertical: 14,
+    backgroundColor: '#F7F8FA', // Match scroll background for seamless sticky
   },
   scrollContent: {
     paddingHorizontal: 16,

@@ -7,7 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { QUICK_ACTIONS } from '@/core/config/constants';
 
 const { width } = Dimensions.get('window');
-const ITEM_WIDTH = (width - 44) / 2; // 16 padding on sides + 12 gap = 44 total spacing
+// Container: marginHorizontal(12*2=24) + paddingHorizontal(16*2=32) + gap(12) = 68
+const ITEM_WIDTH = (width - 68) / 2;
 
 interface QuickAction {
   id: string;
@@ -124,7 +125,17 @@ export const QuickActionsGrid: React.FC<QuickActionsGridProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF', // White card section
+    marginHorizontal: 12,
+    marginTop: 12,
+    borderRadius: 16,
+    // Soft shadow
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
   },
   grid: {
     flexDirection: 'row',
@@ -137,17 +148,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#EEEEEE',
-    // Shadow for iOS
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
+    borderColor: '#E8EDF2', // Softer border
+    // Enhanced shadow for depth
+    shadowColor: '#1A237E', // Tinted shadow for warmth
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
     // Elevation for Android
-    elevation: 2,
+    elevation: 3,
     height: 72, // Fixed height for consistency
   },
   iconContainer: {

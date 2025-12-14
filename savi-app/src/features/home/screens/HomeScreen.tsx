@@ -478,7 +478,7 @@ const styles = StyleSheet.create({
   // Wrapper for rounded corners - ScrollView doesn't support borderRadius well
   scrollWrapper: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F8FA', // Light grey for depth - cards pop on this
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     overflow: 'hidden', // Clip content to rounded corners
@@ -486,7 +486,7 @@ const styles = StyleSheet.create({
   // Scrollable content area - only this scrolls
   scrollView: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#F7F8FA', // Match wrapper for seamless look
   },
   scrollContent: {
     paddingBottom: 24,
