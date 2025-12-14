@@ -93,6 +93,8 @@ export const HomeScreen: React.FC = () => {
     bill,
     householdMembers,
     visitors,
+    isLoadingVisitors,
+    visitorsError,
     maintenanceRequests,
     announcements,
     announcementsTotalCount,
@@ -155,14 +157,14 @@ export const HomeScreen: React.FC = () => {
   );
 
   const handleViewAllVisitors = useCallback(() => {
-    // Navigate to visitors list
-    console.log('View all visitors');
-  }, []);
+    // Navigate to visitors list in services tab
+    (navigation as any).navigate('ServicesTab', { screen: 'VisitorList' });
+  }, [navigation]);
 
   const handleVisitorPress = useCallback((visitorId: string) => {
-    // Navigate to visitor detail
-    console.log('View visitor:', visitorId);
-  }, []);
+    // Navigate to visitors list (detail not available yet)
+    (navigation as any).navigate('ServicesTab', { screen: 'VisitorList' });
+  }, [navigation]);
 
   const handlePreRegisterVisitor = useCallback(() => {
     // Navigate to ServicesTab -> CreateVisitor
@@ -429,6 +431,8 @@ export const HomeScreen: React.FC = () => {
           onViewAll={handleViewAllVisitors}
           onVisitorPress={handleVisitorPress}
           onPreRegister={handlePreRegisterVisitor}
+          isLoading={isLoadingVisitors}
+          error={visitorsError}
         />
 
         <MyRequestsSection

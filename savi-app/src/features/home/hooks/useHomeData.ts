@@ -1,6 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { AnnouncementSummaryDto } from '@/services/api/announcements';
+import { VisitorPassSummaryDto } from '@/services/api/visitors';
 import { useAnnouncementsFeed } from '@/features/announcements/hooks';
+import { useMyVisitors } from '@/features/visitors/hooks';
 
 // ============================================================================
 // Types - Mock data types that will be replaced with real API types later
@@ -19,15 +21,6 @@ interface HouseholdMember {
   name: string;
   photoUrl?: string;
   isNew?: boolean;
-}
-
-interface Visitor {
-  id: string;
-  name: string;
-  flatNumber: string;
-  visitDate: string;
-  visitTime: string;
-  photoUrl?: string;
 }
 
 interface MaintenanceRequest {
@@ -60,7 +53,12 @@ interface FeaturedOffer {
 interface HomeData {
   bill: Bill | null;
   householdMembers: HouseholdMember[];
-  visitors: Visitor[];
+  /** Visitors from API (real data - today + pending) */
+  visitors: VisitorPassSummaryDto[];
+  /** Loading state for visitors */
+  isLoadingVisitors: boolean;
+  /** Error state for visitors */
+  visitorsError: Error | null;
   maintenanceRequests: MaintenanceRequest[];
   /** Announcements from API (real data) */
   announcements: AnnouncementSummaryDto[];
@@ -96,25 +94,6 @@ const mockHouseholdMembers: HouseholdMember[] = [
   { id: '2', name: 'Jane Doe', photoUrl: 'https://picsum.photos/200/200?random=2' },
   { id: '3', name: 'Mike Doe', photoUrl: 'https://picsum.photos/200/200?random=3', isNew: true },
   { id: '4', name: 'Sarah Doe', photoUrl: 'https://picsum.photos/200/200?random=4' },
-];
-
-const mockVisitors: Visitor[] = [
-  {
-    id: 'v1',
-    name: 'Dr. John Doe',
-    flatNumber: '203',
-    visitDate: 'Wed 10',
-    visitTime: '10:00 AM',
-    photoUrl: 'https://picsum.photos/200/200?random=5',
-  },
-  {
-    id: 'v2',
-    name: 'Shella',
-    flatNumber: '203',
-    visitDate: 'Wed 10',
-    visitTime: '10:00 AM',
-    photoUrl: 'https://picsum.photos/200/200?random=6',
-  },
 ];
 
 const mockMaintenanceRequests: MaintenanceRequest[] = [
@@ -185,6 +164,34 @@ export const useHomeData = (): HomeData => {
     refetch: refetchAnnouncements,
   } = useAnnouncementsFeed({ pageSize: 10 });
 
+  // Calculate date filters for visitors (today + upcoming/pending)
+  const visitorsFilters = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return {
+      fromDate: today.toISOString(), // From today onwards (includes today + future)
+      page: 1,
+      pageSize: 10,
+    };
+  }, []);
+
+  // Fetch visitors from API (today + pending)
+  const {
+    data: visitorsData,
+    isLoading: isLoadingVisitors,
+    error: visitorsError,
+    refetch: refetchVisitors,
+  } = useMyVisitors(visitorsFilters);
+
+  // Extract visitors from paginated response and sort by date
+  const visitors = useMemo(() => {
+    if (!visitorsData?.items) return [];
+    // Sort by expected date (earliest first)
+    return [...visitorsData.items].sort((a, b) => 
+      new Date(a.expectedFrom).getTime() - new Date(b.expectedFrom).getTime()
+    );
+  }, [visitorsData?.items]);
+
   // Extract announcements from paginated response
   const announcements = useMemo(() => {
     return announcementsData?.items || [];
@@ -200,7 +207,6 @@ export const useHomeData = (): HomeData => {
   // Mock data - In production, these would come from API calls using React Query
   const [bill] = useState<Bill | null>(mockBill);
   const [householdMembers] = useState<HouseholdMember[]>(mockHouseholdMembers);
-  const [visitors] = useState<Visitor[]>(mockVisitors);
   const [maintenanceRequests] = useState<MaintenanceRequest[]>(mockMaintenanceRequests);
   const [promoBanner] = useState<PromoBanner | null>(mockPromoBanner);
   const [featuredOffers] = useState<FeaturedOffer[]>(mockFeaturedOffers);
@@ -210,19 +216,23 @@ export const useHomeData = (): HomeData => {
   const refetch = useCallback(() => {
     setIsLoading(true);
     
-    // Refetch announcements
+    // Refetch announcements and visitors
     refetchAnnouncements();
+    refetchVisitors();
     
     // Simulate API call for mock data
     setTimeout(() => {
       setIsLoading(false);
     }, 500);
-  }, [refetchAnnouncements]);
+  }, [refetchAnnouncements, refetchVisitors]);
 
   return {
     bill,
     householdMembers,
+    // Visitors (real data from API)
     visitors,
+    isLoadingVisitors,
+    visitorsError: visitorsError || null,
     maintenanceRequests,
     // Announcements (real data from API)
     announcements,
@@ -234,7 +244,7 @@ export const useHomeData = (): HomeData => {
     featuredOffers,
     unreadNotifications,
     unreadAnnouncements,
-    isLoading: isLoading || isLoadingAnnouncements,
+    isLoading: isLoading || isLoadingAnnouncements || isLoadingVisitors,
     error,
     refetch,
   };
