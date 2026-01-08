@@ -131,8 +131,8 @@ export const HomeScreen: React.FC = () => {
     (actionId: string) => {
       switch (actionId) {
         case QUICK_ACTIONS.PRE_REGISTER_VISITOR:
-          // Navigate to ServicesTab -> CreateVisitor
-          (navigation as any).navigate('ServicesTab', { screen: 'CreateVisitor' });
+          // Navigate within HomeStack for consistent slide animation
+          navigation.navigate('CreateVisitor');
           break;
         case QUICK_ACTIONS.MAINTENANCE_REQUEST:
           navigation.navigate('CreateMaintenance');
@@ -167,8 +167,8 @@ export const HomeScreen: React.FC = () => {
   }, [navigation]);
 
   const handlePreRegisterVisitor = useCallback(() => {
-    // Navigate to ServicesTab -> CreateVisitor
-    (navigation as any).navigate('ServicesTab', { screen: 'CreateVisitor' });
+    // Navigate within HomeStack for consistent slide animation
+    navigation.navigate('CreateVisitor');
   }, [navigation]);
 
   const handleViewRequestDetails = useCallback(
@@ -392,8 +392,8 @@ export const HomeScreen: React.FC = () => {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
-          // Remove bottom padding when nav is hidden to eliminate blank space
-          { paddingBottom: isScrollingUp ? 24 : 24 }, // Keep same padding for now, will adjust if needed
+          // Add enough padding to clear the bottom tab bar
+          { paddingBottom: 100 }, // Account for tab bar height + safe area
         ]}
         showsVerticalScrollIndicator={false}
         onScroll={handleScroll}

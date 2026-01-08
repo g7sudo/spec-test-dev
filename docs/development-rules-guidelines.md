@@ -112,7 +112,7 @@ Savi.Domain/
 │   └── Events/
 ├── Tenant/          # Core tenant entities (Party, Unit, etc.)
 ├── Amenities/       # Amenity module entities
-├── Maintenance/     # Maintenance module entities
+├── Maintenance/     # Maspintenance module entities
 ├── Visitor/         # Visitor module entities
 ├── Announcements/   # Announcements module entities
 └── Marketplace/     # Marketplace module entities

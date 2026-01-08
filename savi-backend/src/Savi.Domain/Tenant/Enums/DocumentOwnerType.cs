@@ -44,5 +44,10 @@ public enum DocumentOwnerType
     /// <summary>
     /// Document belongs to an Announcement (images, posters, etc.).
     /// </summary>
-    Announcement = 8
+    Announcement = 8,
+
+    /// <summary>
+    /// Document belongs to a Maintenance Comment (images uploaded with comment).
+    /// </summary>
+    MaintenanceComment = 9
 }

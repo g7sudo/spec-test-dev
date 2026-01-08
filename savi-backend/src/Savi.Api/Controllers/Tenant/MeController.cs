@@ -26,6 +26,9 @@ using Savi.Application.Tenant.Me.Queries.GetMyHome;
 using Savi.Application.Tenant.Me.Queries.GetMyNotificationSettings;
 using Savi.Application.Tenant.Me.Queries.GetMyPrivacySettings;
 using Savi.Application.Tenant.Me.Queries.GetMyProfile;
+using Savi.Application.Tenant.Me.Queries.GetMyMaintenanceRequest;
+using Savi.Application.Tenant.Me.Queries.GetMyMaintenanceComments;
+using Savi.Application.Tenant.Maintenance.Comments.Dtos;
 using Savi.Domain.Tenant.Enums;
 using Savi.SharedKernel.Authorization;
 using Savi.SharedKernel.Common;
@@ -619,6 +622,80 @@ public class MeController : ControllerBase
     }
 
     /// <summary>
+    /// Gets a specific maintenance request by ID with permission-based access.
+    /// - CanViewAll: Can view any request
+    /// - CanViewUnit: Can view requests for user's units
+    /// - CanViewOwn: Can view only own requests
+    /// </summary>
+    [HttpGet("requests/{id:guid}")]
+    [HasAnyPermission(
+        Permissions.Tenant.Maintenance.RequestView,
+        Permissions.Tenant.Maintenance.RequestManage,
+        Permissions.Tenant.Maintenance.RequestViewUnit,
+        Permissions.Tenant.Maintenance.RequestViewOwn)]
+    [ProducesResponseType(typeof(MaintenanceRequestDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetMyRequest(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("GET /tenant/me/requests/{RequestId}", id);
+
+        var query = new GetMyMaintenanceRequestQuery(id);
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            if (result.Error?.Contains("not found") == true)
+            {
+                return NotFound(new { error = result.Error });
+            }
+            return BadRequest(new { error = result.Error });
+        }
+
+        return Ok(result.Value);
+    }
+
+    /// <summary>
+    /// Gets comments for a specific maintenance request with permission-based access.
+    /// Non-admin users only see resident-visible comments.
+    /// </summary>
+    [HttpGet("requests/{id:guid}/comments")]
+    [HasAnyPermission(
+        Permissions.Tenant.Maintenance.RequestView,
+        Permissions.Tenant.Maintenance.RequestManage,
+        Permissions.Tenant.Maintenance.RequestViewUnit,
+        Permissions.Tenant.Maintenance.RequestViewOwn)]
+    [ProducesResponseType(typeof(List<MaintenanceCommentDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetMyRequestComments(
+        Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.LogInformation("GET /tenant/me/requests/{RequestId}/comments", id);
+
+        var query = new GetMyMaintenanceCommentsQuery(id);
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (result.IsFailure)
+        {
+            if (result.Error?.Contains("not found") == true)
+            {
+                return NotFound(new { error = result.Error });
+            }
+            return BadRequest(new { error = result.Error });
+        }
+
+        return Ok(result.Value);
+    }
+
+    /// <summary>
     /// Creates a new maintenance request with optional image attachments.
     /// Auto-populates UnitId and PartyId from the user's active lease.
     /// This endpoint is designed for mobile app usage with multipart/form-data.
@@ -735,8 +812,7 @@ public class MeController : ControllerBase
     }
 
     /// <summary>
-    /// Adds a comment to a maintenance request that was created by the current user.
-    /// Comment type is automatically set to ResidentUpdate with visibility to resident and owner.
+    /// Adds a comment to a maintenance request with optional image attachments.
     /// </summary>
     /// <remarks>
     /// Ownership validation ensures users can only add comments to their own requests.
@@ -746,18 +822,43 @@ public class MeController : ControllerBase
         Permissions.Tenant.Maintenance.RequestCreate,
         Permissions.Tenant.Maintenance.RequestCreateOwn,
         Permissions.Tenant.Maintenance.RequestCreateUnit)]
-    [ProducesResponseType(typeof(AddMyMaintenanceCommentResultDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(AddMyCommentResultDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> AddMyRequestComment(
         Guid id,
-        [FromBody] AddMyMaintenanceCommentRequest request,
+        [FromForm] AddMyMaintenanceCommentFormRequest request,
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("POST /tenant/me/requests/{RequestId}/comments", id);
 
-        var command = new AddMyMaintenanceCommentCommand(id, request.Message);
+        var attachments = new List<MyCommentAttachment>();
+
+        if (request.Attachments != null)
+        {
+            foreach (var file in request.Attachments)
+            {
+                if (file.Length > 0)
+                {
+                    attachments.Add(new MyCommentAttachment
+                    {
+                        FileStream = file.OpenReadStream(),
+                        FileName = file.FileName,
+                        ContentType = file.ContentType,
+                        FileSize = file.Length
+                    });
+                }
+            }
+        }
+
+        var command = new AddMyMaintenanceCommentCommand
+        {
+            RequestId = id,
+            Message = request.Message,
+            Attachments = attachments
+        };
+
         var result = await _mediator.Send(command, cancellationToken);
 
         if (result.IsFailure)
@@ -765,7 +866,7 @@ public class MeController : ControllerBase
             return BadRequest(new { error = result.Error });
         }
 
-        return Created($"/tenant/me/requests/{id}/comments/{result.Value}", new AddMyMaintenanceCommentResultDto(result.Value));
+        return Created($"/tenant/me/requests/{id}/comments/{result.Value.CommentId}", result.Value);
     }
 }
 
@@ -833,9 +934,18 @@ public record CancelMyBookingRequest(string? Reason);
 public record CancelMyMaintenanceRequest(string Reason);
 
 /// <summary>
-/// Request model for adding a comment to a maintenance request.
+/// Request model for adding a comment to a maintenance request (JSON body - kept for backward compatibility).
 /// </summary>
 public record AddMyMaintenanceCommentRequest(string Message);
+
+/// <summary>
+/// Form request model for adding a comment to a maintenance request with optional attachments.
+/// </summary>
+public class AddMyMaintenanceCommentFormRequest
+{
+    public string Message { get; set; } = string.Empty;
+    public List<IFormFile>? Attachments { get; set; }
+}
 
 /// <summary>
 /// Result DTO for adding a comment to a maintenance request.

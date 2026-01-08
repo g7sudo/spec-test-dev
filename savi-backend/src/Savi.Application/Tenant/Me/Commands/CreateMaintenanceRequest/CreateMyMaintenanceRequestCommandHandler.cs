@@ -216,9 +216,22 @@ public class CreateMyMaintenanceRequestCommandHandler
 
     private async Task<UserLeaseInfo?> GetUserLeaseInfoAsync(Guid communityUserId, CancellationToken cancellationToken)
     {
-        // Find the user's active lease party entry
+        // Step 1: Get CommunityUser's PartyId (same approach as /me/home)
+        var communityUser = await _dbContext.CommunityUsers
+            .AsNoTracking()
+            .Where(cu => cu.Id == communityUserId && cu.IsActive)
+            .Select(cu => new { cu.PartyId })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (communityUser?.PartyId == null)
+        {
+            _logger.LogWarning("CommunityUser {CommunityUserId} not found or has no PartyId", communityUserId);
+            return null;
+        }
+
+        // Step 2: Find active lease party by PartyId (NOT CommunityUserId)
         var leaseInfo = await (
-            from lp in _dbContext.LeaseParties.Where(lp => lp.IsActive && lp.CommunityUserId == communityUserId)
+            from lp in _dbContext.LeaseParties.Where(lp => lp.IsActive && lp.PartyId == communityUser.PartyId)
             join l in _dbContext.Leases.Where(l => l.IsActive && l.Status == LeaseStatus.Active)
                 on lp.LeaseId equals l.Id
             join u in _dbContext.Units.Where(u => u.IsActive)

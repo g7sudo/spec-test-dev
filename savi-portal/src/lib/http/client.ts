@@ -100,6 +100,14 @@ export const httpClient = {
   async patch<T>(path: string, body?: unknown, options?: RequestOptions): Promise<T> {
     return request<T>(path, { ...options, method: 'PATCH', body });
   },
+
+  /**
+   * POST request with FormData (for file uploads)
+   * Content-Type is automatically set by browser to multipart/form-data
+   */
+  async postFormData<T>(path: string, formData: FormData, options?: Omit<RequestOptions, 'body'>): Promise<T> {
+    return requestFormData<T>(path, { ...options, method: 'POST' }, formData);
+  },
 };
 
 /**
@@ -167,6 +175,83 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     // if (error instanceof ApiError) {
     //   throw error;
     // }
+    // Wrap all other errors as network errors
+    throw createNetworkError(error);
+  }
+}
+
+/**
+ * FormData request function for file uploads
+ * Does NOT set Content-Type (browser automatically sets multipart/form-data with boundary)
+ */
+async function requestFormData<T>(
+  path: string, 
+  options: Omit<RequestOptions, 'body'> = {},
+  formData: FormData
+): Promise<T> {
+  const { skipAuth, tenantId, headers: customHeaders, ...fetchOptions } = options;
+
+  // Build headers - DO NOT set Content-Type for FormData
+  // Browser automatically sets multipart/form-data with correct boundary
+  const headers: Record<string, string> = {};
+  
+  // Copy custom headers if any
+  if (customHeaders) {
+    Object.entries(customHeaders).forEach(([key, value]) => {
+      if (key.toLowerCase() !== 'content-type') { // Skip Content-Type
+        headers[key] = value as string;
+      }
+    });
+  }
+
+  // Attach auth token if available and not skipped
+  if (!skipAuth) {
+    const token = await getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
+  // Attach X-Tenant-Id header if in tenant scope
+  const effectiveTenantId = tenantId !== undefined ? tenantId : getTenantId();
+  if (effectiveTenantId) {
+    headers['X-Tenant-Id'] = effectiveTenantId;
+  }
+
+  // Build full URL
+  const url = path.startsWith('http') ? path : `${API_BASE_URL}${path}`;
+
+  try {
+    const response = await fetch(url, {
+      ...fetchOptions,
+      headers,
+      body: formData,
+    });
+
+    // Handle errors
+    if (!response.ok) {
+      const error = await mapResponseToError(response);
+      
+      // Trigger session expired handler for 401s
+      if (error instanceof UnauthorizedError && onSessionExpired) {
+        onSessionExpired();
+      }
+      
+      throw error;
+    }
+
+    // Handle empty responses (204 No Content)
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
+    // Parse JSON response
+    return response.json();
+  } catch (error) {
+    // Re-throw specific API errors
+    if (error instanceof UnauthorizedError) {
+      throw error;
+    }
     // Wrap all other errors as network errors
     throw createNetworkError(error);
   }

@@ -30,6 +30,7 @@ import {
   RejectApprovalRequest,
   RecordPaymentRequest,
   AddCommentRequest,
+  AddCommentResponse,
   // Query params
   ListMaintenanceCategoriesParams,
   ListMaintenanceRequestsParams,
@@ -345,13 +346,45 @@ export async function listMaintenanceComments(requestId: string): Promise<Mainte
 }
 
 /**
- * Adds a comment to a maintenance request
+ * Adds a comment to a maintenance request with optional attachments.
+ * Always uses multipart/form-data format as per API spec.
+ * 
+ * POST /api/v1/tenant/maintenance/requests/{id}/comments
+ * Content-Type: multipart/form-data
+ * 
+ * @param requestId - The ID of the maintenance request
+ * @param data - Comment data (type, message, visibility)
+ * @param attachments - Optional array of File objects to attach
+ * @returns Response with commentId and uploaded attachments
  */
 export async function addMaintenanceComment(
   requestId: string,
-  data: AddCommentRequest
-): Promise<{ id: string }> {
-  return httpClient.post<{ id: string }>(`${REQUESTS_BASE}/${requestId}/comments`, data);
+  data: AddCommentRequest,
+  attachments?: File[]
+): Promise<AddCommentResponse> {
+  // Always use multipart/form-data as per API spec
+  const formData = new FormData();
+  formData.append('commentType', data.commentType);
+  formData.append('message', data.message);
+  
+  if (data.isVisibleToResident !== undefined) {
+    formData.append('isVisibleToResident', String(data.isVisibleToResident));
+  }
+  if (data.isVisibleToOwner !== undefined) {
+    formData.append('isVisibleToOwner', String(data.isVisibleToOwner));
+  }
+  
+  // Append attachments if provided
+  if (attachments && attachments.length > 0) {
+    attachments.forEach((file) => {
+      formData.append('attachments', file);
+    });
+  }
+
+  return httpClient.postFormData<AddCommentResponse>(
+    `${REQUESTS_BASE}/${requestId}/comments`, 
+    formData
+  );
 }
 
 /**

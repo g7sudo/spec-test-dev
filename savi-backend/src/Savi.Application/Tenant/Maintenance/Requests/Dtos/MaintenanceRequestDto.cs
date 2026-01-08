@@ -41,6 +41,26 @@ public record MaintenanceRequestDto
     public string? ResidentFeedback { get; init; }
     public DateTime? RatedAt { get; init; }
     public DateTime CreatedAt { get; init; }
+
+    /// <summary>
+    /// Attached files/images for this maintenance request.
+    /// </summary>
+    public List<MaintenanceRequestAttachmentDto> Attachments { get; init; } = new();
+}
+
+/// <summary>
+/// DTO for maintenance request attachments.
+/// </summary>
+public record MaintenanceRequestAttachmentDto
+{
+    public Guid DocumentId { get; init; }
+    public string FileName { get; init; } = string.Empty;
+    public string ContentType { get; init; } = string.Empty;
+    public long SizeBytes { get; init; }
+    public string? Title { get; init; }
+    public string DownloadUrl { get; init; } = string.Empty;
+    public int DisplayOrder { get; init; }
+    public DateTime CreatedAt { get; init; }
 }
 
 /// <summary>

@@ -9,6 +9,8 @@ import {
   getMaintenanceRequestComments,
   addMaintenanceRequestComment,
   MaintenanceCommentDto,
+  AddCommentResponseDto,
+  CommentImageAttachment,
 } from '@/services/api/maintenance';
 import { queryKeys } from '@/services/api/queryClient';
 
@@ -67,14 +69,16 @@ export function useMaintenanceComments(
 
 /**
  * Parameters for add comment mutation
+ * Supports optional image attachments
  */
 interface AddCommentParams {
   requestId: string;
   message: string;
+  attachments?: CommentImageAttachment[];
 }
 
 /**
- * Hook to add a comment to a maintenance request
+ * Hook to add a comment to a maintenance request with optional attachments
  * 
  * Automatically invalidates comments query on success.
  * 
@@ -84,10 +88,12 @@ interface AddCommentParams {
  * ```tsx
  * const addCommentMutation = useAddMaintenanceComment();
  * 
- * const handleAddComment = (message: string) => {
- *   addCommentMutation.mutate({ requestId, message }, {
- *     onSuccess: () => {
+ * const handleAddComment = (message: string, images?: CommentImageAttachment[]) => {
+ *   addCommentMutation.mutate({ requestId, message, attachments: images }, {
+ *     onSuccess: (data) => {
  *       setCommentText('');
+ *       console.log('Comment added:', data.commentId);
+ *       console.log('Attachments:', data.attachments);
  *     },
  *     onError: (error) => {
  *       Alert.alert('Error', error.message);
@@ -99,11 +105,11 @@ interface AddCommentParams {
 export function useAddMaintenanceComment() {
   const queryClient = useQueryClient();
 
-  return useMutation<{ commentId: string }, Error, AddCommentParams>({
-    mutationFn: ({ requestId, message }) => 
-      addMaintenanceRequestComment(requestId, message),
+  return useMutation<AddCommentResponseDto, Error, AddCommentParams>({
+    mutationFn: ({ requestId, message, attachments }) => 
+      addMaintenanceRequestComment(requestId, message, attachments),
     onSuccess: (_, { requestId }) => {
-      // Invalidate comments for this request
+      // Invalidate comments for this request to refetch with new comment
       queryClient.invalidateQueries({ 
         queryKey: commentsQueryKey(requestId) 
       });

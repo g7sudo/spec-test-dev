@@ -4,14 +4,16 @@
  * Handles maintenance request-related API calls including listing, creating,
  * cancelling, commenting, and rating maintenance requests.
  * 
- * Backend Endpoints:
+ * All endpoints use the /me/ prefix for resident access with granular permissions.
+ * 
+ * Backend Endpoints (Resident):
  * - GET /v1/tenant/me/requests - List my maintenance requests
+ * - GET /v1/tenant/me/requests/{id} - Get request details
  * - POST /v1/tenant/me/requests - Create maintenance request (multipart)
- * - GET /v1/tenant/maintenance/requests/{id} - Get request details
  * - POST /v1/tenant/me/requests/{id}/cancel - Cancel request
+ * - GET /v1/tenant/me/requests/{id}/comments - Get comments
  * - POST /v1/tenant/me/requests/{id}/comments - Add comment
- * - GET /v1/tenant/maintenance/requests/{id}/comments - Get comments
- * - POST /v1/tenant/maintenance/requests/{id}/rate - Rate completed request
+ * - POST /v1/tenant/me/requests/{id}/rate - Rate completed request
  */
 
 import apiClient from './apiClient';
@@ -149,16 +151,23 @@ export interface MaintenanceRequestDetailDto {
   residentFeedback: string | null;
   ratedAt: string | null; // ISO 8601 datetime
   createdAt: string; // ISO 8601 datetime
-  // Attachments are fetched separately if needed
+  // Attachments included in response
+  attachments?: MaintenanceAttachmentDto[];
 }
 
 /**
- * Attachment DTO returned after creating request
+ * Attachment DTO for maintenance requests
+ * Used in both request detail and create response
  */
 export interface MaintenanceAttachmentDto {
   documentId: string;
   fileName: string;
+  contentType?: string;
+  sizeBytes?: number;
+  title?: string;
   downloadUrl: string;
+  displayOrder?: number;
+  createdAt?: string; // ISO 8601 datetime
 }
 
 /**
@@ -173,8 +182,18 @@ export interface CreateMaintenanceRequestResponse {
 }
 
 /**
+ * Comment Attachment DTO
+ * Attachments included in comment responses
+ */
+export interface CommentAttachmentDto {
+  documentId: string;
+  fileName: string;
+  downloadUrl: string;
+}
+
+/**
  * Maintenance Comment DTO
- * Response from GET /v1/tenant/maintenance/requests/{id}/comments
+ * Response from GET /v1/tenant/me/requests/{id}/comments
  */
 export interface MaintenanceCommentDto {
   id: string;
@@ -187,6 +206,16 @@ export interface MaintenanceCommentDto {
   createdByName: string;
   createdAt: string; // ISO 8601 datetime
   updatedAt: string | null; // ISO 8601 datetime
+  attachments?: CommentAttachmentDto[]; // Comment attachments
+}
+
+/**
+ * Add Comment Response DTO
+ * Response from POST /v1/tenant/me/requests/{id}/comments
+ */
+export interface AddCommentResponseDto {
+  commentId: string;
+  attachments?: CommentAttachmentDto[];
 }
 
 // ============================================================================
@@ -302,9 +331,9 @@ export async function getMyMaintenanceRequests(
 
 /**
  * Gets maintenance request details by ID.
- * Permission: TENANT_MAINTENANCE_REQUEST_VIEW
+ * Permission: TENANT_MAINTENANCE_REQUEST_VIEW_OWN
  * 
- * Backend Endpoint: GET /api/v1/tenant/maintenance/requests/{id}
+ * Backend Endpoint: GET /api/v1/tenant/me/requests/{id}
  * 
  * @param requestId - The ID of the maintenance request
  * @returns Maintenance request details
@@ -320,7 +349,7 @@ export async function getMaintenanceRequestDetail(
 
   try {
     const response = await apiClient.get<MaintenanceRequestDetailDto>(
-      `/v1/tenant/maintenance/requests/${requestId}`
+      `/v1/tenant/me/requests/${requestId}`
     );
 
     console.log('[Maintenance API] ✅ GET REQUEST DETAIL RESPONSE:', {
@@ -464,12 +493,12 @@ export async function cancelMaintenanceRequest(
 
 /**
  * Gets comments for a maintenance request.
- * Permission: TENANT_MAINTENANCE_REQUEST_VIEW
+ * Permission: TENANT_MAINTENANCE_REQUEST_VIEW_OWN
  * 
- * Backend Endpoint: GET /api/v1/tenant/maintenance/requests/{id}/comments
+ * Backend Endpoint: GET /api/v1/tenant/me/requests/{id}/comments
  * 
  * @param requestId - The ID of the maintenance request
- * @param includeInternal - Include staff internal notes (default: true for admins)
+ * @param includeInternal - Include staff internal notes (default: false for residents)
  * @returns Array of comments
  * @throws ApiError if request fails
  */
@@ -485,7 +514,7 @@ export async function getMaintenanceRequestComments(
 
   try {
     const response = await apiClient.get<MaintenanceCommentDto[]>(
-      `/v1/tenant/maintenance/requests/${requestId}/comments`,
+      `/v1/tenant/me/requests/${requestId}/comments`,
       { params: { includeInternal } }
     );
 
@@ -508,36 +537,78 @@ export async function getMaintenanceRequestComments(
 }
 
 /**
- * Adds a comment to a maintenance request.
+ * Image attachment for comment (local file reference)
+ */
+export interface CommentImageAttachment {
+  uri: string;
+  type?: string;
+  name?: string;
+}
+
+/**
+ * Adds a comment to a maintenance request with optional attachments.
  * Auto-sets CommentType=ResidentComment and visibility=true.
  * Permission: TENANT_MAINTENANCE_REQUEST_CREATE_OWN or higher
  * 
  * Backend Endpoint: POST /api/v1/tenant/me/requests/{id}/comments
+ * Content-Type: multipart/form-data (when attachments provided)
  * 
  * @param requestId - The ID of the maintenance request
  * @param message - Comment message
- * @returns Created comment ID
+ * @param attachments - Optional array of image attachments (up to 5)
+ * @returns Created comment ID and attachment details
  * @throws ApiError if request fails
  */
 export async function addMaintenanceRequestComment(
   requestId: string,
-  message: string
-): Promise<{ commentId: string }> {
+  message: string,
+  attachments?: CommentImageAttachment[]
+): Promise<AddCommentResponseDto> {
   console.log('[Maintenance API] 💬 ADD COMMENT:', {
     requestId,
     messageLength: message.length,
+    attachmentCount: attachments?.length || 0,
     timestamp: new Date().toISOString(),
   });
 
   try {
-    const response = await apiClient.post<{ commentId: string }>(
-      `/v1/tenant/me/requests/${requestId}/comments`,
-      { message }
-    );
+    let response;
+
+    // Use multipart/form-data if attachments are provided
+    if (attachments && attachments.length > 0) {
+      const formData = new FormData();
+      formData.append('message', message);
+
+      // Append each attachment
+      attachments.forEach((attachment, index) => {
+        formData.append('attachments', {
+          uri: attachment.uri,
+          type: attachment.type || 'image/jpeg',
+          name: attachment.name || `comment_photo_${index}.jpg`,
+        } as any);
+      });
+
+      response = await apiClient.post<AddCommentResponseDto>(
+        `/v1/tenant/me/requests/${requestId}/comments`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+    } else {
+      // Simple JSON request without attachments
+      response = await apiClient.post<AddCommentResponseDto>(
+        `/v1/tenant/me/requests/${requestId}/comments`,
+        { message }
+      );
+    }
 
     console.log('[Maintenance API] ✅ ADD COMMENT RESPONSE:', {
       status: response.status,
       commentId: response.data.commentId,
+      attachmentCount: response.data.attachments?.length || 0,
       timestamp: new Date().toISOString(),
     });
 
@@ -557,9 +628,9 @@ export async function addMaintenanceRequestComment(
 /**
  * Rates a completed maintenance request.
  * Only Completed status requests can be rated.
- * Permission: TENANT_MAINTENANCE_REQUEST_CREATE
+ * Permission: TENANT_MAINTENANCE_REQUEST_CREATE_OWN
  * 
- * Backend Endpoint: POST /api/v1/tenant/maintenance/requests/{id}/rate
+ * Backend Endpoint: POST /api/v1/tenant/me/requests/{id}/rate
  * 
  * @param requestId - The ID of the maintenance request
  * @param rating - Rating from 1-5
@@ -579,7 +650,7 @@ export async function rateMaintenanceRequest(
   });
 
   try {
-    await apiClient.post(`/v1/tenant/maintenance/requests/${requestId}/rate`, {
+    await apiClient.post(`/v1/tenant/me/requests/${requestId}/rate`, {
       rating,
       feedback,
     });

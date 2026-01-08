@@ -17,4 +17,22 @@ public record MaintenanceCommentDto
     public string? CreatedByName { get; init; }
     public DateTime CreatedAt { get; init; }
     public DateTime? UpdatedAt { get; init; }
+
+    /// <summary>
+    /// Attachments uploaded with this comment.
+    /// </summary>
+    public List<CommentAttachmentDto> Attachments { get; init; } = new();
+}
+
+/// <summary>
+/// DTO for comment attachment.
+/// </summary>
+public record CommentAttachmentDto
+{
+    public Guid DocumentId { get; init; }
+    public string FileName { get; init; } = string.Empty;
+    public string ContentType { get; init; } = string.Empty;
+    public long SizeBytes { get; init; }
+    public string DownloadUrl { get; init; } = string.Empty;
+    public DateTime CreatedAt { get; init; }
 }

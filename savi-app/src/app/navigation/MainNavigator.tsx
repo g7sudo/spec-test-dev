@@ -33,6 +33,9 @@ import { ServicesScreen } from '@/features/services/screens/ServicesScreen';
 import { MaintenanceListScreen } from '@/features/maintenance/screens/MaintenanceListScreen';
 import { VisitorListScreen, CreateVisitorScreen } from '@/features/visitors/screens';
 
+// Shared screens (used in multiple stacks)
+// CreateVisitorScreen is imported above and used in both Home and Services stacks
+
 // Community Stack Screens
 import { CommunityScreen } from '@/features/community/screens/CommunityScreen';
 import { AnnouncementDetailScreen } from '@/features/announcements/screens/AnnouncementDetailScreen';
@@ -82,6 +85,11 @@ const HomeStackNavigator: React.FC = () => {
       <HomeStack.Screen
         name="CreateMaintenance"
         component={CreateMaintenanceScreen}
+        options={{ headerShown: false }}
+      />
+      <HomeStack.Screen
+        name="CreateVisitor"
+        component={CreateVisitorScreen}
         options={{ headerShown: false }}
       />
     </HomeStack.Navigator>
@@ -306,8 +314,8 @@ export const MainNavigator: React.FC = () => {
         component={HomeStackNavigator}
         options={({ route }) => {
           const routeName = getFocusedRouteNameFromRoute(route) ?? 'HomeMain';
-          // Hide tab bar on CreateMaintenance screen
-          const hideTabBar = routeName === 'CreateMaintenance';
+          // Hide tab bar on CreateMaintenance and CreateVisitor screens
+          const hideTabBar = routeName === 'CreateMaintenance' || routeName === 'CreateVisitor';
           
           return {
             tabBarLabel: t('tabs.home'),
@@ -334,6 +342,17 @@ export const MainNavigator: React.FC = () => {
             tabBarStyle: hideTabBar ? { display: 'none' } : undefined,
           };
         }}
+        listeners={({ navigation }) => ({
+          // Reset stack to initial screen when tab is pressed
+          tabPress: (e) => {
+            const state = navigation.getState();
+            const facilityRoute = state.routes.find((r: any) => r.name === 'FacilityTab');
+            if (facilityRoute?.state?.index && facilityRoute.state.index > 0) {
+              e.preventDefault();
+              navigation.navigate('FacilityTab', { screen: 'FacilityMain' });
+            }
+          },
+        })}
       />
       <Tab.Screen
         name="ServicesTab"
@@ -351,6 +370,18 @@ export const MainNavigator: React.FC = () => {
             tabBarStyle: hideTabBar ? { display: 'none' } : undefined,
           };
         }}
+        listeners={({ navigation }) => ({
+          // Reset stack to initial screen when tab is pressed
+          tabPress: (e) => {
+            const state = navigation.getState();
+            const servicesRoute = state.routes.find((r: any) => r.name === 'ServicesTab');
+            // If we're not on the main screen, reset to it
+            if (servicesRoute?.state?.index && servicesRoute.state.index > 0) {
+              e.preventDefault();
+              navigation.navigate('ServicesTab', { screen: 'ServicesMain' });
+            }
+          },
+        })}
       />
       <Tab.Screen
         name="CommunityTab"
@@ -368,6 +399,17 @@ export const MainNavigator: React.FC = () => {
             tabBarStyle: hideTabBar ? { display: 'none' } : undefined,
           };
         }}
+        listeners={({ navigation }) => ({
+          // Reset stack to initial screen when tab is pressed
+          tabPress: (e) => {
+            const state = navigation.getState();
+            const communityRoute = state.routes.find((r: any) => r.name === 'CommunityTab');
+            if (communityRoute?.state?.index && communityRoute.state.index > 0) {
+              e.preventDefault();
+              navigation.navigate('CommunityTab', { screen: 'CommunityMain' });
+            }
+          },
+        })}
       />
       <Tab.Screen
         name="ProfileTab"
@@ -387,6 +429,17 @@ export const MainNavigator: React.FC = () => {
             tabBarStyle: hideTabBar ? { display: 'none' } : undefined,
           };
         }}
+        listeners={({ navigation }) => ({
+          // Reset stack to initial screen when tab is pressed
+          tabPress: (e) => {
+            const state = navigation.getState();
+            const profileRoute = state.routes.find((r: any) => r.name === 'ProfileTab');
+            if (profileRoute?.state?.index && profileRoute.state.index > 0) {
+              e.preventDefault();
+              navigation.navigate('ProfileTab', { screen: 'ProfileMain' });
+            }
+          },
+        })}
       />
     </Tab.Navigator>
   );

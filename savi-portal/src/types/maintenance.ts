@@ -364,6 +364,18 @@ export interface RecordPaymentRequest {
 // ============================================
 
 /**
+ * Attachment included in a comment
+ */
+export interface CommentAttachment {
+  documentId: string;
+  fileName: string;
+  contentType?: string;
+  sizeBytes?: number;
+  downloadUrl: string;
+  createdAt?: string;
+}
+
+/**
  * Maintenance comment
  */
 export interface MaintenanceComment {
@@ -377,16 +389,25 @@ export interface MaintenanceComment {
   createdByName: string | null;
   createdAt: string;
   updatedAt: string | null;
+  attachments?: CommentAttachment[]; // Optional attachments
 }
 
 /**
- * Add comment
+ * Add comment request (used with multipart/form-data when attachments included)
  */
 export interface AddCommentRequest {
   commentType: MaintenanceCommentType;
   message: string;
   isVisibleToResident?: boolean;
   isVisibleToOwner?: boolean;
+}
+
+/**
+ * Add comment response
+ */
+export interface AddCommentResponse {
+  commentId: string;
+  attachments?: CommentAttachment[];
 }
 
 // ============================================

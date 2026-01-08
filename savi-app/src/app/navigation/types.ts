@@ -41,6 +41,7 @@ export type HomeStackParamList = {
   Notifications: undefined;
   MaintenanceDetail: { requestId: string };
   CreateMaintenance: undefined;
+  CreateVisitor: undefined; // Added for consistent navigation from quick actions
 };
 
 // Facility Stack (Amenities)

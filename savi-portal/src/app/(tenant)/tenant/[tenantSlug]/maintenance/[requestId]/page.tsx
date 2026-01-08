@@ -656,6 +656,33 @@ export default function MaintenanceRequestDetailPage() {
                           <p className="text-sm text-gray-700 mt-2 whitespace-pre-wrap">
                             {comment.message}
                           </p>
+                          
+                          {/* Comment Attachments */}
+                          {comment.attachments && comment.attachments.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {comment.attachments.map((attachment) => (
+                                <a
+                                  key={attachment.documentId}
+                                  href={attachment.downloadUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="group relative block w-20 h-20 rounded-lg overflow-hidden border border-gray-200 hover:border-primary-400 transition-colors"
+                                >
+                                  <img
+                                    src={attachment.downloadUrl}
+                                    alt={attachment.fileName}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                    <span className="opacity-0 group-hover:opacity-100 text-white text-xs">
+                                      View
+                                    </span>
+                                  </div>
+                                </a>
+                              ))}
+                            </div>
+                          )}
+                          
                           <div className="text-xs text-gray-400 mt-1">
                             {comment.isVisibleToResident && <span className="mr-2">👤 Resident</span>}
                             {comment.isVisibleToOwner && <span>🏠 Owner</span>}

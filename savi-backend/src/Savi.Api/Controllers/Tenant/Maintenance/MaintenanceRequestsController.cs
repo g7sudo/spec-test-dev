@@ -760,26 +760,48 @@ public class MaintenanceRequestsController : ControllerBase
     }
 
     /// <summary>
-    /// Adds a comment to a maintenance request.
+    /// Adds a comment to a maintenance request with optional image attachments.
     /// </summary>
     [HttpPost("{id:guid}/comments")]
     [HasPermission(Permissions.Tenant.Maintenance.RequestManage)]
-    [ProducesResponseType(typeof(Guid), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(AddCommentResultDto), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<IActionResult> AddComment(
         Guid id,
-        [FromBody] AddMaintenanceCommentRequest request,
+        [FromForm] AddMaintenanceCommentFormRequest request,
         CancellationToken cancellationToken = default)
     {
-        var command = new AddCommentCommand(
-            id,
-            request.CommentType,
-            request.Message,
-            request.IsVisibleToResident,
-            request.IsVisibleToOwner);
+        var attachments = new List<CommentAttachment>();
+
+        if (request.Attachments != null)
+        {
+            foreach (var file in request.Attachments)
+            {
+                if (file.Length > 0)
+                {
+                    attachments.Add(new CommentAttachment
+                    {
+                        FileStream = file.OpenReadStream(),
+                        FileName = file.FileName,
+                        ContentType = file.ContentType,
+                        FileSize = file.Length
+                    });
+                }
+            }
+        }
+
+        var command = new AddCommentCommand
+        {
+            MaintenanceRequestId = id,
+            CommentType = request.CommentType,
+            Message = request.Message,
+            IsVisibleToResident = request.IsVisibleToResident,
+            IsVisibleToOwner = request.IsVisibleToOwner,
+            Attachments = attachments
+        };
 
         var result = await _mediator.Send(command, cancellationToken);
 
@@ -792,7 +814,7 @@ public class MaintenanceRequestsController : ControllerBase
             return BadRequest(new { error = result.Error });
         }
 
-        return Created($"api/v1/tenant/maintenance/requests/{id}/comments/{result.Value}", new { id = result.Value });
+        return Created($"api/v1/tenant/maintenance/requests/{id}/comments/{result.Value.CommentId}", result.Value);
     }
 
     /// <summary>
@@ -905,13 +927,25 @@ public record RecordPaymentRequest(
     string? PaymentReference);
 
 /// <summary>
-/// Request model for adding a maintenance comment.
+/// Request model for adding a maintenance comment (JSON body - kept for backward compatibility).
 /// </summary>
 public record AddMaintenanceCommentRequest(
     MaintenanceCommentType CommentType,
     string Message,
     bool IsVisibleToResident,
     bool IsVisibleToOwner);
+
+/// <summary>
+/// Form request model for adding a maintenance comment with optional attachments.
+/// </summary>
+public class AddMaintenanceCommentFormRequest
+{
+    public MaintenanceCommentType CommentType { get; set; }
+    public string Message { get; set; } = string.Empty;
+    public bool IsVisibleToResident { get; set; }
+    public bool IsVisibleToOwner { get; set; }
+    public List<IFormFile>? Attachments { get; set; }
+}
 
 /// <summary>
 /// Request model for rating a maintenance request.
