@@ -236,6 +236,7 @@ export function AddOwnershipDialog({
           partyName: name,
           firstName: newPartyType === PartyType.Individual ? newFirstName : undefined,
           lastName: newPartyType === PartyType.Individual ? newLastName : undefined,
+          contacts: [],
         });
         partyId = result.id;
       } else {
@@ -386,7 +387,7 @@ export function AddOwnershipDialog({
                 </label>
                 <Select
                   value={newPartyType.toString()}
-                  onValueChange={(v) => setNewPartyType(parseInt(v) as PartyType)}
+                  onValueChange={(v) => setNewPartyType(v as PartyType)}
                 >
                   <SelectTrigger>
                     <SelectValue />

@@ -506,7 +506,7 @@ export function BookingDetailDialog({
                     Cancel
                   </Button>
                   <Button
-                    variant="destructive"
+                    variant="danger"
                     size="sm"
                     onClick={handleReject}
                     disabled={isSubmitting || !rejectReason.trim()}
@@ -546,7 +546,7 @@ export function BookingDetailDialog({
                     Back
                   </Button>
                   <Button
-                    variant="destructive"
+                    variant="danger"
                     size="sm"
                     onClick={handleCancel}
                     disabled={isSubmitting}
@@ -645,7 +645,7 @@ export function BookingDetailDialog({
                       )}
                     </Button>
                     <Button
-                      variant="destructive"
+                      variant="danger"
                       onClick={() => setActionMode('reject')}
                       disabled={isSubmitting}
                     >

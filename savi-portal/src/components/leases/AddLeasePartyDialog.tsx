@@ -204,6 +204,7 @@ export function AddLeasePartyDialog({
           partyName: name,
           firstName: newPartyType === PartyType.Individual ? newFirstName : undefined,
           lastName: newPartyType === PartyType.Individual ? newLastName : undefined,
+          contacts: [],
         });
         partyId = result.id;
       } catch (err: unknown) {
@@ -358,7 +359,7 @@ export function AddLeasePartyDialog({
                 </label>
                 <Select
                   value={newPartyType.toString()}
-                  onValueChange={(v) => setNewPartyType(parseInt(v) as PartyType)}
+                  onValueChange={(v) => setNewPartyType(v as PartyType)}
                 >
                   <SelectTrigger>
                     <SelectValue />

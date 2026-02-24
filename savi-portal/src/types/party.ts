@@ -4,7 +4,7 @@
  */
 
 // Re-export PagedResult from http.ts to avoid duplication
-export { PagedResult } from './http';
+export type { PagedResult } from './http';
 
 // ============================================
 // Enums (values match C# enum integers)

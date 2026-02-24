@@ -47,6 +47,7 @@ import {
   PartyAddress,
   PartyContact,
   PartyType,
+  PartyContactType,
   getPartyTypeLabel,
   getAddressTypeLabel,
   getContactTypeLabel,
@@ -142,7 +143,7 @@ interface ContactCardProps {
 function ContactCard({ contact, canManage, onEdit, onDelete }: ContactCardProps) {
   const getIcon = () => {
     switch (contact.contactType) {
-      case 0: // Email
+      case PartyContactType.Email:
         return <Mail className="h-5 w-5" />;
       default:
         return <Phone className="h-5 w-5" />;
@@ -425,7 +426,7 @@ export default function PartyDetailPage() {
       </Card>
 
       {/* Addresses & Contacts Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue="addresses" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="addresses" icon={<MapPin className="h-4 w-4" />}>
             Addresses ({party.addresses?.length || 0})

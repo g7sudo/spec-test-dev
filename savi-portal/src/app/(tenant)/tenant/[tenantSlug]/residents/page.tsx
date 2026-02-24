@@ -57,6 +57,7 @@ import {
   canInviteResident,
 } from '@/types/resident';
 import { LeasePartyRole } from '@/types/lease';
+import { PartyType } from '@/types/party';
 import { MoveOutResidentDialog } from '@/components/residents';
 import { SendResidentInviteDialog } from '@/components/leases';
 
@@ -654,7 +655,7 @@ export default function ResidentsPage() {
             leaseId: inviteResident.leaseId,
             partyId: inviteResident.partyId,
             partyName: inviteResident.residentName, // Map residentName to partyName for dialog
-            partyType: inviteResident.partyType,
+            partyType: inviteResident.partyType as unknown as PartyType,
             communityUserId: inviteResident.communityUserId,
             role: inviteResident.role as LeasePartyRole,
             isPrimary: inviteResident.isPrimary,

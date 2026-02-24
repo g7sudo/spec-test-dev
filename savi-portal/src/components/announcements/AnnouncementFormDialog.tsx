@@ -1027,7 +1027,7 @@ export function AnnouncementFormDialog({
                   />
                   <div>
                     <p className="font-medium text-gray-900">Add to calendar</p>
-                    <p className="text-sm text-gray-500">Show "Add to Calendar" button (for events)</p>
+                    <p className="text-sm text-gray-500">Show &quot;Add to Calendar&quot; button (for events)</p>
                   </div>
                 </label>
               </div>

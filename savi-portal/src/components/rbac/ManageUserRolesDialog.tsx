@@ -72,7 +72,7 @@ export function ManageUserRolesDialog({
   const hasChanges = () => {
     const currentIds = new Set(user.roles.map((r) => r.roleId));
     if (currentIds.size !== selectedRoleIds.size) return true;
-    for (const id of currentIds) {
+    for (const id of Array.from(currentIds)) {
       if (!selectedRoleIds.has(id)) return true;
     }
     return false;

@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { createTenant, updateTenant } from '@/lib/api/tenants';
 import {
   Tenant,
+  TenantSummary,
   CreateTenantRequest,
   UpdateTenantRequest,
 } from '@/types/tenant';
@@ -24,7 +25,8 @@ import {
 interface TenantFormDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  tenant?: Tenant | null; // null = create mode
+  /** Accepts full Tenant or TenantSummary for edit; null/undefined = create mode */
+  tenant?: Tenant | TenantSummary | null;
   onSuccess: () => void;
 }
 
@@ -66,18 +68,19 @@ export function TenantFormDialog({
   useEffect(() => {
     if (open) {
       if (tenant) {
+        const fullTenant = tenant as Partial<Tenant>;
         setName(tenant.name);
         setCode(tenant.code || '');
-        setAddressLine1(tenant.addressLine1 || '');
-        setAddressLine2(tenant.addressLine2 || '');
+        setAddressLine1(fullTenant.addressLine1 || '');
+        setAddressLine2(fullTenant.addressLine2 || '');
         setCity(tenant.city || '');
-        setState(tenant.state || '');
+        setState(fullTenant.state || '');
         setCountry(tenant.country || '');
-        setPostalCode(tenant.postalCode || '');
-        setTimezone(tenant.timezone || '');
-        setPrimaryContactName(tenant.primaryContactName || '');
-        setPrimaryContactEmail(tenant.primaryContactEmail || '');
-        setPrimaryContactPhone(tenant.primaryContactPhone || '');
+        setPostalCode(fullTenant.postalCode || '');
+        setTimezone(fullTenant.timezone || '');
+        setPrimaryContactName(fullTenant.primaryContactName || '');
+        setPrimaryContactEmail(fullTenant.primaryContactEmail || '');
+        setPrimaryContactPhone(fullTenant.primaryContactPhone || '');
       } else {
         // Reset to defaults
         setName('');
@@ -179,7 +182,7 @@ export function TenantFormDialog({
                 onChange={(e) => setCode(e.target.value)}
                 placeholder="e.g. green-meadows"
                 disabled={isEditing}
-                hint={isEditing ? 'Cannot be changed after creation' : 'Auto-generated if left empty'}
+                helperText={isEditing ? 'Cannot be changed after creation' : 'Auto-generated if left empty'}
               />
             </div>
           </div>

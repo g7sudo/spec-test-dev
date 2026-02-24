@@ -124,9 +124,7 @@ function LeaseCard({
   const residents = lease.parties.filter(
     (p) =>
       p.role === LeasePartyRole.PrimaryResident ||
-      p.role === LeasePartyRole.CoResident ||
-      p.role === 'PrimaryResident' ||
-      p.role === 'CoResident'
+      p.role === LeasePartyRole.CoResident
   );
 
   // Get invite status for a party
@@ -237,9 +235,7 @@ function LeaseCard({
                   const invite = getPartyInvite(party.partyId);
                   const isResident =
                     party.role === LeasePartyRole.PrimaryResident ||
-                    party.role === LeasePartyRole.CoResident ||
-                    party.role === 'PrimaryResident' ||
-                    party.role === 'CoResident';
+                    party.role === LeasePartyRole.CoResident;
 
                   return (
                     <div
@@ -384,7 +380,7 @@ export function LeaseSection({
 
       // Load invites for active leases
       const activeLeases = leasesWithDetails.filter(
-        (l) => l.status === LeaseStatus.Active || l.status === 'Active'
+        (l) => l.status === LeaseStatus.Active
       );
       const invitesMap: Record<string, ResidentInvite[]> = {};
       await Promise.all(
@@ -433,17 +429,15 @@ export function LeaseSection({
 
   // Separate leases by status
   const activeLeases = leases.filter(
-    (l) => l.status === LeaseStatus.Active || l.status === 'Active'
+    (l) => l.status === LeaseStatus.Active
   );
   const draftLeases = leases.filter(
-    (l) => l.status === LeaseStatus.Draft || l.status === 'Draft'
+    (l) => l.status === LeaseStatus.Draft
   );
   const pastLeases = leases.filter(
     (l) =>
       l.status === LeaseStatus.Ended ||
-      l.status === 'Ended' ||
-      l.status === LeaseStatus.Terminated ||
-      l.status === 'Terminated'
+      l.status === LeaseStatus.Terminated
   );
 
   if (!canView) {

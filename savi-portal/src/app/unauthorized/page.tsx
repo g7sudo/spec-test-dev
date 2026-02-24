@@ -65,7 +65,7 @@ export default function UnauthorizedPage() {
 
         {/* Description */}
         <p className="mt-3 text-gray-500">
-          You don't have permission to access this area.
+          You don&apos;t have permission to access this area.
           Please contact your administrator if you believe this is a mistake.
         </p>
 

@@ -37,7 +37,7 @@ export default function NoAccessPage() {
 
         {/* Description */}
         <p className="mt-3 text-gray-500">
-          Your account has been created, but you haven't been assigned access
+          Your account has been created, but you haven&apos;t been assigned access
           to any communities or platform areas yet.
         </p>
 

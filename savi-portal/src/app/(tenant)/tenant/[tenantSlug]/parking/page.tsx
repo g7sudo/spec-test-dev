@@ -54,6 +54,7 @@ import {
 } from '@/lib/api/community';
 import {
   ParkingSlot,
+  ParkingStatus,
   Unit,
   getParkingStatusLabel,
   getParkingStatusColor,
@@ -382,7 +383,7 @@ export default function ParkingPage() {
       const result = await listParkingSlots({
         page,
         pageSize: PAGE_SIZE,
-        status: filterStatus !== 'all' ? parseInt(filterStatus) : undefined,
+        status: filterStatus !== 'all' ? (parseInt(filterStatus) as ParkingStatus) : undefined,
       });
 
       setParkingSlots(result.items);

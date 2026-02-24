@@ -121,7 +121,7 @@ export function RoleGroupFormDialog({
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="e.g. SECURITY_GUARD"
-            hint="Auto-generated from name if left empty"
+            helperText="Auto-generated from name if left empty"
           />
           
           {/* Description */}

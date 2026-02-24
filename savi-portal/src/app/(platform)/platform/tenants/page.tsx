@@ -245,7 +245,7 @@ export default function TenantsPage() {
       const result = await listTenants({
         page,
         pageSize: PAGE_SIZE,
-        status: filterStatus !== 'all' ? parseInt(filterStatus) : undefined,
+        status: filterStatus !== 'all' ? filterStatus as TenantStatus : undefined,
         search: searchTerm || undefined,
       });
 

@@ -30,6 +30,7 @@ import { activateLease, endLease, removeLeaseParty } from '@/lib/api/leases';
 import {
   Lease,
   LeaseParty,
+  LeasePartyRole,
   formatLeaseDate,
   getLeasePartyRoleLabel,
 } from '@/types/lease';
@@ -60,7 +61,7 @@ export function ActivateLeaseDialog({
   // Check if lease has a primary resident
   const hasPrimaryResident = lease.parties.some(p => p.isPrimary);
   const residents = lease.parties.filter(p =>
-    p.role === 0 || p.role === 1 || p.role === 'PrimaryResident' || p.role === 'CoResident'
+    p.role === LeasePartyRole.PrimaryResident || p.role === LeasePartyRole.CoResident
   );
 
   const handleActivate = async () => {

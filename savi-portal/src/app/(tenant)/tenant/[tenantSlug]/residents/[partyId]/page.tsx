@@ -44,6 +44,7 @@ import {
   formatResidentDate,
 } from '@/types/resident';
 import { LeasePartyRole } from '@/types/lease';
+import { PartyType } from '@/types/party';
 import { MoveOutResidentDialog } from '@/components/residents';
 import { SendResidentInviteDialog } from '@/components/leases';
 import {
@@ -567,7 +568,7 @@ export default function ResidentProfilePage() {
       />
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs defaultValue="residency" value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="residency" icon={<Home className="h-4 w-4" />}>
             Residency ({residencies.length})
@@ -731,7 +732,7 @@ export default function ResidentProfilePage() {
             leaseId: inviteResidency.leaseId,
             partyId: profile.partyId,
             partyName: profile.residentName,
-            partyType: profile.partyType,
+            partyType: profile.partyType as unknown as PartyType,
             communityUserId: profile.communityUserId,
             role: inviteResidency.role as LeasePartyRole,
             isPrimary: inviteResidency.isPrimary,

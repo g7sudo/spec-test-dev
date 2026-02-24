@@ -7,7 +7,7 @@
 import { PagedResult } from './http';
 
 // Re-export PagedResult for convenience
-export { PagedResult };
+export type { PagedResult };
 
 // ============================================
 // Enums
@@ -332,11 +332,11 @@ export function groupPermissionsByModule<T extends { module: string }>(
   permissions: T[]
 ): Record<string, T[]> {
   return permissions.reduce((acc, permission) => {
-    const module = permission.module || 'Other';
-    if (!acc[module]) {
-      acc[module] = [];
+    const moduleName = permission.module || 'Other';
+    if (!acc[moduleName]) {
+      acc[moduleName] = [];
     }
-    acc[module].push(permission);
+    acc[moduleName].push(permission);
     return acc;
   }, {} as Record<string, T[]>);
 }

@@ -243,7 +243,7 @@ export default function PartiesPage() {
       const result = await listParties({
         page,
         pageSize: PAGE_SIZE,
-        partyType: filterType !== 'all' ? parseInt(filterType) : undefined,
+        partyType: filterType !== 'all' ? filterType as PartyType : undefined,
         searchTerm: searchTerm || undefined,
       });
 

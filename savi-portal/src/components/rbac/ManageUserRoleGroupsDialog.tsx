@@ -100,7 +100,7 @@ export function ManageUserRoleGroupsDialog({
     
     if (currentMap.size !== selectedRoleGroups.size) return true;
     
-    for (const [id, isPrimary] of selectedRoleGroups) {
+    for (const [id, isPrimary] of Array.from(selectedRoleGroups)) {
       if (!currentMap.has(id) || currentMap.get(id) !== isPrimary) {
         return true;
       }

@@ -5,10 +5,10 @@
  */
 
 // Re-export PagedResult from http.ts to avoid duplication
-export { PagedResult } from './http';
+export type { PagedResult } from './http';
 
 // Re-export TempUploadResponse from profile.ts to avoid duplication
-export { TempUploadResponse } from './profile';
+export type { TempUploadResponse } from './profile';
 
 // ============================================
 // Document Types for Amenity Images

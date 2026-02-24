@@ -206,23 +206,19 @@ export interface ListLeasesParams {
  * Gets display label for lease status
  */
 export function getLeaseStatusLabel(status: LeaseStatus | string): string {
-  // Handle string values from API
+  // Handle string values from API by converting to enum
   const statusValue = typeof status === 'string' 
     ? LeaseStatus[status as keyof typeof LeaseStatus] ?? status
     : status;
     
-  switch (statusValue) {
+  switch (statusValue as LeaseStatus) {
     case LeaseStatus.Draft:
-    case 'Draft':
       return 'Draft';
     case LeaseStatus.Active:
-    case 'Active':
       return 'Active';
     case LeaseStatus.Ended:
-    case 'Ended':
       return 'Ended';
     case LeaseStatus.Terminated:
-    case 'Terminated':
       return 'Terminated';
     default:
       return String(status);
@@ -237,18 +233,14 @@ export function getLeaseStatusColor(status: LeaseStatus | string): string {
     ? LeaseStatus[status as keyof typeof LeaseStatus] ?? status
     : status;
     
-  switch (statusValue) {
+  switch (statusValue as LeaseStatus) {
     case LeaseStatus.Draft:
-    case 'Draft':
       return 'bg-yellow-100 text-yellow-700';
     case LeaseStatus.Active:
-    case 'Active':
       return 'bg-green-100 text-green-700';
     case LeaseStatus.Ended:
-    case 'Ended':
       return 'bg-gray-100 text-gray-600';
     case LeaseStatus.Terminated:
-    case 'Terminated':
       return 'bg-red-100 text-red-700';
     default:
       return 'bg-gray-100 text-gray-600';
@@ -263,18 +255,14 @@ export function getLeasePartyRoleLabel(role: LeasePartyRole | string): string {
     ? LeasePartyRole[role as keyof typeof LeasePartyRole] ?? role
     : role;
     
-  switch (roleValue) {
+  switch (roleValue as LeasePartyRole) {
     case LeasePartyRole.PrimaryResident:
-    case 'PrimaryResident':
       return 'Primary Resident';
     case LeasePartyRole.CoResident:
-    case 'CoResident':
       return 'Co-Resident';
     case LeasePartyRole.Guarantor:
-    case 'Guarantor':
       return 'Guarantor';
     case LeasePartyRole.Other:
-    case 'Other':
       return 'Other';
     default:
       return String(role);
@@ -289,18 +277,14 @@ export function getLeasePartyRoleColor(role: LeasePartyRole | string): string {
     ? LeasePartyRole[role as keyof typeof LeasePartyRole] ?? role
     : role;
     
-  switch (roleValue) {
+  switch (roleValue as LeasePartyRole) {
     case LeasePartyRole.PrimaryResident:
-    case 'PrimaryResident':
       return 'bg-primary-100 text-primary-700';
     case LeasePartyRole.CoResident:
-    case 'CoResident':
       return 'bg-blue-100 text-blue-700';
     case LeasePartyRole.Guarantor:
-    case 'Guarantor':
       return 'bg-purple-100 text-purple-700';
     case LeasePartyRole.Other:
-    case 'Other':
       return 'bg-gray-100 text-gray-600';
     default:
       return 'bg-gray-100 text-gray-600';

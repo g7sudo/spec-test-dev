@@ -437,7 +437,7 @@ export default function VisitorPassDetailPage() {
                       <Calendar className="h-4 w-4" /> Expected Window
                     </dt>
                     <dd className="font-medium">
-                      {formatDateTime(pass.expectedFrom)} — {formatDateTime(pass.expectedTo)}
+                      {formatDateTime(pass.expectedFrom ?? null)} — {formatDateTime(pass.expectedTo ?? null)}
                     </dd>
                   </div>
                 )}

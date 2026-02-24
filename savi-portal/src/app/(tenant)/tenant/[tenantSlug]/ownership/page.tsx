@@ -233,7 +233,7 @@ export default function OwnersPage() {
         page,
         pageSize: PAGE_SIZE,
         searchTerm: searchTerm || undefined,
-        partyType: filterType !== 'all' ? parseInt(filterType) : undefined,
+        partyType: filterType !== 'all' ? filterType as PartyType : undefined,
         currentOwnersOnly,
       });
 

@@ -10,7 +10,7 @@
  * 5. Redirect to tenant dashboard
  */
 
-import { useState, useEffect, FormEvent, useCallback, useRef } from 'react';
+import { useState, useEffect, FormEvent, useCallback, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Building2,
@@ -48,6 +48,14 @@ type Step = 'loading' | 'invalid' | 'details' | 'signin' | 'accepting' | 'succes
 // ============================================
 
 export default function AcceptInvitationPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary-500" /></div>}>
+      <AcceptInvitationContent />
+    </Suspense>
+  );
+}
+
+function AcceptInvitationContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -345,7 +353,7 @@ export default function AcceptInvitationPage() {
               value={invitation?.inviteeEmail || ''}
               leftAddon={<Mail className="h-4 w-4" />}
               disabled
-              hint="Email is locked to match your invitation"
+              helperText="Email is locked to match your invitation"
             />
 
             {/* Toggle for new/existing user */}

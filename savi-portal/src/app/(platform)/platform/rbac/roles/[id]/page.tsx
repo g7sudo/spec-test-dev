@@ -395,7 +395,7 @@ export default function PlatformRoleDetailPage() {
       {/* Tabs */}
       <Card>
         <CardContent className="p-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <Tabs defaultValue="permissions" value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
               <TabsTrigger value="permissions">
                 <Key className="h-4 w-4" />

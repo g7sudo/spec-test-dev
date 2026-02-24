@@ -219,6 +219,7 @@ export function CreateLeaseDialog({
         partyName: name,
         firstName: newPartyType === PartyType.Individual ? newFirstName : undefined,
         lastName: newPartyType === PartyType.Individual ? newLastName : undefined,
+        contacts: [],
       });
 
       // Add to selected parties
@@ -522,7 +523,7 @@ export function CreateLeaseDialog({
 
                   <Select
                     value={newPartyType.toString()}
-                    onValueChange={(v) => setNewPartyType(parseInt(v) as PartyType)}
+                    onValueChange={(v) => setNewPartyType(v as PartyType)}
                   >
                     <SelectTrigger>
                       <SelectValue />

@@ -249,14 +249,11 @@ export function SendResidentInviteDialog({
 
   // Check if invite is pending or expired
   const isPending =
-    existingInvite?.status === ResidentInviteStatus.Pending ||
-    existingInvite?.status === 'Pending';
+    existingInvite?.status === ResidentInviteStatus.Pending;
   const isExpired =
-    existingInvite?.status === ResidentInviteStatus.Expired ||
-    existingInvite?.status === 'Expired';
+    existingInvite?.status === ResidentInviteStatus.Expired;
   const isAccepted =
-    existingInvite?.status === ResidentInviteStatus.Accepted ||
-    existingInvite?.status === 'Accepted';
+    existingInvite?.status === ResidentInviteStatus.Accepted;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -346,8 +343,7 @@ export function SendResidentInviteDialog({
 
           {/* New Invite Form - show if no existing invite or cancelled */}
           {(!existingInvite ||
-            existingInvite.status === ResidentInviteStatus.Cancelled ||
-            existingInvite.status === 'Cancelled') &&
+            existingInvite.status === ResidentInviteStatus.Cancelled) &&
             !isLoadingInvite && (
               <div className="space-y-4">
                 {/* Email */}
@@ -416,8 +412,7 @@ export function SendResidentInviteDialog({
               {success ? 'Close' : 'Cancel'}
             </Button>
             {(!existingInvite ||
-              existingInvite.status === ResidentInviteStatus.Cancelled ||
-              existingInvite.status === 'Cancelled') &&
+              existingInvite.status === ResidentInviteStatus.Cancelled) &&
               !success && (
                 <Button onClick={handleSendInvite} disabled={isSubmitting}>
                   {isSubmitting ? (

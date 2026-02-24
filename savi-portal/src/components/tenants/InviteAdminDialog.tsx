@@ -190,7 +190,7 @@ export function InviteAdminDialog({
             onChange={(e) => setFullName(e.target.value)}
             placeholder="John Doe"
             leftAddon={<User className="h-4 w-4" />}
-            hint="Optional - helps personalize the invitation"
+            helperText="Optional - helps personalize the invitation"
           />
 
           {/* Error */}

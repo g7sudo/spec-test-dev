@@ -34,7 +34,7 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { listAdvertisers, createCampaign, updateCampaign, getCampaignById } from '@/lib/api/ads';
 import { listTenants } from '@/lib/api/tenants';
-import { TenantSummary } from '@/types/tenant';
+import { TenantSummary, TenantStatus } from '@/types/tenant';
 import {
   Advertiser,
   Campaign,
@@ -126,7 +126,7 @@ export function CampaignFormDialog({
 
     try {
       // Only load active tenants for targeting
-      const result = await listTenants({ pageSize: 100, status: 1 }); // 1 = Active
+      const result = await listTenants({ pageSize: 100, status: TenantStatus.Active });
       setTenants(result.items);
     } catch (err) {
       console.error('Failed to load tenants:', err);

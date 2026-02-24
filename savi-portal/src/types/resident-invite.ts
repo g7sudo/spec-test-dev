@@ -141,18 +141,14 @@ export function getInviteStatusLabel(status: ResidentInviteStatus | string): str
     ? ResidentInviteStatus[status as keyof typeof ResidentInviteStatus] ?? status
     : status;
 
-  switch (statusValue) {
+  switch (statusValue as ResidentInviteStatus) {
     case ResidentInviteStatus.Pending:
-    case 'Pending':
       return 'Pending';
     case ResidentInviteStatus.Accepted:
-    case 'Accepted':
       return 'Accepted';
     case ResidentInviteStatus.Expired:
-    case 'Expired':
       return 'Expired';
     case ResidentInviteStatus.Cancelled:
-    case 'Cancelled':
       return 'Cancelled';
     default:
       return String(status);
@@ -167,18 +163,14 @@ export function getInviteStatusColor(status: ResidentInviteStatus | string): str
     ? ResidentInviteStatus[status as keyof typeof ResidentInviteStatus] ?? status
     : status;
 
-  switch (statusValue) {
+  switch (statusValue as ResidentInviteStatus) {
     case ResidentInviteStatus.Pending:
-    case 'Pending':
       return 'bg-yellow-100 text-yellow-700';
     case ResidentInviteStatus.Accepted:
-    case 'Accepted':
       return 'bg-green-100 text-green-700';
     case ResidentInviteStatus.Expired:
-    case 'Expired':
       return 'bg-gray-100 text-gray-600';
     case ResidentInviteStatus.Cancelled:
-    case 'Cancelled':
       return 'bg-red-100 text-red-700';
     default:
       return 'bg-gray-100 text-gray-600';
@@ -247,7 +239,7 @@ export function canCancelInvite(status: ResidentInviteStatus | string): boolean 
  * Checks if an invite is still actionable (pending and not expired)
  */
 export function isInviteActionable(invite: ResidentInvite): boolean {
-  if (invite.status !== ResidentInviteStatus.Pending && invite.status !== 'Pending') {
+  if (invite.status !== ResidentInviteStatus.Pending) {
     return false;
   }
   
