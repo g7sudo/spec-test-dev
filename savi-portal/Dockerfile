@@ -20,6 +20,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Ensure public folder exists (Next.js standalone build expects it)
+RUN mkdir -p public
+
 # Build the Next.js production bundle
 # Next.js collects telemetry by default — disable it during build
 ENV NEXT_TELEMETRY_DISABLED=1
