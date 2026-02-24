@@ -2,8 +2,8 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Copy dependency manifests (paths relative to repo root since Render uses repo root as build context)
-COPY savi-portal/package.json savi-portal/package-lock.json* savi-portal/yarn.lock* savi-portal/pnpm-lock.yaml* ./
+# Copy dependency manifests
+COPY package.json package-lock.json* yarn.lock* pnpm-lock.yaml* ./
 
 # Install dependencies based on available lock file
 RUN \
@@ -18,7 +18,7 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY savi-portal/ .
+COPY . .
 
 # Build the Next.js production bundle
 # Next.js collects telemetry by default — disable it during build
