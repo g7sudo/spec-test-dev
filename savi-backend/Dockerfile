@@ -36,4 +36,5 @@ USER appuser
 
 EXPOSE 8080
 
-ENTRYPOINT ["dotnet", "Savi.Api.dll"]
+# Copy Render secret files (appsettings + firebase credentials) into the app directory at startup
+ENTRYPOINT ["sh", "-c", "cp /etc/secrets/*.json /app/ 2>/dev/null; dotnet Savi.Api.dll"]
