@@ -29,6 +29,7 @@ export enum VisitorPassStatus {
   CheckedIn = 'CheckedIn',                 // Visitor has entered
   CheckedOut = 'CheckedOut',               // Visitor has left
   Expired = 'Expired',                     // Auto-expired (no show / out of time window)
+  Cancelled = 'Cancelled',                 // Cancelled before arrival
 }
 
 /**
@@ -200,6 +201,9 @@ export function getVisitorPassStatusLabel(status: VisitorPassStatus | string): s
     case VisitorPassStatus.Expired:
     case 'Expired':
       return 'Expired';
+    case VisitorPassStatus.Cancelled:
+    case 'Cancelled':
+      return 'Cancelled';
     default:
       return status || 'Unknown';
   }
@@ -231,6 +235,9 @@ export function getVisitorPassStatusColor(status: VisitorPassStatus | string): s
     case VisitorPassStatus.Expired:
     case 'Expired':
       return 'bg-orange-100 text-orange-700';
+    case VisitorPassStatus.Cancelled:
+    case 'Cancelled':
+      return 'bg-gray-100 text-gray-500';
     default:
       return 'bg-gray-100 text-gray-600';
   }
@@ -327,6 +334,7 @@ export const VISITOR_PASS_STATUS_OPTIONS = [
   { value: VisitorPassStatus.CheckedIn, label: 'Checked In' },
   { value: VisitorPassStatus.CheckedOut, label: 'Checked Out' },
   { value: VisitorPassStatus.Expired, label: 'Expired' },
+  { value: VisitorPassStatus.Cancelled, label: 'Cancelled' },
 ];
 
 /**
@@ -338,4 +346,161 @@ export const VISITOR_SOURCE_OPTIONS = [
   { value: VisitorSource.AdminPortal, label: 'Admin Portal' },
   { value: VisitorSource.Other, label: 'Other' },
 ];
+
+// ============================================
+// Pass DTOs (match backend C# DTOs exactly)
+// ============================================
+
+/**
+ * Full visitor pass details
+ * Response from GET /api/v1/tenant/visitors/passes/{id}
+ */
+export interface VisitorPass {
+  id: string;
+  unitId: string;
+  unitNumber?: string;
+  blockName?: string;
+  visitType: VisitorType | string;
+  source: VisitorSource | string;
+  accessCode?: string;
+  requestedForUserId?: string;
+  requestedForUserName?: string;
+  visitorName: string;
+  visitorPhone?: string;
+  visitorIdType?: string;
+  visitorIdNumber?: string;
+  vehicleNumber?: string;
+  vehicleType?: string;
+  deliveryProvider?: string;
+  notes?: string;
+  expectedFrom?: string;
+  expectedTo?: string;
+  expiresAt?: string;
+  checkInAt?: string;
+  checkOutAt?: string;
+  checkInByUserId?: string;
+  checkInByUserName?: string;
+  checkOutByUserId?: string;
+  checkOutByUserName?: string;
+  status: VisitorPassStatus | string;
+  approvedByUserId?: string;
+  approvedByUserName?: string;
+  approvedAt?: string;
+  rejectedByUserId?: string;
+  rejectedByUserName?: string;
+  rejectedAt?: string;
+  rejectedReason?: string;
+  notifyVisitorAtGate: boolean;
+  createdAt: string;
+  createdBy?: string;
+  createdByUserName?: string;
+}
+
+/**
+ * Summary visitor pass for list views
+ * Response from GET /api/v1/tenant/visitors/passes (paginated)
+ */
+export interface VisitorPassSummary {
+  id: string;
+  unitNumber?: string;
+  blockName?: string;
+  visitType: VisitorType | string;
+  source: VisitorSource | string;
+  accessCode?: string;
+  visitorName: string;
+  visitorPhone?: string;
+  deliveryProvider?: string;
+  expectedFrom?: string;
+  expectedTo?: string;
+  checkInAt?: string;
+  checkOutAt?: string;
+  status: VisitorPassStatus | string;
+  createdAt: string;
+}
+
+// ============================================
+// Request DTOs
+// ============================================
+
+/**
+ * Request body for creating a pre-registered visitor pass
+ */
+export interface CreateVisitorPassRequest {
+  unitId: string;
+  visitorName: string;
+  visitType?: VisitorType;
+  visitorPhone?: string;
+  vehicleNumber?: string;
+  vehicleType?: string;
+  deliveryProvider?: string;
+  notes?: string;
+  expectedFrom?: string;
+  expectedTo?: string;
+  notifyVisitorAtGate?: boolean;
+}
+
+/**
+ * Result from creating a visitor pass
+ */
+export interface CreateVisitorPassResult {
+  id: string;
+  accessCode: string;
+}
+
+/**
+ * Request body for creating a walk-in visitor pass (security guard flow)
+ */
+export interface CreateWalkInPassRequest {
+  unitId: string;
+  visitorName: string;
+  visitType?: VisitorType;
+  visitorPhone?: string;
+  visitorIdType?: string;
+  visitorIdNumber?: string;
+  vehicleNumber?: string;
+  vehicleType?: string;
+  deliveryProvider?: string;
+  notes?: string;
+}
+
+/**
+ * Request body for updating a visitor pass
+ */
+export interface UpdateVisitorPassRequest {
+  visitorName: string;
+  visitorPhone?: string;
+  vehicleNumber?: string;
+  vehicleType?: string;
+  notes?: string;
+}
+
+/**
+ * Request body for rejecting a visitor pass
+ */
+export interface RejectVisitorPassRequest {
+  reason?: string;
+}
+
+/**
+ * Query parameters for listing visitor passes
+ */
+export interface ListVisitorPassesParams {
+  searchTerm?: string;
+  unitId?: string;
+  status?: VisitorPassStatus | string;
+  visitType?: VisitorType | string;
+  source?: VisitorSource | string;
+  fromDate?: string;
+  toDate?: string;
+  currentlyInside?: boolean;
+  page?: number;
+  pageSize?: number;
+}
+
+// ============================================
+// Date/Time Helpers
+// Re-exported from maintenance to avoid barrel export conflicts in types/index.ts
+// ============================================
+
+export { formatDateTime, formatDate } from './maintenance';
 

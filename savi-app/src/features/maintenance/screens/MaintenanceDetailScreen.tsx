@@ -564,7 +564,7 @@ export const MaintenanceDetailScreen: React.FC = () => {
   // Loading state
   if (isLoading && !request) {
     return (
-      <Screen safeArea style={styles.screen}>
+      <Screen safeArea edges={['bottom']} style={styles.screen}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text variant="body" color={theme.colors.textSecondary} style={{ marginTop: 12 }}>
@@ -578,7 +578,7 @@ export const MaintenanceDetailScreen: React.FC = () => {
   // Error state
   if (error && !request) {
     return (
-      <Screen safeArea style={styles.screen}>
+      <Screen safeArea edges={['bottom']} style={styles.screen}>
         <ErrorState
           message={error.message || 'Failed to load request'}
           onRetry={refetch}
@@ -595,7 +595,7 @@ export const MaintenanceDetailScreen: React.FC = () => {
   const attachments = request.attachments || [];
 
   return (
-    <Screen safeArea style={styles.screen}>
+    <Screen safeArea edges={['bottom']} style={styles.screen}>
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}

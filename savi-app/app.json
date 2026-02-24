@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "SAVI",
-    "slug": "savi-app",
+    "slug": "dara",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -29,7 +29,11 @@
             }
           }
         },
-        "UIBackgroundModes": ["remote-notification"]
+        "UIBackgroundModes": [
+          "remote-notification",
+          "remote-notification"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -67,7 +71,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "2927cdc5-4840-4acb-a54e-219d38da816a"
+        "projectId": "ca4b19ae-2266-4417-8154-c8c8c3ea79ef"
       }
     },
     "owner": "dev-tes"

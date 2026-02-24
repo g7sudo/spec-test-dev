@@ -16,8 +16,17 @@ const apiClient: AxiosInstance = axios.create({
 // Request interceptor - add auth token and tenant ID, track loading state
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Track API call start (increment active requests counter)
-    useApiLoadingStore.getState().incrementRequest();
+    // Only track mutating requests (POST/PUT/DELETE/PATCH) for the loading overlay.
+    // GET requests are typically background fetches from React Query and should NOT
+    // block the UI with a loading overlay. This prevents the app from freezing when
+    // React Query invalidates queries and triggers background refetches.
+    const method = config.method?.toLowerCase();
+    const isMutating = method && method !== 'get';
+    if (isMutating) {
+      useApiLoadingStore.getState().incrementRequest();
+    }
+    // Tag the request so response interceptors know whether to decrement
+    (config as any).__trackLoading = isMutating;
 
     // Add auth token
     const idToken = useAuthStore.getState().idToken;
@@ -110,8 +119,10 @@ apiClient.interceptors.request.use(
 // Response interceptor - handle errors and track loading state
 apiClient.interceptors.response.use(
   (response) => {
-    // Track API call end (decrement active requests counter)
-    useApiLoadingStore.getState().decrementRequest();
+    // Only decrement for requests that were tracked (mutating requests)
+    if ((response.config as any).__trackLoading) {
+      useApiLoadingStore.getState().decrementRequest();
+    }
 
     // Log successful response
     const fullUrl = `${response.config.baseURL || ''}${response.config.url || ''}`;
@@ -126,8 +137,10 @@ apiClient.interceptors.response.use(
     return response;
   },
   async (error: AxiosError) => {
-    // Track API call end (decrement active requests counter) - even on error
-    useApiLoadingStore.getState().decrementRequest();
+    // Only decrement for requests that were tracked (mutating requests) - even on error
+    if ((error.config as any)?.__trackLoading) {
+      useApiLoadingStore.getState().decrementRequest();
+    }
 
     const originalRequest = error.config;
     const fullUrl = originalRequest ? `${originalRequest.baseURL || ''}${originalRequest.url || ''}` : 'unknown';

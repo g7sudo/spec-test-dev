@@ -79,30 +79,15 @@ export const SetupProfileScreen: React.FC = () => {
       // Get fresh Firebase token
       const currentFirebaseToken = await getIdToken();
 
-      // Update profile
-      await updateProfile(
-        {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          dateOfBirth: dateOfBirth.trim(),
-          phoneNumber: phoneNumber.trim(),
-          email: email.trim(),
-        },
-        currentFirebaseToken,
-        tenantId
-      );
-
-      console.log('[SetupProfileScreen] ✅ Profile updated successfully');
-
-      // Get updated user profile (platform level)
+      // Get platform auth data first (uses manual headers, no store needed)
       const authMeResponse = await getAuthMe(currentFirebaseToken);
 
-      // Get detailed user profile (tenant level)
-      let userProfile = null;
+      // Set token and tenant in stores BEFORE making tenant-scoped API calls
+      // The apiClient interceptor reads from these stores to attach headers
+      useAuthStore.getState().setIdToken(currentFirebaseToken);
+
       if (authMeResponse.tenantMemberships.length > 0) {
         const tenant = authMeResponse.tenantMemberships[0];
-        
-        // Select tenant first so apiClient can add X-Tenant-Id header
         selectTenant(
           {
             id: tenant.tenantId,
@@ -114,9 +99,36 @@ export const SetupProfileScreen: React.FC = () => {
             name: '',
           }
         );
+      } else if (tenantId) {
+        // Fallback: use tenantId from route params
+        selectTenant(
+          {
+            id: tenantId,
+            name: '',
+            slug: '',
+          },
+          {
+            id: '',
+            name: '',
+          }
+        );
+      }
 
-        // Store token in auth store first (apiClient reads from store)
-        useAuthStore.getState().setIdToken(currentFirebaseToken);
+      // Now update profile (apiClient will use token + tenant from stores)
+      await updateProfile({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        dateOfBirth: dateOfBirth.trim(),
+        phoneNumber: phoneNumber.trim(),
+        email: email.trim(),
+      });
+
+      console.log('[SetupProfileScreen] ✅ Profile updated successfully');
+
+      // Get detailed user profile (tenant level)
+      let userProfile = null;
+      if (authMeResponse.tenantMemberships.length > 0) {
+        const tenant = authMeResponse.tenantMemberships[0];
         
         // Fetch detailed profile (apiClient will use token from store)
         try {

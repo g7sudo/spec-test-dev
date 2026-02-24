@@ -137,16 +137,16 @@ export function AddressFormDialog({
               Address Type
             </label>
             <Select
-              value={addressType.toString()}
-              onValueChange={(v) => setAddressType(parseInt(v))}
+              value={addressType}
+              onValueChange={(v) => setAddressType(v as PartyAddressType)}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[0, 1, 2, 3, 4].map((t) => (
-                  <SelectItem key={t} value={t.toString()}>
-                    {getAddressTypeLabel(t)}
+                {Object.values(PartyAddressType).map((at) => (
+                  <SelectItem key={at} value={at}>
+                    {getAddressTypeLabel(at)}
                   </SelectItem>
                 ))}
               </SelectContent>

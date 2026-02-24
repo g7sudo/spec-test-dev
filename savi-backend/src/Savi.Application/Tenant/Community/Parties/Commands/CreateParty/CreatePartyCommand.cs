@@ -6,6 +6,7 @@ namespace Savi.Application.Tenant.Community.Parties.Commands.CreateParty;
 
 /// <summary>
 /// Command to create a new party (individual, company, or entity).
+/// At least one contact is required.
 /// </summary>
 public record CreatePartyCommand : IRequest<Result<Guid>>
 {
@@ -58,5 +59,31 @@ public record CreatePartyCommand : IRequest<Result<Guid>>
     /// Additional notes about the party.
     /// </summary>
     public string? Notes { get; init; }
+
+    /// <summary>
+    /// Contact details for the party. At least one contact is required.
+    /// </summary>
+    public List<CreatePartyContactItem> Contacts { get; init; } = new();
+}
+
+/// <summary>
+/// A single contact entry to be created alongside the party.
+/// </summary>
+public record CreatePartyContactItem
+{
+    /// <summary>
+    /// Type of contact (Email, Mobile, Phone, Fax, Other).
+    /// </summary>
+    public PartyContactType ContactType { get; init; }
+
+    /// <summary>
+    /// Contact value (e.g. email address, phone number).
+    /// </summary>
+    public string Value { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Whether this is the primary contact of its type.
+    /// </summary>
+    public bool IsPrimary { get; init; }
 }
 

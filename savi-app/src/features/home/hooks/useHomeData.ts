@@ -3,6 +3,7 @@ import { AnnouncementSummaryDto } from '@/services/api/announcements';
 import { VisitorPassSummaryDto } from '@/services/api/visitors';
 import { useAnnouncementsFeed } from '@/features/announcements/hooks';
 import { useMyVisitors } from '@/features/visitors/hooks';
+import { useMyMaintenanceRequests } from '@/features/maintenance/hooks';
 
 // ============================================================================
 // Types - Mock data types that will be replaced with real API types later
@@ -60,6 +61,10 @@ interface HomeData {
   /** Error state for visitors */
   visitorsError: Error | null;
   maintenanceRequests: MaintenanceRequest[];
+  /** Loading state for maintenance requests */
+  isLoadingMaintenance: boolean;
+  /** Error state for maintenance requests */
+  maintenanceError: Error | null;
   /** Announcements from API (real data) */
   announcements: AnnouncementSummaryDto[];
   /** Total count of announcements for "View more" indicator */
@@ -96,25 +101,6 @@ const mockHouseholdMembers: HouseholdMember[] = [
   { id: '4', name: 'Sarah Doe', photoUrl: 'https://picsum.photos/200/200?random=4' },
 ];
 
-const mockMaintenanceRequests: MaintenanceRequest[] = [
-  {
-    id: 'm1',
-    title: 'Leaking Bathroom Faucet',
-    requestDate: 'Sept 23',
-    requestTime: '10:00 AM',
-    category: 'Plumber',
-    status: 'New',
-  },
-  {
-    id: 'm2',
-    title: 'AC Not Cooling',
-    requestDate: 'Sept 22',
-    requestTime: '03:00 PM',
-    category: 'AC Tech',
-    status: 'Completed',
-  },
-];
-
 const mockPromoBanner: PromoBanner = {
   id: 'promo-1',
   title: 'Tandoori Nights @ Spinache!',
@@ -142,14 +128,36 @@ const mockFeaturedOffers: FeaturedOffer[] = [
 ];
 
 // ============================================================================
+// Helpers
+// ============================================================================
+
+/**
+ * Format an ISO date string to display date (e.g., "Feb 2")
+ */
+function formatRequestDate(isoDate: string): string {
+  const date = new Date(isoDate);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+/**
+ * Format an ISO date string to display time (e.g., "10:00 AM")
+ */
+function formatRequestTime(isoDate: string): string {
+  const date = new Date(isoDate);
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+// ============================================================================
 // Hook Implementation
 // ============================================================================
 
 /**
  * useHomeData - Hook for fetching all home screen data
- * 
+ *
  * Fetches:
  * - Announcements (real API via React Query)
+ * - Visitors (real API via React Query)
+ * - Maintenance requests (real API via React Query)
  * - Other data (mock data for now, to be replaced with real APIs)
  */
 export const useHomeData = (): HomeData => {
@@ -183,14 +191,35 @@ export const useHomeData = (): HomeData => {
     refetch: refetchVisitors,
   } = useMyVisitors(visitorsFilters);
 
+  // Fetch maintenance requests from API (latest 3 for home screen)
+  const {
+    data: maintenanceData,
+    isLoading: isLoadingMaintenance,
+    error: maintenanceError,
+    refetch: refetchMaintenance,
+  } = useMyMaintenanceRequests({ pageSize: 3 });
+
   // Extract visitors from paginated response and sort by date
   const visitors = useMemo(() => {
     if (!visitorsData?.items) return [];
     // Sort by expected date (earliest first)
-    return [...visitorsData.items].sort((a, b) => 
+    return [...visitorsData.items].sort((a, b) =>
       new Date(a.expectedFrom).getTime() - new Date(b.expectedFrom).getTime()
     );
   }, [visitorsData?.items]);
+
+  // Transform maintenance API response to component format
+  const maintenanceRequests: MaintenanceRequest[] = useMemo(() => {
+    if (!maintenanceData?.items) return [];
+    return maintenanceData.items.map((item) => ({
+      id: item.id,
+      title: item.title,
+      requestDate: formatRequestDate(item.requestedAt),
+      requestTime: formatRequestTime(item.requestedAt),
+      category: item.categoryName || '-',
+      status: item.status as MaintenanceRequest['status'],
+    }));
+  }, [maintenanceData?.items]);
 
   // Extract announcements from paginated response
   const announcements = useMemo(() => {
@@ -207,7 +236,6 @@ export const useHomeData = (): HomeData => {
   // Mock data - In production, these would come from API calls using React Query
   const [bill] = useState<Bill | null>(mockBill);
   const [householdMembers] = useState<HouseholdMember[]>(mockHouseholdMembers);
-  const [maintenanceRequests] = useState<MaintenanceRequest[]>(mockMaintenanceRequests);
   const [promoBanner] = useState<PromoBanner | null>(mockPromoBanner);
   const [featuredOffers] = useState<FeaturedOffer[]>(mockFeaturedOffers);
   const [unreadNotifications] = useState(3);
@@ -215,16 +243,17 @@ export const useHomeData = (): HomeData => {
   // Refetch all data
   const refetch = useCallback(() => {
     setIsLoading(true);
-    
-    // Refetch announcements and visitors
+
+    // Refetch all real API data
     refetchAnnouncements();
     refetchVisitors();
-    
-    // Simulate API call for mock data
+    refetchMaintenance();
+
+    // Simulate API call for remaining mock data
     setTimeout(() => {
       setIsLoading(false);
     }, 500);
-  }, [refetchAnnouncements, refetchVisitors]);
+  }, [refetchAnnouncements, refetchVisitors, refetchMaintenance]);
 
   return {
     bill,
@@ -233,7 +262,10 @@ export const useHomeData = (): HomeData => {
     visitors,
     isLoadingVisitors,
     visitorsError: visitorsError || null,
+    // Maintenance requests (real data from API)
     maintenanceRequests,
+    isLoadingMaintenance,
+    maintenanceError: maintenanceError || null,
     // Announcements (real data from API)
     announcements,
     announcementsTotalCount,
@@ -244,7 +276,7 @@ export const useHomeData = (): HomeData => {
     featuredOffers,
     unreadNotifications,
     unreadAnnouncements,
-    isLoading: isLoading || isLoadingAnnouncements || isLoadingVisitors,
+    isLoading: isLoading || isLoadingAnnouncements || isLoadingVisitors || isLoadingMaintenance,
     error,
     refetch,
   };

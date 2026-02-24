@@ -61,12 +61,26 @@ public class CreatePartyCommandHandler : IRequestHandler<CreatePartyCommand, Res
         }
 
         _dbContext.Add(party);
+
+        // Create contact entries for the party in the same transaction
+        foreach (var contactItem in request.Contacts)
+        {
+            var contact = PartyContact.Create(
+                partyId: party.Id,
+                contactType: contactItem.ContactType,
+                value: contactItem.Value,
+                isPrimary: contactItem.IsPrimary,
+                createdBy: _currentUser.TenantUserId);
+
+            _dbContext.Add(contact);
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation(
-            "Party {PartyId} created successfully with name {PartyName}",
+            "Party {PartyId} created with {ContactCount} contacts",
             party.Id,
-            request.PartyName);
+            request.Contacts.Count);
 
         return Result<Guid>.Success(party.Id);
     }

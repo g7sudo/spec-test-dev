@@ -64,6 +64,25 @@ public class CreatePartyValidator : AbstractValidator<CreatePartyCommand>
         RuleFor(x => x.Notes)
             .MaximumLength(2000)
             .WithMessage("Notes cannot exceed 2000 characters.");
+
+        // Contacts are mandatory — at least one required
+        RuleFor(x => x.Contacts)
+            .NotEmpty()
+            .WithMessage("At least one contact is required.");
+
+        // Validate each contact entry
+        RuleForEach(x => x.Contacts).ChildRules(contact =>
+        {
+            contact.RuleFor(c => c.ContactType)
+                .IsInEnum()
+                .WithMessage("Contact type must be a valid value.");
+
+            contact.RuleFor(c => c.Value)
+                .NotEmpty()
+                .WithMessage("Contact value is required.")
+                .MaximumLength(500)
+                .WithMessage("Contact value cannot exceed 500 characters.");
+        });
     }
 }
 

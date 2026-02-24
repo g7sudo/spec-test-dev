@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { User, Building2, Briefcase, Save, Loader2 } from 'lucide-react';
+import { User, Building2, Briefcase, Save, Plus, Trash2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,8 +21,11 @@ import { createParty, updateParty } from '@/lib/api/parties';
 import {
   Party,
   PartyType,
+  PartyContactType,
   CreatePartyRequest,
+  CreatePartyContactItem,
   UpdatePartyRequest,
+  getContactTypeLabel,
 } from '@/types/party';
 
 // ============================================
@@ -48,6 +51,13 @@ export function PartyFormDialog({
 }: PartyFormDialogProps) {
   const isEditing = !!party;
 
+  // Default contact row for new parties
+  const emptyContact: CreatePartyContactItem = {
+    contactType: PartyContactType.Email,
+    value: '',
+    isPrimary: true,
+  };
+
   // Form state
   const [partyType, setPartyType] = useState<PartyType>(PartyType.Individual);
   const [partyName, setPartyName] = useState('');
@@ -58,6 +68,7 @@ export function PartyFormDialog({
   const [registrationNumber, setRegistrationNumber] = useState('');
   const [taxNumber, setTaxNumber] = useState('');
   const [notes, setNotes] = useState('');
+  const [contacts, setContacts] = useState<CreatePartyContactItem[]>([emptyContact]);
 
   // UI state
   const [isSaving, setIsSaving] = useState(false);
@@ -77,7 +88,7 @@ export function PartyFormDialog({
         setTaxNumber(party.taxNumber || '');
         setNotes(party.notes || '');
       } else {
-        // Reset to defaults
+        // Reset to defaults for create mode
         setPartyType(PartyType.Individual);
         setPartyName('');
         setLegalName('');
@@ -87,6 +98,7 @@ export function PartyFormDialog({
         setRegistrationNumber('');
         setTaxNumber('');
         setNotes('');
+        setContacts([{ ...emptyContact }]);
       }
       setError(null);
     }
@@ -112,6 +124,14 @@ export function PartyFormDialog({
         };
         await updateParty(party.id, request);
       } else {
+        // Filter out contacts with empty values
+        const validContacts = contacts.filter(c => c.value.trim());
+        if (validContacts.length === 0) {
+          setError('At least one contact is required.');
+          setIsSaving(false);
+          return;
+        }
+
         const request: CreatePartyRequest = {
           partyType,
           partyName,
@@ -122,6 +142,7 @@ export function PartyFormDialog({
           registrationNumber: registrationNumber || null,
           taxNumber: taxNumber || null,
           notes: notes || null,
+          contacts: validContacts,
         };
         await createParty(request);
       }
@@ -140,12 +161,13 @@ export function PartyFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="flex max-h-[90vh] max-w-lg flex-col">
         <DialogTitle>
           {isEditing ? 'Edit Party' : 'Create New Party'}
         </DialogTitle>
 
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-4 flex flex-1 flex-col overflow-hidden">
+          <div className="flex-1 space-y-4 overflow-y-auto pr-1">
           {/* Party Type (only for create) */}
           {!isEditing && (
             <div>
@@ -241,6 +263,103 @@ export function PartyFormDialog({
             </>
           )}
 
+          {/* Contacts (mandatory for create) */}
+          {!isEditing && (
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-sm font-medium text-gray-700">
+                  Contacts *
+                </label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setContacts([
+                      ...contacts,
+                      { contactType: PartyContactType.Email, value: '', isPrimary: false },
+                    ])
+                  }
+                  className="inline-flex items-center gap-1 text-xs font-medium text-primary-600 hover:text-primary-700"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  Add Contact
+                </button>
+              </div>
+              <div className="space-y-3">
+                {contacts.map((contact, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-lg border border-gray-200 bg-gray-50 p-3"
+                  >
+                    {/* Row 1: Type dropdown + Remove button */}
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={contact.contactType}
+                        onValueChange={(val) => {
+                          const updated = [...contacts];
+                          updated[idx] = { ...updated[idx], contactType: val as PartyContactType };
+                          setContacts(updated);
+                        }}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.values(PartyContactType).map((ct) => (
+                            <SelectItem key={ct} value={ct}>
+                              {getContactTypeLabel(ct)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {contacts.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setContacts(contacts.filter((_, i) => i !== idx))}
+                          className="rounded p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-500"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Row 2: Value input */}
+                    <div className="mt-2">
+                      <Input
+                        value={contact.value}
+                        onChange={(e) => {
+                          const updated = [...contacts];
+                          updated[idx] = { ...updated[idx], value: e.target.value };
+                          setContacts(updated);
+                        }}
+                        placeholder={
+                          contact.contactType === PartyContactType.Email
+                            ? 'email@example.com'
+                            : '+971 50 123 4567'
+                        }
+                      />
+                    </div>
+
+                    {/* Row 3: Primary checkbox */}
+                    <label className="mt-2 inline-flex cursor-pointer items-center gap-1.5 text-xs text-gray-500">
+                      <input
+                        type="checkbox"
+                        checked={contact.isPrimary}
+                        onChange={(e) => {
+                          const updated = [...contacts];
+                          updated[idx] = { ...updated[idx], isPrimary: e.target.checked };
+                          setContacts(updated);
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      Primary contact
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Notes */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">
@@ -255,25 +374,27 @@ export function PartyFormDialog({
             />
           </div>
 
-          {/* Error */}
-          {error && (
-            <p className="text-sm text-error">{error}</p>
-          )}
+          </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-3 pt-2">
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={() => onOpenChange(false)}
-              disabled={isSaving}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" isLoading={isSaving}>
-              <Save className="h-4 w-4" />
-              {isEditing ? 'Save Changes' : 'Create Party'}
-            </Button>
+          {/* Error + Actions pinned at the bottom */}
+          <div className="shrink-0 border-t border-gray-100 pt-3 mt-3">
+            {error && (
+              <p className="mb-3 text-sm text-error">{error}</p>
+            )}
+            <div className="flex justify-end gap-3">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => onOpenChange(false)}
+                disabled={isSaving}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" isLoading={isSaving}>
+                <Save className="h-4 w-4" />
+                {isEditing ? 'Save Changes' : 'Create Party'}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

@@ -120,13 +120,13 @@ export const WelcomeScreen: React.FC = () => {
         const phoneNumber = userProfile?.primaryPhone || authMeResponse.phoneNumber;
         const email = userProfile?.primaryEmail || authMeResponse.email;
 
-        // Use communityUserId from userProfile if available, otherwise fetch from tenantAuth
+        // Fetch tenant auth to get communityUserId and lease/unit info
+        const tenantAuthData = await getTenantAuth();
+
         let communityUserId: string;
         if (userProfile?.communityUserId) {
           communityUserId = userProfile.communityUserId;
         } else {
-          // Fetch tenant auth to get communityUserId
-          const tenantAuthData = await getTenantAuth();
           if (!tenantAuthData?.communityUserId) {
             throw new Error('Unable to get community user ID. Please try again.');
           }
@@ -145,19 +145,22 @@ export const WelcomeScreen: React.FC = () => {
           [membership]
         );
 
-        // Tenant already selected above for profile fetch
-        if (!userProfile) {
-          selectTenant(
-            {
-              id: tenant.tenantId,
-              name: tenant.tenantName,
-              slug: tenant.tenantSlug,
-            },
-            {
-              id: '',
-              name: '',
-            }
-          );
+        // Set current unit from lease data (same pattern as SignInScreen)
+        if (tenantAuthData?.leases?.length > 0) {
+          const primaryLease = tenantAuthData.leases.find((lease: any) => lease.isPrimary);
+          const selectedLease = primaryLease || tenantAuthData.leases[0];
+
+          if (selectedLease?.unitId) {
+            useTenantStore.getState().setCurrentUnit({
+              id: selectedLease.unitId,
+              unitNumber: selectedLease.unitLabel || selectedLease.unitNumber || '',
+            });
+
+            console.log('[WelcomeScreen] ✅ Unit set from lease:', {
+              unitId: selectedLease.unitId,
+              unitLabel: selectedLease.unitLabel,
+            });
+          }
         }
       }
 

@@ -14,10 +14,10 @@ export { PagedResult } from './http';
  * Status of a tenant/community
  */
 export enum TenantStatus {
-  Pending = 0,
-  Active = 1,
-  Suspended = 2,
-  Archived = 3,
+  Pending = 'Pending',
+  Active = 'Active',
+  Suspended = 'Suspended',
+  Archived = 'Archived',
 }
 
 // ============================================

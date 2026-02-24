@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Savi.Application.Common.Interfaces;
 using Savi.Application.Platform.Profile.Dtos;
+using Savi.Domain.Platform;
 using Savi.SharedKernel.Authorization;
 using Savi.SharedKernel.Common;
 using Savi.SharedKernel.Interfaces;
@@ -83,9 +84,12 @@ public sealed class GetMyPlatformProfileQueryHandler
         // ─────────────────────────────────────────────────────────────────
         // 3. Get tenant memberships (for scope dropdown)
         // ─────────────────────────────────────────────────────────────────
+        // Only return accepted memberships — Invited/Suspended should not appear in tenant dropdown
         var memberships = _platformDbContext.UserTenantMemberships
             .AsNoTracking()
-            .Where(m => m.PlatformUserId == _currentUser.UserId && m.IsActive)
+            .Where(m => m.PlatformUserId == _currentUser.UserId
+                        && m.IsActive
+                        && m.Status == MembershipStatus.Active)
             .Join(
                 _platformDbContext.Tenants.AsNoTracking().Where(t => t.IsActive),
                 m => m.TenantId,

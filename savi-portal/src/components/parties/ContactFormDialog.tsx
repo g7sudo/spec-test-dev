@@ -145,16 +145,16 @@ export function ContactFormDialog({
               Contact Type
             </label>
             <Select
-              value={contactType.toString()}
-              onValueChange={(v) => setContactType(parseInt(v))}
+              value={contactType}
+              onValueChange={(v) => setContactType(v as PartyContactType)}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {[0, 1, 2, 3, 4].map((t) => (
-                  <SelectItem key={t} value={t.toString()}>
-                    {getContactTypeLabel(t)}
+                {Object.values(PartyContactType).map((ct) => (
+                  <SelectItem key={ct} value={ct}>
+                    {getContactTypeLabel(ct)}
                   </SelectItem>
                 ))}
               </SelectContent>

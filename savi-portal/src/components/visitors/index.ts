@@ -3,6 +3,7 @@
  * Barrel export for visitor-related components
  */
 
-// Export visitor components here as they are created
-// Example: export { VisitorPassFormDialog } from './VisitorPassFormDialog';
-
+export { CreateVisitorPassDialog } from './CreateVisitorPassDialog';
+export { WalkInPassDialog } from './WalkInPassDialog';
+export { RejectPassDialog } from './RejectPassDialog';
+export { UpdatePassDialog } from './UpdatePassDialog';

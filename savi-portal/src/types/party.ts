@@ -11,34 +11,37 @@ export { PagedResult } from './http';
 // ============================================
 
 /**
- * Type of party in the community
+ * Type of party in the community.
+ * Values are strings to match backend JsonStringEnumConverter serialization.
  */
 export enum PartyType {
-  Individual = 0,
-  Company = 1,
-  Entity = 2,
+  Individual = 'Individual',
+  Company = 'Company',
+  Entity = 'Entity',
 }
 
 /**
- * Type of address for a party
+ * Type of address for a party.
+ * Values are strings to match backend JsonStringEnumConverter serialization.
  */
 export enum PartyAddressType {
-  Permanent = 0,
-  Communication = 1,
-  Registered = 2,
-  Billing = 3,
-  Other = 4,
+  Permanent = 'Permanent',
+  Communication = 'Communication',
+  Registered = 'Registered',
+  Billing = 'Billing',
+  Other = 'Other',
 }
 
 /**
- * Type of contact information for a party
+ * Type of contact information for a party.
+ * Values are strings to match backend JsonStringEnumConverter serialization.
  */
 export enum PartyContactType {
-  Email = 0,
-  Mobile = 1,
-  Phone = 2,
-  Whatsapp = 3,
-  Other = 4,
+  Email = 'Email',
+  Mobile = 'Mobile',
+  Phone = 'Phone',
+  Whatsapp = 'Whatsapp',
+  Other = 'Other',
 }
 
 // ============================================
@@ -112,7 +115,17 @@ export interface PartyContact {
 // ============================================
 
 /**
- * Create party request
+ * A single contact entry included when creating a party.
+ */
+export interface CreatePartyContactItem {
+  contactType: PartyContactType;
+  value: string;
+  isPrimary: boolean;
+}
+
+/**
+ * Create party request.
+ * At least one contact is required.
  */
 export interface CreatePartyRequest {
   partyType: PartyType;
@@ -124,6 +137,7 @@ export interface CreatePartyRequest {
   registrationNumber?: string | null;
   taxNumber?: string | null;
   notes?: string | null;
+  contacts: CreatePartyContactItem[];
 }
 
 /**
