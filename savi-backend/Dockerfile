@@ -28,6 +28,9 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 
 COPY --from=build /app/publish .
 
+# Grant appuser write access so Render secret files can be copied at startup
+RUN chown -R appuser:appuser /app
+
 # Render injects PORT env var; default to 8080 for local testing
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
@@ -36,5 +39,5 @@ USER appuser
 
 EXPOSE 8080
 
-# Copy Render secret files (appsettings + firebase credentials) into the app directory at startup
-ENTRYPOINT ["sh", "-c", "cp /etc/secrets/*.json /app/ 2>/dev/null; dotnet Savi.Api.dll"]
+# Copy Render secret files (appsettings + firebase credentials) into /app before starting
+ENTRYPOINT ["sh", "-c", "ls -la /etc/secrets/ && cp /etc/secrets/*.json /app/ && echo 'Secrets copied OK' && dotnet Savi.Api.dll"]
