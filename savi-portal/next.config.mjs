@@ -2,6 +2,9 @@
 const nextConfig = {
   // Enable React strict mode for better development experience
   reactStrictMode: true,
+
+  // Output as standalone for optimized Docker deployments
+  output: 'standalone',
   
   // Image optimization domains (add your CDN/storage domains here)
   images: {
