@@ -520,3 +520,7 @@ savi-portal/.next
 savi-portal/node_modules
 savi-portal/package.json
 
+
+savi-backend/src/Savi.Api/appsettings.json
+appsettings.Development.json
+appsettings.Local.json
