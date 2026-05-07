@@ -1,0 +1,103 @@
+# =============================================================================
+# Savi — Master Docker Compose
+#
+# Brings up all three services together:
+#   • savi-backend  → .NET 8 API          → http://localhost:8080
+#   • savi-portal   → Next.js dashboard   → http://localhost:3000
+#   • savi-website  → Next.js static site → http://localhost:3001
+#
+# Usage:
+#   docker compose up --build          # build images and start all services
+#   docker compose up savi-backend     # start a single service
+#   docker compose down                # stop and remove containers
+#   docker compose logs -f             # tail logs from all services
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # savi-backend — .NET 8 REST API
+  # Expects secrets (appsettings.*.json, Firebase credentials) mounted at
+  # /etc/secrets/ — see the ENTRYPOINT in savi-backend/Dockerfile.
+  # ---------------------------------------------------------------------------
+  savi-backend:
+    build:
+      context: ./savi-backend
+      dockerfile: Dockerfile
+    container_name: savi-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      # Override these via a .env file or CI/CD secrets
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+    volumes:
+      # Mount your local secrets folder so the ENTRYPOINT can copy them in.
+      # Create a local folder at ./secrets/ with appsettings.json etc.
+      # Remove this volume block if you bake secrets into the image instead.
+      - ./secrets:/etc/secrets:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - savi-net
+
+  # ---------------------------------------------------------------------------
+  # savi-portal — Next.js 14 standalone dashboard app
+  # Talks to savi-backend via NEXT_PUBLIC_API_BASE_URL.
+  # ---------------------------------------------------------------------------
+  savi-portal:
+    build:
+      context: ./savi-portal
+      dockerfile: Dockerfile
+    container_name: savi-portal
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: "0.0.0.0"
+      # Point the portal at the backend service (Docker internal hostname)
+      NEXT_PUBLIC_API_BASE_URL: http://savi-backend:8080
+    depends_on:
+      savi-backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - savi-net
+
+  # ---------------------------------------------------------------------------
+  # savi-website — Next.js 14 static-export marketing/public site
+  # Served by nginx on port 3001.
+  # ---------------------------------------------------------------------------
+  savi-website:
+    build:
+      context: ./savi-website
+      dockerfile: Dockerfile
+    container_name: savi-website
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - savi-net
+
+# Shared internal network — containers can reach each other by service name
+networks:
+  savi-net:
+    driver: bridge
