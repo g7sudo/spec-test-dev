@@ -427,19 +427,6 @@ export function LeaseSection({
     await loadLeases(true);
   };
 
-  // Separate leases by status
-  const activeLeases = leases.filter(
-    (l) => l.status === LeaseStatus.Active
-  );
-  const draftLeases = leases.filter(
-    (l) => l.status === LeaseStatus.Draft
-  );
-  const pastLeases = leases.filter(
-    (l) =>
-      l.status === LeaseStatus.Ended ||
-      l.status === LeaseStatus.Terminated
-  );
-
   if (!canView) {
     return null;
   }
@@ -450,9 +437,9 @@ export function LeaseSection({
         <CardHeader
           title="Leases"
           description={
-            activeLeases.length > 0
-              ? `${activeLeases.length} active lease${activeLeases.length !== 1 ? 's' : ''}`
-              : 'No active leases'
+            leases.length > 0
+              ? `${leases.length} lease${leases.length !== 1 ? 's' : ''}`
+              : 'No leases'
           }
           action={
             canManage && (
@@ -487,115 +474,39 @@ export function LeaseSection({
               )}
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* Draft Leases */}
-              {draftLeases.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
-                    Draft Leases
-                  </h4>
-                  <div className="space-y-3">
-                    {draftLeases.map((lease) => (
-                      <LeaseCard
-                        key={lease.id}
-                        lease={lease}
-                        invites={invitesByLease[lease.id] || []}
-                        canManage={canManage}
-                        onActivate={() => {
-                          setSelectedLease(lease);
-                          setIsActivateOpen(true);
-                        }}
-                        onEnd={() => {
-                          setSelectedLease(lease);
-                          setIsEndOpen(true);
-                        }}
-                        onAddParty={() => {
-                          setSelectedLease(lease);
-                          setIsAddPartyOpen(true);
-                        }}
-                        onRemoveParty={(party) => {
-                          setRemovingParty(party);
-                        }}
-                        onSendInvite={(party) => {
-                          setSelectedLease(lease);
-                          setInvitingParty(party);
-                        }}
-                        onRefresh={() => {
-                          fetchedRef.current = false;
-                          loadLeases(true);
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Active Leases */}
-              {activeLeases.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
-                    Active Leases
-                  </h4>
-                  <div className="space-y-3">
-                    {activeLeases.map((lease) => (
-                      <LeaseCard
-                        key={lease.id}
-                        lease={lease}
-                        invites={invitesByLease[lease.id] || []}
-                        canManage={canManage}
-                        onActivate={() => {
-                          setSelectedLease(lease);
-                          setIsActivateOpen(true);
-                        }}
-                        onEnd={() => {
-                          setSelectedLease(lease);
-                          setIsEndOpen(true);
-                        }}
-                        onAddParty={() => {
-                          setSelectedLease(lease);
-                          setIsAddPartyOpen(true);
-                        }}
-                        onRemoveParty={(party) => {
-                          setRemovingParty(party);
-                        }}
-                        onSendInvite={(party) => {
-                          setSelectedLease(lease);
-                          setInvitingParty(party);
-                        }}
-                        onRefresh={() => {
-                          fetchedRef.current = false;
-                          loadLeases(true);
-                        }}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Past Leases */}
-              {pastLeases.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
-                    Past Leases
-                  </h4>
-                  <div className="space-y-3">
-                    {pastLeases.map((lease) => (
-                      <LeaseCard
-                        key={lease.id}
-                        lease={lease}
-                        invites={[]}
-                        canManage={false}
-                        onActivate={() => {}}
-                        onEnd={() => {}}
-                        onAddParty={() => {}}
-                        onRemoveParty={() => {}}
-                        onSendInvite={() => {}}
-                        onRefresh={() => {}}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
+            /* Show all leases — status badge on each card handles Draft/Active/Ended display */
+            <div className="space-y-3">
+              {leases.map((lease) => (
+                <LeaseCard
+                  key={lease.id}
+                  lease={lease}
+                  invites={invitesByLease[lease.id] || []}
+                  canManage={canManage}
+                  onActivate={() => {
+                    setSelectedLease(lease);
+                    setIsActivateOpen(true);
+                  }}
+                  onEnd={() => {
+                    setSelectedLease(lease);
+                    setIsEndOpen(true);
+                  }}
+                  onAddParty={() => {
+                    setSelectedLease(lease);
+                    setIsAddPartyOpen(true);
+                  }}
+                  onRemoveParty={(party) => {
+                    setRemovingParty(party);
+                  }}
+                  onSendInvite={(party) => {
+                    setSelectedLease(lease);
+                    setInvitingParty(party);
+                  }}
+                  onRefresh={() => {
+                    fetchedRef.current = false;
+                    loadLeases(true);
+                  }}
+                />
+              ))}
             </div>
           )}
         </CardContent>

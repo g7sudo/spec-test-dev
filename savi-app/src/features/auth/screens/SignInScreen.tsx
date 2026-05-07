@@ -374,7 +374,7 @@ export const SignInScreen: React.FC = () => {
             <Text variant="body" color={theme.colors.textSecondary}>
               {t('dontHaveAccount')}
             </Text>
-            <TouchableOpacity onPress={() => {}}>
+            <TouchableOpacity onPress={() => authNavigation.navigate('SignUp')}>
               <Text
                 variant="body"
                 color={theme.colors.primary}

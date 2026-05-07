@@ -12,37 +12,39 @@ import { PartyType } from './party';
 export type { PagedResult } from './http';
 
 // ============================================
-// Enums (values match C# enum integers)
+// Enums (string values matching .NET JSON serialization)
 // ============================================
 
 /**
  * Status of a lease agreement
  * Maps to: Savi.Domain.Tenant.Enums.LeaseStatus
+ * NOTE: .NET backend serializes enums as strings, not integers
  */
 export enum LeaseStatus {
   /** Lease is being drafted, not yet active */
-  Draft = 0,
+  Draft = 'Draft',
   /** Lease is active and in effect */
-  Active = 1,
+  Active = 'Active',
   /** Lease has ended normally */
-  Ended = 2,
+  Ended = 'Ended',
   /** Lease was terminated early */
-  Terminated = 3,
+  Terminated = 'Terminated',
 }
 
 /**
  * Role of a party in a lease agreement
  * Maps to: Savi.Domain.Tenant.Enums.LeasePartyRole
+ * NOTE: .NET backend serializes enums as strings, not integers
  */
 export enum LeasePartyRole {
   /** Primary resident responsible for the lease */
-  PrimaryResident = 0,
+  PrimaryResident = 'PrimaryResident',
   /** Co-resident sharing the unit */
-  CoResident = 1,
+  CoResident = 'CoResident',
   /** Guarantor for the lease */
-  Guarantor = 2,
+  Guarantor = 'Guarantor',
   /** Other role */
-  Other = 3,
+  Other = 'Other',
 }
 
 // ============================================
@@ -328,21 +330,21 @@ export function formatLeasePeriod(
  * Checks if a lease can be activated (is in Draft status)
  */
 export function canActivateLease(status: LeaseStatus | string): boolean {
-  return status === LeaseStatus.Draft || status === 'Draft';
+  return status === LeaseStatus.Draft;
 }
 
 /**
  * Checks if a lease can be ended (is Active)
  */
 export function canEndLease(status: LeaseStatus | string): boolean {
-  return status === LeaseStatus.Active || status === 'Active';
+  return status === LeaseStatus.Active;
 }
 
 /**
  * Checks if a lease is editable (is Draft)
  */
 export function isLeaseEditable(status: LeaseStatus | string): boolean {
-  return status === LeaseStatus.Draft || status === 'Draft';
+  return status === LeaseStatus.Draft;
 }
 
 /**

@@ -4,7 +4,7 @@
  */
 
 // API base URL for backend calls
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5024';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://spec-test.onrender.com';
 
 // Firebase configuration for authentication
 export const firebaseConfig = {

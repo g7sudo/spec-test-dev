@@ -12,22 +12,23 @@ import { LeasePartyRole } from './lease';
 export type { PagedResult } from './http';
 
 // ============================================
-// Enums (values match C# enum integers)
+// Enums (string values matching .NET JSON serialization)
 // ============================================
 
 /**
  * Status of a resident invitation
  * Maps to: Savi.Domain.Tenant.Enums.ResidentInviteStatus
+ * NOTE: .NET backend serializes enums as strings, not integers
  */
 export enum ResidentInviteStatus {
   /** Invite has been sent and is awaiting acceptance */
-  Pending = 0,
+  Pending = 'Pending',
   /** Invite has been accepted by the resident */
-  Accepted = 1,
+  Accepted = 'Accepted',
   /** Invite has expired without being accepted */
-  Expired = 2,
+  Expired = 'Expired',
   /** Invite was cancelled by admin */
-  Cancelled = 3,
+  Cancelled = 'Cancelled',
 }
 
 // ============================================
@@ -220,19 +221,14 @@ export function formatInviteExpiry(expiresAt: string | null): string {
  * Checks if an invite can be resent (is pending or expired)
  */
 export function canResendInvite(status: ResidentInviteStatus | string): boolean {
-  return (
-    status === ResidentInviteStatus.Pending ||
-    status === 'Pending' ||
-    status === ResidentInviteStatus.Expired ||
-    status === 'Expired'
-  );
+  return status === ResidentInviteStatus.Pending || status === ResidentInviteStatus.Expired;
 }
 
 /**
  * Checks if an invite can be cancelled (is pending)
  */
 export function canCancelInvite(status: ResidentInviteStatus | string): boolean {
-  return status === ResidentInviteStatus.Pending || status === 'Pending';
+  return status === ResidentInviteStatus.Pending;
 }
 
 /**
