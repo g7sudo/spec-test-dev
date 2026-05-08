@@ -520,6 +520,6 @@ savi-portal/.next
 savi-portal/node_modules
 
 
-savi-backend/src/Savi.Api/appsettings.json
+# appsettings.json is committed — it contains only safe defaults, no secrets
 appsettings.Development.json
 appsettings.Local.json
