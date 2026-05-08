@@ -3,8 +3,8 @@
 #
 # Brings up all three services together:
 #   • savi-backend  → .NET 8 API          → http://localhost:8080
-#   • savi-portal   → Next.js dashboard   → http://localhost:3000
-#   • savi-website  → Next.js static site → http://localhost:3001
+#   • savi-portal   → Next.js dashboard   → http://localhost:8081
+#   • savi-website  → Next.js static site → http://localhost:8082
 #
 # Usage:
 #   docker compose up --build          # build images and start all services
@@ -57,7 +57,7 @@ services:
     container_name: savi-portal
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "8081:3000"
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -78,7 +78,7 @@ services:
 
   # ---------------------------------------------------------------------------
   # savi-website — Next.js 14 static-export marketing/public site
-  # Served by nginx on port 3001.
+  # Served by nginx on port 8082 (host) → 3001 (container).
   # ---------------------------------------------------------------------------
   savi-website:
     build:
@@ -87,7 +87,7 @@ services:
     container_name: savi-website
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "8082:3001"
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3001"]
       interval: 30s
