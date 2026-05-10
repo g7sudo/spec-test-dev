@@ -164,8 +164,12 @@ try
         await next();
     });
 
-    // HTTPS redirection (skip in development)
-    if (!app.Environment.IsDevelopment())
+    // HTTPS redirection — only enabled when HTTPS is actually configured.
+    // In Docker we run plain HTTP (TLS is terminated at the reverse proxy/load balancer).
+    // Skipping this prevents the "Failed to determine the https port" warning in containers.
+    var httpsPort = app.Configuration.GetValue<int?>("HTTPS_PORT")
+                    ?? app.Configuration.GetValue<int?>("ASPNETCORE_HTTPS_PORT");
+    if (!app.Environment.IsDevelopment() && httpsPort.HasValue)
     {
         app.UseHsts();
         app.UseHttpsRedirection();
@@ -174,8 +178,12 @@ try
     // CORS - must be before auth middleware
     app.UseCors("AllowFrontend");
 
-    // Swagger (development only by default, or controlled by config)
-    if (app.Environment.IsDevelopment())
+    // Swagger — enabled in Development always.
+    // In Production, controlled by "EnableSwagger" config flag.
+    // Set "EnableSwagger": true in appsettings.json to expose it in Docker.
+    var enableSwagger = app.Environment.IsDevelopment()
+                        || app.Configuration.GetValue<bool>("EnableSwagger");
+    if (enableSwagger)
     {
         app.UseSwagger();
         app.UseSwaggerUI();
