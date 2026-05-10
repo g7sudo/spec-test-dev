@@ -61,17 +61,31 @@ try
         options.SubstituteApiVersionInUrl = true;
     });
 
-    // CORS - Allow frontend origins
+    // CORS - Allow frontend origins.
+    // Base origins are always allowed (local dev).
+    // Additional origins can be added via "Cors:AllowedOrigins" in appsettings.json —
+    // useful for Docker ports or production domains without a code change.
+    var corsOrigins = new List<string>
+    {
+        "http://localhost:3000",   // Next.js dev (npm run dev default)
+        "http://localhost:8081",   // savi-portal in Docker
+        "http://localhost:5173",   // Vite dev server
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8081",
+        "http://127.0.0.1:5173",
+    };
+
+    // Merge any extra origins defined in config (e.g. production domain)
+    var extraOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+    if (extraOrigins?.Length > 0)
+        corsOrigins.AddRange(extraOrigins);
+
     builder.Services.AddCors(options =>
     {
         options.AddPolicy("AllowFrontend", policy =>
         {
             policy
-                .WithOrigins(
-                    "http://localhost:3000",   // Next.js dev server
-                    "http://localhost:5173",   // Vite dev server
-                    "http://127.0.0.1:3000",
-                    "http://127.0.0.1:5173")
+                .WithOrigins(corsOrigins.ToArray())
                 .AllowAnyMethod()
                 .AllowAnyHeader()
                 .AllowCredentials();
