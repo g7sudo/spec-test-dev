@@ -26,12 +26,18 @@ WORKDIR /app
 # Create a non-root user for security
 RUN groupadd -r appuser && useradd -r -g appuser appuser
 
+# Copy the published .NET app from the build stage
 COPY --from=build /app/publish .
 
-# Grant appuser write access so Render secret files can be copied at startup
+# Copy production config from the Mac Mini config folder (~/savi-config/).
+# This file is injected at build time via docker-compose `additional_contexts`.
+# It is NEVER committed to git — it lives only on the Mac Mini.
+# Contains: DB connection strings, Firebase credentials, etc.
+COPY --from=config appsettings.json ./appsettings.json
+
+# Grant appuser ownership of the app directory
 RUN chown -R appuser:appuser /app
 
-# Render injects PORT env var; default to 8080 for local testing
 ENV ASPNETCORE_URLS=http://+:8080
 ENV ASPNETCORE_ENVIRONMENT=Production
 
@@ -39,5 +45,6 @@ USER appuser
 
 EXPOSE 8080
 
-# Copy Render secret files (appsettings + firebase credentials) into /app before starting
-ENTRYPOINT ["sh", "-c", "ls -la /etc/secrets/ && cp /etc/secrets/*.json /app/ && echo 'Secrets copied OK' && dotnet Savi.Api.dll"]
+# .NET config system loads appsettings.json first, then appsettings.json
+# on top — Production values win for any keys that overlap.
+ENTRYPOINT ["dotnet", "Savi.Api.dll"]

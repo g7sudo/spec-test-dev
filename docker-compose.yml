@@ -6,6 +6,11 @@
 #   • savi-portal   → Next.js dashboard   → http://localhost:8081
 #   • savi-website  → Next.js static site → http://localhost:8082
 #
+# Config strategy:
+#   Secrets and production config live in ~/savi-config/ on the Mac Mini.
+#   That folder is OUTSIDE the git repo and never committed.
+#   Docker BuildKit pulls files from it via `additional_contexts` at build time.
+#
 # Usage:
 #   docker compose up --build          # build images and start all services
 #   docker compose up savi-backend     # start a single service
@@ -17,13 +22,20 @@ services:
 
   # ---------------------------------------------------------------------------
   # savi-backend — .NET 8 REST API
-  # Expects secrets (appsettings.*.json, Firebase credentials) mounted at
-  # /etc/secrets/ — see the ENTRYPOINT in savi-backend/Dockerfile.
+  #
+  # Config pulled from Mac Mini at build time:
+  #   ~/savi-config/appsettings.json → baked into image
+  #
+  # The 'config' additional_context points BuildKit to ~/savi-config/.
+  # The Dockerfile does: COPY --from=config appsettings.json .
   # ---------------------------------------------------------------------------
   savi-backend:
     build:
       context: ./savi-backend
       dockerfile: Dockerfile
+      additional_contexts:
+        # Points to the Mac Mini config folder — never committed to git
+        config: /Users/dheeban/savi-config
     container_name: savi-backend
     restart: unless-stopped
     ports:
@@ -31,8 +43,8 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:8080
-      # All other config (DB, Firebase, Email etc.) is read from
-      # appsettings.json baked into the image — no extra env vars needed.
+      # All other config (DB, Firebase, Email etc.) comes from
+      # appsettings.json baked into the image at build time
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
@@ -44,12 +56,18 @@ services:
 
   # ---------------------------------------------------------------------------
   # savi-portal — Next.js 14 standalone dashboard app
-  # Talks to savi-backend via NEXT_PUBLIC_API_BASE_URL.
+  #
+  # Config pulled from Mac Mini at build time:
+  #   ~/savi-config/portal.env → copied as .env.local before `next build`
+  #   This makes NEXT_PUBLIC_* vars available at build time (required by Next.js)
   # ---------------------------------------------------------------------------
   savi-portal:
     build:
       context: ./savi-portal
       dockerfile: Dockerfile
+      additional_contexts:
+        # Points to the Mac Mini config folder — never committed to git
+        config: /Users/dheeban/savi-config
     container_name: savi-portal
     restart: unless-stopped
     ports:
@@ -58,8 +76,6 @@ services:
       NODE_ENV: production
       PORT: 3000
       HOSTNAME: "0.0.0.0"
-      # Point the portal at the backend service (Docker internal hostname)
-      NEXT_PUBLIC_API_BASE_URL: http://savi-backend:8080
     depends_on:
       savi-backend:
         condition: service_healthy
@@ -75,6 +91,7 @@ services:
   # ---------------------------------------------------------------------------
   # savi-website — Next.js 14 static-export marketing/public site
   # Served by nginx on port 8082 (host) → 3001 (container).
+  # No secrets needed — purely static, no server-side config.
   # ---------------------------------------------------------------------------
   savi-website:
     build:
@@ -93,7 +110,8 @@ services:
     networks:
       - savi-net
 
-# Shared internal network — containers can reach each other by service name
+# Shared internal network — containers reach each other by service name
+# e.g. savi-portal → http://savi-backend:8080
 networks:
   savi-net:
     driver: bridge

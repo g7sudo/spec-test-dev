@@ -523,3 +523,9 @@ savi-portal/node_modules
 # appsettings.json is committed — it contains only safe defaults, no secrets
 appsettings.Development.json
 appsettings.Local.json
+# Production config lives on the Mac Mini at ~/savi-config/
+# These files are injected at build time via Docker BuildKit additional_contexts
+# NEVER commit these — they contain real secrets
+appsettings.json
+.env.local
+portal.env
