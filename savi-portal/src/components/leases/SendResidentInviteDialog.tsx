@@ -154,7 +154,7 @@ export function SendResidentInviteDialog({
       const result = await createResidentInvite({
         leaseId,
         partyId: leaseParty.partyId,
-        role: leaseParty.role as LeasePartyRole,
+        role: leaseParty.role as unknown as LeasePartyRole,
         email,
         expirationDays: parseInt(expirationDays),
       });

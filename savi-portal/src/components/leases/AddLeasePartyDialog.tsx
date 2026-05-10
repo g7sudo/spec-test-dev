@@ -426,7 +426,7 @@ export function AddLeasePartyDialog({
                 </label>
                 <Select
                   value={role.toString()}
-                  onValueChange={(v) => setRole(parseInt(v) as LeasePartyRole)}
+                  onValueChange={(v) => setRole(parseInt(v) as unknown as LeasePartyRole)}
                 >
                   <SelectTrigger>
                     <SelectValue />

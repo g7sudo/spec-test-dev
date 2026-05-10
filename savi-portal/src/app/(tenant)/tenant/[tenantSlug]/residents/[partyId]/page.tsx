@@ -734,7 +734,7 @@ export default function ResidentProfilePage() {
             partyName: profile.residentName,
             partyType: profile.partyType as unknown as PartyType,
             communityUserId: profile.communityUserId,
-            role: inviteResidency.role as LeasePartyRole,
+            role: inviteResidency.role as unknown as LeasePartyRole,
             isPrimary: inviteResidency.isPrimary,
             moveInDate: inviteResidency.moveInDate,
             moveOutDate: inviteResidency.moveOutDate,

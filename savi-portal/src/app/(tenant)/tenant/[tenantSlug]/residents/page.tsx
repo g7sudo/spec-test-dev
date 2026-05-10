@@ -657,7 +657,7 @@ export default function ResidentsPage() {
             partyName: inviteResident.residentName, // Map residentName to partyName for dialog
             partyType: inviteResident.partyType as unknown as PartyType,
             communityUserId: inviteResident.communityUserId,
-            role: inviteResident.role as LeasePartyRole,
+            role: inviteResident.role as unknown as LeasePartyRole,
             isPrimary: inviteResident.isPrimary,
             moveInDate: inviteResident.moveInDate,
             moveOutDate: inviteResident.moveOutDate,

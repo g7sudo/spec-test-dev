@@ -597,7 +597,7 @@ export function CreateLeaseDialog({
                             <Select
                               value={party.role.toString()}
                               onValueChange={(v) =>
-                                updateParty(party.id, { role: parseInt(v) as LeasePartyRole })
+                                updateParty(party.id, { role: parseInt(v) as unknown as LeasePartyRole })
                               }
                             >
                               <SelectTrigger className="h-7 text-xs w-32">

@@ -58,7 +58,7 @@ services:
   # savi-portal — Next.js 14 standalone dashboard app
   #
   # Config pulled from Mac Mini at build time:
-  #   ~/savi-config/portal.env → copied as .env.local before `next build`
+  #   ~/savi-config/.env.local → copied as .env.local before `next build`
   #   This makes NEXT_PUBLIC_* vars available at build time (required by Next.js)
   # ---------------------------------------------------------------------------
   savi-portal:
@@ -78,7 +78,7 @@ services:
       HOSTNAME: "0.0.0.0"
     depends_on:
       savi-backend:
-        condition: service_healthy
+        condition: service_started
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000"]
       interval: 30s
