@@ -529,3 +529,6 @@ appsettings.Local.json
 appsettings.json
 .env.local
 portal.env
+
+# Runtime log files mounted from Docker containers
+logs/

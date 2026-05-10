@@ -29,11 +29,15 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 # Copy the published .NET app from the build stage
 COPY --from=build /app/publish .
 
-# Copy production config from the Mac Mini config folder (~/savi-config/).
-# This file is injected at build time via docker-compose `additional_contexts`.
-# It is NEVER committed to git — it lives only on the Mac Mini.
-# Contains: DB connection strings, Firebase credentials, etc.
+# Copy production config files from the Mac Mini config folder (~/savi-config/).
+# Injected at build time via docker-compose `additional_contexts`.
+# These files are NEVER committed to git — they live only on the Mac Mini.
+#
+# Required files in ~/savi-config/:
+#   appsettings.json              ← DB, Firebase, Email, etc.
+#   dk-dev-app-firebase-admin.json ← Firebase service account credentials
 COPY --from=config appsettings.json ./appsettings.json
+COPY --from=config dk-dev-app-firebase-admin.json ./dk-dev-app-firebase-admin.json
 
 # Grant appuser ownership of the app directory
 RUN chown -R appuser:appuser /app
