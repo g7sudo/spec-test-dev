@@ -45,6 +45,11 @@ services:
       ASPNETCORE_URLS: http://+:8080
       # All other config (DB, Firebase, Email etc.) comes from
       # appsettings.json baked into the image at build time
+    volumes:
+      # Backend log files are mounted to the host so you can read them
+      # without exec-ing into the container.
+      # Logs appear at: ./logs/backend/savi-YYYYMMDD.log
+      - ./logs/backend:/app/logs
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 30s
